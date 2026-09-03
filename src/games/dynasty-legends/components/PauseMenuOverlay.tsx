@@ -22,13 +22,13 @@ export const PauseMenuOverlay: React.FC<PauseMenuOverlayProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6 select-none font-sans">
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6 select-none font-sans">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 15 }}
           transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="w-full max-w-md bg-slate-900/95 border border-amber-500/50 rounded-2xl p-6 shadow-2xl space-y-6"
+          className="w-full max-w-md bg-slate-900 border-2 border-amber-500/70 rounded-2xl p-6 shadow-2xl space-y-6"
         >
           {/* Header */}
           <div className="text-center space-y-1 border-b border-slate-800 pb-4">

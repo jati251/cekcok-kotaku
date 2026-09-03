@@ -395,10 +395,22 @@ export const drawEntity = (
     ctx.scale(Math.max(0.2, progress), Math.max(0.2, progress));
   }
 
-  const facingX = Math.cos(entity.facing);
-  ctx.scale(facingX > 0 ? 1 : -1, 1);
   const bounce = Math.abs(Math.sin(entity.walkFrame)) * (4 * scale);
   const idleBob = Math.sin(time * 2) * (1.5 * scale);
+  const bodyTop = -32 * scale + bounce + idleBob;
+  const isAttacking = entity.attackProgress > 0;
+
+  // Animated Marching Feet / Legs
+  const legSwing = Math.sin(entity.walkFrame * 2) * (5 * scale);
+  const legLift = Math.abs(Math.cos(entity.walkFrame * 2)) * (3 * scale);
+  ctx.fillStyle = isPlayer ? '#0f172a' : isAllied ? '#075985' : '#1e293b';
+  ctx.fillRect(-6 * scale + legSwing, bodyTop + 18 * scale - (legSwing > 0 ? legLift : 0), 4 * scale, 9 * scale);
+  ctx.fillRect(2 * scale - legSwing, bodyTop + 18 * scale - (legSwing < 0 ? legLift : 0), 4 * scale, 9 * scale);
+
+  // Character body rendered in facing-direction context
+  ctx.save();
+  const facingX = Math.cos(entity.facing);
+  ctx.scale(facingX > 0 ? 1 : -1, 1);
 
   // Musou Golden Flame Aura
   if (isPlayer && isMusouActive) {
@@ -412,9 +424,6 @@ export const drawEntity = (
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
   }
-
-  const bodyTop = -32 * scale + bounce + idleBob;
-  const isAttacking = entity.attackProgress > 0;
 
   if (isPlayer && entity.heroType) {
     if (entity.heroType === HeroType.GUAN_YU) {
@@ -442,16 +451,17 @@ export const drawEntity = (
   } else {
     drawEnemyUnit(ctx, entity, scale, bodyTop, time);
   }
+  ctx.restore();
 
-  // Health Bars for all active combatants
+  // Health Bars for all active combatants (Unscaled / Never flipped)
   if (!entity.isDead) {
     const isOfficerOrBoss = isBoss || entity.type === EntityType.ENEMY_CAPTAIN;
     const barW = (isBoss ? 48 : isOfficerOrBoss ? 34 : 22) * scale;
     const barH = isOfficerOrBoss ? 4.5 : 3;
     const hpPct = Math.max(0, Math.min(1, entity.health / entity.maxHealth));
-    const barY = bodyTop - (isOfficerOrBoss ? 26 : 14) * scale;
+    const barY = bodyTop - (isOfficerOrBoss ? 24 : 14) * scale;
 
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
     ctx.fillRect(-barW / 2 - 1, barY - 1, barW + 2, barH + 2);
 
     const hpColor = isPlayer

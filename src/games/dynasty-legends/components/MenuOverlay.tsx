@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameStatus, BattleScenario, HeroType, DifficultyLevel, MapTheme } from '../types';
 import {
   Sword,
@@ -10,6 +10,8 @@ import {
   Mountain,
   ChevronRight,
   ArrowLeft,
+  Lock,
+  CheckCircle2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Constants from '../constants';
@@ -53,9 +55,32 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
   >('MAIN');
   const [pendingHero, setPendingHero] = useState<HeroType | null>(null);
 
+  const [unlockedChapter, setUnlockedChapter] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('dynasty_unlocked_chapter');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    if (status === GameStatus.VICTORY) {
+      const nextChapter = Math.min(Constants.SCENARIOS.length - 1, selectedScenarioIndex + 1);
+      setUnlockedChapter((prev) => {
+        const updated = Math.max(prev, nextChapter);
+        try {
+          localStorage.setItem('dynasty_unlocked_chapter', String(updated));
+        } catch {}
+        return updated;
+      });
+    }
+  }, [status, selectedScenarioIndex]);
+
   if (status === GameStatus.PLAYING || status === GameStatus.STORY_INTRO) return null;
 
   const handleScenarioSelect = (index: number) => {
+    if (index > unlockedChapter) return;
     onSelectScenario(index);
     setSelectionStep('HERO_SELECT');
   };
@@ -123,7 +148,7 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
         </div>
 
         <div className="mt-4 w-full flex items-center justify-between text-xs font-semibold text-amber-400 group-hover:translate-x-1 transition-transform">
-          <span>Deploy General</span>
+          <span>Deploy Commander</span>
           <ChevronRight className="w-4 h-4" />
         </div>
       </motion.button>
@@ -154,12 +179,12 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
                 DYNASTY LEGENDS
               </h1>
               <p className="text-base sm:text-lg text-slate-300 font-medium">
-                Warlords of the Three Kingdoms · Story Campaign
+                Warlords of the Three Kingdoms · Linear Story Campaign
               </p>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Lead historical generals across grand battlefields. Slay rebel vanguards, capture tactical
-              supply outposts, and duel legendary warlords in Musou combat!
+              Experience the historical chronicle chapter by chapter. Unlock battles, capture fortress
+              outposts, and duel supreme commanders in high-octane Musou combat!
             </p>
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <motion.button
@@ -168,7 +193,7 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
                 onClick={() => setSelectionStep('SCENARIO_SELECT')}
                 className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 cursor-pointer"
               >
-                Start Campaign
+                Enter Story Campaign
               </motion.button>
             </div>
           </motion.div>
@@ -185,8 +210,8 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-100">CAMPAIGN CHAPTERS</h2>
-                <p className="text-xs text-slate-400">Select a historical battle scenario and objective</p>
+                <h2 className="text-2xl font-black text-slate-100">CAMPAIGN PROGRESSION</h2>
+                <p className="text-xs text-slate-400">Advance linearly through the Three Kingdoms chronicles</p>
               </div>
               <button
                 onClick={() => setSelectionStep('MAIN')}
@@ -197,51 +222,56 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Constants.SCENARIOS.map((s, index) => (
-                <motion.button
-                  key={s.id}
-                  whileHover={{ scale: 1.015, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleScenarioSelect(index)}
-                  className={`group text-left p-5 rounded-2xl border transition-colors cursor-pointer ${
-                    selectedScenarioIndex === index
-                      ? 'bg-slate-900 border-amber-500/80 shadow-lg shadow-amber-500/10'
-                      : 'bg-slate-900/60 hover:bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider font-mono">
-                      {s.chapter}
-                    </span>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                      {MAP_THEME_ICONS[s.mapTheme]}
-                      <span className="text-[11px] font-mono">{s.subtitle}</span>
+              {Constants.SCENARIOS.map((s, index) => {
+                const isLocked = index > unlockedChapter;
+                const isCompleted = index < unlockedChapter;
+                return (
+                  <motion.button
+                    key={s.id}
+                    whileHover={!isLocked ? { scale: 1.015, y: -2 } : {}}
+                    whileTap={!isLocked ? { scale: 0.98 } : {}}
+                    onClick={() => handleScenarioSelect(index)}
+                    disabled={isLocked}
+                    className={`group text-left p-5 rounded-2xl border transition-colors ${
+                      isLocked
+                        ? 'bg-slate-950/60 border-slate-900 opacity-50 cursor-not-allowed'
+                        : selectedScenarioIndex === index
+                        ? 'bg-slate-900 border-amber-500/80 shadow-lg shadow-amber-500/10 cursor-pointer'
+                        : 'bg-slate-900/60 hover:bg-slate-900/90 border-slate-800 hover:border-slate-700 cursor-pointer'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider font-mono">
+                          {s.chapter}
+                        </span>
+                        {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                        {isLocked && <Lock className="w-3.5 h-3.5 text-slate-500" />}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        {MAP_THEME_ICONS[s.mapTheme]}
+                        <span className="text-[11px] font-mono">{s.subtitle}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <h3 className="text-lg font-bold text-slate-100 mb-1 group-hover:text-amber-300 transition-colors">
-                    {s.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-                    {s.description}
-                  </p>
+                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-amber-300 transition-colors mb-1">
+                      {s.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed">
+                      {isLocked ? 'Locked. Victoriously conclude previous chapter to advance.' : s.description}
+                    </p>
 
-                  <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Enemy Boss:</span>
-                      <span className="font-bold text-rose-400">{s.bossName}</span>
+                    <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-800/80">
+                      <span className="text-slate-400">
+                        Boss: <strong className="text-rose-400">{s.bossName}</strong>
+                      </span>
+                      <span className="text-amber-400 font-medium">
+                        {isLocked ? 'Locked' : 'Deploy Army ➔'}
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Objectives:</span>
-                      <span className="font-mono text-slate-300">{s.objectives.length} Missions</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Tactical Bases:</span>
-                      <span className="font-mono text-sky-400">{s.bases.length} Forts</span>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
+                  </motion.button>
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -333,7 +363,7 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.85 }}
-            className="text-center max-w-md bg-slate-900/95 border border-amber-500/50 p-8 rounded-2xl shadow-2xl space-y-5"
+            className="text-center max-w-md bg-slate-900/95 border-2 border-amber-500/70 p-8 rounded-2xl shadow-2xl space-y-5"
           >
             <motion.div
               animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] }}
@@ -362,14 +392,35 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={onRestart}
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm uppercase tracking-wider transition cursor-pointer"
-            >
-              Return to Campaign Map
-            </motion.button>
+            <div className="space-y-2">
+              {selectedScenarioIndex < Constants.SCENARIOS.length - 1 ? (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    onSelectScenario(selectedScenarioIndex + 1);
+                    setSelectionStep('HERO_SELECT');
+                    onRestart();
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm uppercase tracking-wider transition cursor-pointer shadow-lg shadow-amber-500/20"
+                >
+                  Advance to Next Chapter ➔
+                </motion.button>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs font-bold">
+                  👑 CAMPAIGN CONQUERED! True Hegemon of the Realm
+                </div>
+              )}
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onRestart}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider transition cursor-pointer border border-slate-700"
+              >
+                Return to Campaign Map
+              </motion.button>
+            </div>
           </motion.div>
         )}
 

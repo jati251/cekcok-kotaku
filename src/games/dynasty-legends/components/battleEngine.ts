@@ -66,27 +66,67 @@ export function generateBattlefieldProps(scenario: BattleScenario): MapProp[] {
   }
 
   const size = Constants.WORLD_SIZE;
-  for (let i = 0; i < 40; i++) {
+  // Dense forest clusters
+  for (let i = 0; i < 65; i++) {
     props.push({
       id: `tree_${id++}`,
       type: PropType.TREE,
-      x: Math.random() * (size - 400) + 200,
-      y: Math.random() * (size - 400) + 200,
-      width: 50 + Math.random() * 25,
+      x: Math.random() * (size - 300) + 150,
+      y: Math.random() * (size - 300) + 150,
+      width: 45 + Math.random() * 30,
       height: 60,
-      scale: 0.9 + Math.random() * 0.3,
+      scale: 0.85 + Math.random() * 0.35,
       variant: Math.floor(Math.random() * 3),
     });
   }
 
-  for (let i = 0; i < 25; i++) {
+  // Tactical Rock Formations
+  for (let i = 0; i < 40; i++) {
     props.push({
       id: `rock_${id++}`,
       type: PropType.ROCK,
+      x: Math.random() * (size - 300) + 150,
+      y: Math.random() * (size - 300) + 150,
+      width: 25 + Math.random() * 25,
+      height: 22,
+      scale: 1,
+      variant: 0,
+    });
+  }
+
+  // Fortified Outpost Buildings & Watchtowers
+  for (let i = 0; i < 14; i++) {
+    props.push({
+      id: `bld_${id++}`,
+      type: PropType.BUILDING,
+      x: Math.random() * (size - 500) + 250,
+      y: Math.random() * (size - 500) + 250,
+      width: 80,
+      height: 70,
+      scale: 0.9,
+      variant: 0,
+    });
+  }
+
+  // Roadside Barricades & Torches
+  for (let i = 0; i < 22; i++) {
+    props.push({
+      id: `barricade_field_${id++}`,
+      type: PropType.BARRICADE,
       x: Math.random() * (size - 400) + 200,
       y: Math.random() * (size - 400) + 200,
-      width: 25 + Math.random() * 20,
-      height: 20,
+      width: 45,
+      height: 22,
+      scale: 1,
+      variant: 0,
+    });
+    props.push({
+      id: `torch_field_${id++}`,
+      type: PropType.TORCH,
+      x: Math.random() * (size - 400) + 200,
+      y: Math.random() * (size - 400) + 200,
+      width: 10,
+      height: 35,
       scale: 1,
       variant: 0,
     });
