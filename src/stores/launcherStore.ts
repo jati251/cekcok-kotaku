@@ -94,54 +94,44 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   launchGame: (gameId) => {
     soundManager.playBuild();
 
-    const isEa = gameId === 'empires-and-allies';
-    const title = isEa ? 'Empires & Allies' : 'CityVille Retro';
+    const tabMap: Record<string, ActiveGameTab> = {
+      'empires-and-allies': 'game',
+      'cityville': 'cityville',
+      'tetris-classic': 'tetris',
+    };
+
+    const titles: Record<string, string> = {
+      'empires-and-allies': 'Empires & Allies',
+      'cityville': 'CityVille',
+      'tetris-classic': 'Tetris Classic',
+    };
+
+    const title = titles[gameId] || gameId;
+    const targetTab = tabMap[gameId];
+    if (!targetTab) return;
 
     set({
       isLoadingGame: true,
       loadingProgress: 15,
       loadingTitle: title,
-      loadingSubtitle: isEa
-        ? 'Establishing Command Station & Satellite Uplink...'
-        : 'Surveying Municipal Valley & Zoning Avenues...',
+      loadingSubtitle: 'Initializing...',
     });
 
-    // Step 2: 45%
-    setTimeout(() => {
-      set({
-        loadingProgress: 48,
-        loadingSubtitle: isEa
-          ? 'Mobilizing Vanguard Infantry & Armor Divisions...'
-          : 'Connecting Urban Road Grid & Water Networks...',
-      });
-    }, 450);
+    setTimeout(() => set({ loadingProgress: 50, loadingSubtitle: 'Loading assets...' }), 400);
+    setTimeout(() => set({ loadingProgress: 85, loadingSubtitle: 'Almost ready...' }), 800);
 
-    // Step 3: 80%
     setTimeout(() => {
-      set({
-        loadingProgress: 82,
-        loadingSubtitle: isEa
-          ? 'Calibrating 360-Degree Island Defense Radar...'
-          : 'Stocking Commercial Goods Depot & Bakeries...',
-      });
-    }, 950);
-
-    // Step 4: 100% Launch!
-    setTimeout(() => {
-      set({
-        loadingProgress: 100,
-        loadingSubtitle: isEa ? 'Ready for Deployment!' : 'Metropolis Ready, Welcome Mayor!',
-      });
+      set({ loadingProgress: 100, loadingSubtitle: 'Ready' });
       soundManager.playVictory();
 
       setTimeout(() => {
         set({
           isLoadingGame: false,
-          activeTab: isEa ? 'game' : 'cityville',
+          activeTab: targetTab,
           selectedGameId: gameId,
         });
-      }, 350);
-    }, 1450);
+      }, 300);
+    }, 1200);
   },
 
   exitToLauncher: () => {

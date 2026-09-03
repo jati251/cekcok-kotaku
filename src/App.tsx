@@ -6,14 +6,13 @@ import {
   SettingsModal,
   GameLoadingScreen,
 } from './features/launcher';
-import { EmpiresAndAlliesGame, CityVilleGame } from './games';
+import { EmpiresAndAlliesGame, CityVilleGame, TetrisGame } from './games';
 
 export const App: React.FC = () => {
   const { activeTab } = useLauncherStore();
 
   return (
     <div className="relative w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col font-sans">
-      {/* Universal Game Loading Splash Screen */}
       <GameLoadingScreen />
 
       {activeTab === 'launcher' ? (
@@ -22,6 +21,8 @@ export const App: React.FC = () => {
           <LauncherDashboard />
           <SettingsModal />
         </div>
+      ) : activeTab === 'tetris' ? (
+        <TetrisGame />
       ) : activeTab === 'cityville' ? (
         <CityVilleGame />
       ) : (
