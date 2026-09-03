@@ -140,12 +140,6 @@ export function renderBattlefieldScene(
   }
 
   const theme = Constants.MAP_THEMES[mapTheme];
-  for (const prop of props) {
-    const sx = (prop.x - camX) * ZOOM_LEVEL + halfW;
-    const sy = (prop.y - camY) * ZOOM_LEVEL + halfH;
-    if (sx < -100 || sx > ctx.canvas.width + 100 || sy < -100 || sy > ctx.canvas.height + 100) continue;
-    drawProp(ctx, prop, { x: sx, y: sy }, theme, time);
-  }
 
   // Draw burning fire zones
   for (const fz of fireZones) {
@@ -158,12 +152,29 @@ export function renderBattlefieldScene(
     drawItem(ctx, item, { x: sx, y: sy });
   }
 
-  const sorted = [...entities].sort((a, b) => a.position.y - b.position.y);
-  for (const e of sorted) {
-    const sx = (e.position.x - camX) * ZOOM_LEVEL + halfW;
-    const sy = (e.position.y - camY) * ZOOM_LEVEL + halfH;
-    if (sx < -100 || sx > ctx.canvas.width + 100 || sy < -100 || sy > ctx.canvas.height + 100) continue;
-    drawEntity(ctx, e, { x: sx, y: sy }, time, isMusouActive);
+  // Unified Y-sorting: sorts props and entities together for correct 2.5D depth
+  type Renderable =
+    | { kind: 'prop'; prop: MapProp; y: number }
+    | { kind: 'entity'; entity: Entity; y: number };
+
+  const renderables: Renderable[] = [
+    ...props.map((p) => ({ kind: 'prop' as const, prop: p, y: p.y })),
+    ...entities.map((e) => ({ kind: 'entity' as const, entity: e, y: e.position.y })),
+  ];
+  renderables.sort((a, b) => a.y - b.y);
+
+  for (const item of renderables) {
+    if (item.kind === 'prop') {
+      const sx = (item.prop.x - camX) * ZOOM_LEVEL + halfW;
+      const sy = (item.prop.y - camY) * ZOOM_LEVEL + halfH;
+      if (sx < -120 || sx > ctx.canvas.width + 120 || sy < -180 || sy > ctx.canvas.height + 120) continue;
+      drawProp(ctx, item.prop, { x: sx, y: sy }, theme, time);
+    } else {
+      const sx = (item.entity.position.x - camX) * ZOOM_LEVEL + halfW;
+      const sy = (item.entity.position.y - camY) * ZOOM_LEVEL + halfH;
+      if (sx < -100 || sx > ctx.canvas.width + 100 || sy < -100 || sy > ctx.canvas.height + 100) continue;
+      drawEntity(ctx, item.entity, { x: sx, y: sy }, time, isMusouActive);
+    }
   }
 
   for (const s of slashes) drawSlashArc(ctx, s, camX, camY);

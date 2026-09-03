@@ -77,7 +77,13 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
     }
   }, [status, selectedScenarioIndex]);
 
-  if (status === GameStatus.PLAYING || status === GameStatus.STORY_INTRO) return null;
+  if (
+    status === GameStatus.PLAYING ||
+    status === GameStatus.STORY_INTRO ||
+    status === GameStatus.PAUSED
+  ) {
+    return null;
+  }
 
   const handleScenarioSelect = (index: number) => {
     if (index > unlockedChapter) return;
