@@ -17,6 +17,7 @@ import {
 } from '../engine/isometricMath';
 import { INITIAL_BUILDINGS_CATALOG } from '../../../config/gameData';
 import type { PlacedBuilding, WildernessObstacle } from '../../../types';
+import { spriteManager } from '../../../services/spriteLoader';
 
 export const IsometricCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -216,10 +217,30 @@ export const IsometricCanvas: React.FC = () => {
             ctx.restore();
           }
 
-          // Building Geometry
+          // Building Geometry (HD Sprite or Procedural Fallback)
           ctx.save();
           if (isMoving) ctx.globalAlpha = 0.5;
-          drawDetailedBuilding(ctx, b, def, basePt, timestamp);
+
+          const sprite = spriteManager.getSprite(def.id);
+          if (sprite) {
+            const targetW = def.width === 3 ? 190 : def.width === 2 ? 135 : 80;
+            const targetH = targetW * (sprite.naturalHeight / sprite.naturalWidth);
+            const drawX = basePt.x - targetW / 2;
+            const drawY = basePt.y - targetH + 18;
+
+            // Ambient Drop Shadow
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.beginPath();
+            ctx.ellipse(basePt.x, basePt.y + 4, targetW * 0.45, targetW * 0.22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Draw Pre-rendered HD Sprite
+            ctx.drawImage(sprite, drawX, drawY, targetW, targetH);
+          } else {
+            drawDetailedBuilding(ctx, b, def, basePt, timestamp);
+          }
           ctx.restore();
 
           // Harvest Bubble (Coins / Wood / Oil)
@@ -288,7 +309,14 @@ export const IsometricCanvas: React.FC = () => {
 
           const ghostPt = gridToScreen(gx + def.width / 2, gy + def.height / 2, 0, 0);
           ctx.globalAlpha = 0.65;
-          drawDetailedBuilding(ctx, { level: 1 } as PlacedBuilding, def, ghostPt, timestamp);
+          const ghostSprite = spriteManager.getSprite(def.id);
+          if (ghostSprite) {
+            const targetW = def.width === 3 ? 190 : def.width === 2 ? 135 : 80;
+            const targetH = targetW * (ghostSprite.naturalHeight / ghostSprite.naturalWidth);
+            ctx.drawImage(ghostSprite, ghostPt.x - targetW / 2, ghostPt.y - targetH + 18, targetW, targetH);
+          } else {
+            drawDetailedBuilding(ctx, { level: 1 } as PlacedBuilding, def, ghostPt, timestamp);
+          }
           ctx.restore();
         }
       }
