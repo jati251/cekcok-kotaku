@@ -1,49 +1,67 @@
 # Cekcok Kotaku 🎮⚔️
 
-> **Cekcok Kotaku** is a high-performance retro social game desktop launcher built with **Tauri v2**, **Rust**, **React 19**, **TypeScript**, **Zustand**, and **Tailwind CSS**. It includes a recreation of the classic 2011 social RTS **Empires & Allies**, alongside upcoming roadmap placeholders for nostalgic classics like **CityVille**.
+> **Cekcok Kotaku** is a high-performance retro social game desktop launcher built with **Tauri v2**, **Rust**, **React 19**, **TypeScript**, **Zustand**, and **Tailwind CSS**. It features a comprehensive, authentic remaster of the classic 2011 social RTS **Empires & Allies**, with rich 2.5D procedural isometric art and complete gameplay loops.
 
 ---
 
-## 🌟 Features
+## 🌟 Full Feature Roster
 
 ### 🚀 1. Desktop Game Launcher
-- **Commander Profile & Ranks:** Real-time level progression, rank titles, and military stats.
-- **Game Library Carousel:** Switch between titles, view feature checklists, and quick-launch active games.
-- **Audio & Grid Settings:** Real-time Web Audio SFX volume slider, mute toggle, and visual diamond grid overlay switches.
-- **Local Persistence & Save Sync:** Forced save triggers and safe reset options stored locally on disk.
+- **Commander Profile & Ranks:** Real-time level progression, rank titles, and military statistics.
+- **Game Library Carousel:** Switch between titles, view feature checklists, and launch active games.
+- **Audio & Grid Settings:** Real-time Web Audio SFX volume slider, mute toggle, and diamond grid overlay switches.
+- **Save Sync & Rust Persistence:** Forced save triggers and safe reset options stored locally on disk.
 
-### 🏝️ 2. Empires & Allies (Playable Game)
-- **60fps Isometric Canvas Engine:**
-  - Diamond projection grid with smooth pan (drag) and zoom (scroll wheel / buttons: 0.5x – 2.0x).
-  - Multi-layer procedural rendering: ocean wave ripples, golden sand shoreline, lush grassland tiles, asphalt roads.
-  - Accurate depth-sorting (Painter’s algorithm) so structures and multi-tile buildings occlude tiles behind them.
-  - Hover cursor with real-time collision detection (green when clear, red when colliding or out of bounds).
-- **Base Building & Production Loop:**
-  - *Command Center / Headquarters (HQ)* (3x3)
-  - *Military Barracks* (2x2)
-  - *Armor Foundry / Tank Factory* (2x2)
-  - *Airfield Hangar* (3x3)
-  - *Lumber Mill* (2x2, yields wood over time)
-  - *Gold Treasury* (2x2, yields gold coins over time)
-  - *Fuel Refinery* (2x2, yields oil over time)
-  - *Patriot Defense Tower* (1x1)
-  - *Supply Roads & Sandbags* (1x1)
-  - Floating harvest bubbles (click-to-collect bouncing coin/wood/oil icons when production cycles complete).
-  - Interactive Building Inspector (view details, move structures across the island, demolish).
-- **Tactical Turn-Based Combat Arena:**
-  - 4v4 combat lanes: Vanguard Squad (Player) vs Raven Syndicate Invaders.
-  - **Rock-Paper-Scissors Advantage Matrix:**
-    - *Infantry* > *Artillery* (+60% Critical Damage)
-    - *Artillery* > *Armor* (+60% Critical Damage)
-    - *Armor* > *Infantry* (+60% Critical Damage)
-    - *Fighter Jet* > *Naval Gunboats* (+60% Critical Damage)
-  - Tactical support powers: Call in **Airstrikes** (area-of-effect bombardment) or deploy **Field Medikits** (+70 HP squad repair).
-  - Floating damage numbers, combat ticker log, victory fanfare, and confetti celebrations.
-- **Story Quests & Military Briefings:**
-  - Advisor dialogue modals featuring Major Foley and General Castor.
-  - Collapsible Campaign Directives HUD with progress bars and instant reward collection.
+### 🏝️ 2. Empires & Allies (Complete Gameplay Systems)
+- **High-Fidelity 2.5D Isometric Engine:**
+  - Diamond projection grid with smooth pan (mouse drag) and zoom ($0.5\times$ to $2.0\times$).
+  - Animated multi-layer ocean with shoreline foam and dynamic waves washing onto the golden beach.
+  - Natural tropical palm trees with swaying fronds and coconut clusters.
+  - Accurate depth-sorting (Painter’s algorithm) so tall structures, antennas, and multi-tile buildings occlude tiles behind them.
+- **Authentic Building Suite:**
+  - *Command Center / Headquarters (HQ)* ($3\times3$): Reinforced concrete fortress, helipad, waving flag, and $360^\circ$ rotating radar.
+  - *Military Town Hall* ($3\times3$): Raises base population limit by $+50$.
+  - *Officer Cottages & Staff Quarters* ($2\times2$): Residential housing generating gold rent and housing recruits.
+  - *Military Barracks* ($2\times2$): Trains Vanguard Riflemen and Commandos.
+  - *Armor Foundry* ($2\times2$): Manufactures Grizzly & Mammoth Heavy Tanks; features industrial chimneys with animated rising smoke particles.
+  - *Airfield Hangar* ($3\times3$): Houses Falcon Jets and Stealth Bombers on striped tarmac.
+  - *Naval Shipyard* ($3\times3$, Coastal): Coastal pier extending into the water with moored patrol gunboats.
+  - *Lumber Mill* ($2\times2$): Produces wood with rotating waterwheel and saw blades.
+  - *Gold Treasury* ($2\times2$): Mints coins with timber minecart tracks and gold ore nuggets.
+  - *Fuel Refinery* ($2\times2$): Animated nodding donkey pump jack rocking up and down.
+  - *Patriot Defense Tower* ($1\times1$): Automated surface-to-air missile turret.
+  - *Supply Roads & Fortified Sandbags* ($1\times1$).
+- **Wilderness Clearing & Island Expansion:**
+  - Unclaimed island borders contain wild jungle trees, granite boulders, and crashed drone wreckage.
+  - Click any obstacle to spend Energy and Coins to clear the plot, harvest raw wood/coins/XP, and unlock ground for base construction.
+- **Recruitment Depot & Army Reserve:**
+  - Train 9 unique combat unit types across 5 classes (Infantry, Armor, Artillery, Aircraft, Naval).
+  - Units are stored in your **Army Reserve** and deployed directly into battles.
+  - Population and Housing checks manage recruit mobilization caps.
+- **Archipelago Campaign Map (5 Sectors):**
+  - Interactive world map with 5 escalating difficulty sectors:
+    - *Sector 1: Outer Atoll* (Raven Recon Vanguard)
+    - *Sector 2: Iron Shallows* (Coastal Amphibious Assault)
+    - *Sector 3: Razor Ridge* (Fortified Howitzer Batteries)
+    - *Sector 4: Black Sky Airfield* (Supersonic Interceptors)
+    - *Sector 5: Fortress Castor* (Supreme Boss Encounter!)
+  - Earn stars, massive resource bounties, and rare war materials upon liberation.
+- **Combat with Projectile Ballistics & Screen Shake:**
+  - 4v4 tactical engagement with Rock-Paper-Scissors advantage matrix (+60% Critical Damage on favored matchups).
+  - Animated bullet tracers, tank shell ballistic arcs with smoke contrails, and guided missile plumes.
+  - Impact explosions with dynamic **screen shake**!
+  - Tactical support powers: Air Strike and Field Medikit.
+- **HQ War Room & Superweapons:**
+  - Collect rare battlefield materials (Aluminum, Steel, Rubber, Copper, Microchips) dropped from harvests and victories.
+  - Fabricate superweapons in the War Room: **Tactical Warheads**, **Orbital Ion Cannons**, and **Napalm Carpet Bombs**!
+- **Allies Dock & Neighbor Island Visits:**
+  - Dock featuring friendly commanders (*Major Foley*, *Captain Sophia*, *Lt. Ramirez*).
+  - Visit ally bases, perform 5 daily helper actions (speeding up and assisting installations), and earn valuable **Honor Points**!
+- **Story Campaign Quests & Briefings:**
+  - Step-by-step briefings from Major Foley and General Castor.
+  - Collapsible Quest Tracker HUD with instant reward collection.
 - **Synthesized Web Audio SFX:**
-  - Crisp retro sound effects created purely via Web Audio API oscillators (button clicks, building placement, gold chimes, gunfire, artillery explosions, victory fanfares) with zero external audio asset loading risk.
+  - Pure Web Audio API oscillators for clicks, builds, coin chimes, gunfire, heavy shell explosions, and fanfares.
 
 ### 🦀 3. Native Rust Backend (Tauri v2)
 - **Tauri IPC Commands:** State serialization to `~/.cekcok-kotaku/save_empires_and_allies.json`.
@@ -57,7 +75,7 @@
 - **Backend:** Rust 2021 edition (`serde`, `serde_json`, `tauri-plugin-opener`)
 - **Frontend:** React 19 + TypeScript (Strict mode enabled, zero `any`)
 - **Package Manager:** `pnpm`
-- **State Management:** [Zustand](https://github.com/pmndrs/zustand) (Feature-driven vertical slice structure)
+- **State Management:** [Zustand](https://github.com/pmndrs/zustand)
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) with `@tailwindcss/vite`
 - **Icons:** [Lucide React](https://lucide.dev/)
 - **Visual FX:** [canvas-confetti](https://github.com/catdad/canvas-confetti)
@@ -65,11 +83,6 @@
 ---
 
 ## 🚀 Getting Started
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [pnpm](https://pnpm.io/) (`corepack enable pnpm` or `npm i -g pnpm`)
-- [Rust](https://www.rust-lang.org/) (rustc, cargo)
 
 ### Installation
 ```bash
@@ -95,42 +108,8 @@ pnpm tauri dev
 # Typecheck & build web bundle
 pnpm build
 
-# Build standalone desktop installer (.app / .dmg / .exe / .deb)
+# Build standalone desktop installer
 pnpm tauri build
-```
-
----
-
-## 📂 Project Structure
-
-```text
-cekcok-kotaku/
-├── src-tauri/
-│   ├── src/
-│   │   ├── commands.rs       # Tauri IPC commands (save/load, offline progress)
-│   │   ├── state.rs          # Serializable Rust game state & resources schema
-│   │   ├── lib.rs            # Tauri setup & command registration
-│   │   └── main.rs
-│   ├── Cargo.toml
-│   └── tauri.conf.json       # App metadata & window sizing
-├── src/
-│   ├── app/                  # Route layouts
-│   ├── components/ui/        # Reusable primitives (Button, Modal, Badge)
-│   ├── config/               # Building catalogs, unit advantage definitions, quests
-│   ├── features/             # Feature-driven vertical slices
-│   │   ├── launcher/         # Game cards, carousel, launcher header, settings
-│   │   ├── city-builder/     # Isometric canvas engine, build menu, inspector
-│   │   ├── combat/           # Turn-based 4v4 battle arena, tactical powers
-│   │   ├── economy/          # Resource HUD, energy timers, level calculations
-│   │   └── quests/           # Story dialogue modals, quest tracker HUD
-│   ├── services/             # Tauri bridge & game persistence manager
-│   ├── stores/               # Zustand global stores (launcherStore)
-│   ├── types/                # Global TypeScript definitions
-│   ├── utils/                # Audio synthesizer (Web Audio API)
-│   ├── App.tsx               # Main application entry switcher
-│   ├── index.css             # Tailwind v4 theme & tactical font tokens
-│   └── main.tsx              # Hydration & React root
-└── package.json
 ```
 
 ---

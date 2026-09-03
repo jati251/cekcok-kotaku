@@ -13,15 +13,19 @@ import {
   Coins,
   Fuel,
   Trophy,
+  Radiation,
+  Zap,
 } from 'lucide-react';
 import { useCombatStore } from '../stores/combatStore';
+import { useWarRoomStore } from '../../economy/stores/warRoomStore';
 import type { UnitClass } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 
 export const CombatModal: React.FC = () => {
   const {
     phase,
-    sectorName,
+    currentSectorId,
+    campaignSectors,
     playerUnits,
     enemyUnits,
     selectedPlayerSlot,
@@ -30,17 +34,24 @@ export const CombatModal: React.FC = () => {
     medikitsAvailable,
     combatLog,
     activeDamageEffects,
+    activeProjectile,
+    screenShake,
     lootRewards,
     selectPlayerUnit,
     selectEnemyTarget,
     executePlayerAttack,
     executeAirstrike,
     executeMedikit,
+    executeSuperweapon,
     claimBattleVictory,
     exitBattle,
   } = useCombatStore();
 
+  const { superweaponsInventory } = useWarRoomStore();
+
   if (phase === 'idle') return null;
+
+  const currentSector = campaignSectors.find((s) => s.id === currentSectorId) || campaignSectors[0];
 
   const getClassIcon = (uClass: UnitClass) => {
     switch (uClass) {
@@ -58,7 +69,11 @@ export const CombatModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div
+        className={`relative w-full max-w-5xl rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-transform duration-75 ${
+          screenShake ? 'translate-x-1 -translate-y-1 rotate-0.5' : ''
+        }`}
+      >
         {/* Arena Header */}
         <div className="flex items-center justify-between px-6 py-3.5 bg-slate-950/80 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -67,30 +82,56 @@ export const CombatModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100 tracking-wider uppercase font-tactical">
-                {sectorName}
+                {currentSector.name}
               </h3>
               <span className="text-[11px] text-slate-400">
-                Turn-Based Tactical Engagement • Rock-Paper-Scissors Advantage
+                Opponent: <strong className="text-rose-400">{currentSector.enemyCommander}</strong> • Tactical 4v4 Grid
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Tactical Powers */}
             <Button
               variant="tactical"
               size="sm"
-              icon={<Flame className="w-4 h-4" />}
+              icon={<Flame className="w-3.5 h-3.5" />}
               onClick={executeAirstrike}
               disabled={phase !== 'player_turn' || airstrikesAvailable <= 0}
             >
               Airstrike ({airstrikesAvailable})
             </Button>
 
+            {/* Superweapon button if in inventory */}
+            {superweaponsInventory.tactical_nuke > 0 && (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Radiation className="w-3.5 h-3.5" />}
+                onClick={() => executeSuperweapon('tactical_nuke')}
+                disabled={phase !== 'player_turn'}
+                className="animate-pulse"
+              >
+                Nuke ({superweaponsInventory.tactical_nuke})
+              </Button>
+            )}
+
+            {superweaponsInventory.orbital_laser > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Zap className="w-3.5 h-3.5 text-cyan-300" />}
+                onClick={() => executeSuperweapon('orbital_laser')}
+                disabled={phase !== 'player_turn'}
+              >
+                Orbital Laser ({superweaponsInventory.orbital_laser})
+              </Button>
+            )}
+
             <Button
               variant="success"
               size="sm"
-              icon={<PlusCircle className="w-4 h-4" />}
+              icon={<PlusCircle className="w-3.5 h-3.5" />}
               onClick={executeMedikit}
               disabled={phase !== 'player_turn' || medikitsAvailable <= 0}
             >
@@ -108,6 +149,21 @@ export const CombatModal: React.FC = () => {
 
         {/* Battlefield Arena Canvas / Grid */}
         <div className="relative flex-1 p-6 bg-radial from-slate-900 to-slate-950 overflow-y-auto">
+          {/* Active Projectile Tracer VFX Line */}
+          {activeProjectile && (
+            <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center">
+              <div
+                className={`h-1.5 rounded-full shadow-lg transition-all duration-300 ${
+                  activeProjectile.type === 'missile'
+                    ? 'w-48 bg-gradient-to-r from-amber-400 to-rose-500 shadow-rose-500/50 animate-pulse'
+                    : activeProjectile.type === 'shell'
+                    ? 'w-36 bg-gradient-to-r from-yellow-300 to-amber-600 shadow-amber-500/50'
+                    : 'w-28 bg-blue-400 shadow-blue-500/50'
+                }`}
+              />
+            </div>
+          )}
+
           {/* Turn Phase Banner */}
           <div className="text-center mb-6">
             <span
@@ -120,10 +176,10 @@ export const CombatModal: React.FC = () => {
               }`}
             >
               {phase === 'player_turn'
-                ? 'Your Turn - Choose Squad & Target'
+                ? 'Your Turn - Select Unit & Target to Strike'
                 : phase === 'animating'
-                ? 'Resolving Combat Round...'
-                : 'Raven Syndicate Turn...'}
+                ? 'Engaging Battlefield Ordnance...'
+                : 'Raven Syndicate Retaliation...'}
             </span>
           </div>
 
@@ -133,7 +189,7 @@ export const CombatModal: React.FC = () => {
             <div className="flex flex-col gap-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500" />
-                Vanguard Squad (You)
+                Vanguard Squad (Your Forces)
               </h4>
 
               {playerUnits.map((unit) => {
@@ -157,7 +213,6 @@ export const CombatModal: React.FC = () => {
                         : 'bg-slate-850 border-slate-700/80 hover:border-slate-600'
                     }`}
                   >
-                    {/* Floating Damage Text */}
                     {dmgEffect && (
                       <div className="absolute -top-3 right-6 text-base font-black text-rose-400 animate-bounce font-mono">
                         -{dmgEffect.damage}
@@ -205,7 +260,7 @@ export const CombatModal: React.FC = () => {
             <div className="flex flex-col gap-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
-                Raven Syndicate Forces
+                Raven Syndicate Division
               </h4>
 
               {enemyUnits.map((unit) => {
@@ -229,7 +284,6 @@ export const CombatModal: React.FC = () => {
                         : 'bg-slate-850 border-slate-700/80 hover:border-slate-600'
                     }`}
                   >
-                    {/* Floating Damage Text */}
                     {dmgEffect && (
                       <div className="absolute -top-3 left-6 text-base font-black text-amber-400 animate-bounce font-mono">
                         -{dmgEffect.damage}
@@ -277,7 +331,6 @@ export const CombatModal: React.FC = () => {
 
         {/* Bottom Engagement Bar & Tactical Action */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-6">
-          {/* Advantage Indicator */}
           <div className="flex-1 text-xs">
             {selectedPlayerUnit && selectedEnemyUnit ? (
               <div className="flex items-center gap-2 text-slate-300">
@@ -291,7 +344,7 @@ export const CombatModal: React.FC = () => {
                   </span>
                 ) : selectedPlayerUnit.weakAgainst === selectedEnemyUnit.unitClass ? (
                   <span className="text-amber-400 font-semibold">
-                    Weakened Target (-40% DMG)
+                    Weakened Fire (-40% DMG)
                   </span>
                 ) : (
                   <span className="text-slate-400 font-medium">Standard Advantage</span>
@@ -301,13 +354,11 @@ export const CombatModal: React.FC = () => {
               <span className="text-slate-400">Select an attacker and a target to engage</span>
             )}
 
-            {/* Combat Ticker */}
             <p className="text-[11px] text-slate-400 mt-1 font-mono truncate">
-              {combatLog[0] || 'Ready for tactical orders.'}
+              {combatLog[0] || 'Awaiting fire mission orders.'}
             </p>
           </div>
 
-          {/* Attack Command Button */}
           <Button
             variant="tactical"
             size="lg"
@@ -329,13 +380,12 @@ export const CombatModal: React.FC = () => {
               </div>
 
               <h2 className="text-2xl font-black text-slate-100 uppercase tracking-wide font-tactical">
-                Victory Achieved!
+                Sector Liberated!
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                The Raven Syndicate forces in this sector have been vanquished!
+                The Raven Syndicate forces have been routed. Sector territory is secured!
               </p>
 
-              {/* Loot Rewards */}
               <div className="mt-5 p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-around">
                 <div className="flex items-center gap-1.5 text-amber-400 font-mono font-bold">
                   <Coins className="w-4 h-4" />
@@ -348,6 +398,11 @@ export const CombatModal: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-indigo-400 font-mono font-bold">
                   +{lootRewards.xp} XP
                 </div>
+                {lootRewards.rareMaterial && (
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-mono font-bold uppercase">
+                    +2 {lootRewards.rareMaterial}
+                  </div>
+                )}
               </div>
 
               <Button
@@ -370,7 +425,7 @@ export const CombatModal: React.FC = () => {
                 Squad Neutralized
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Our forces were overwhelmed. Regroup and reinforce your army at the base!
+                Our vanguard was overwhelmed. Reinforce your army reserve and try again!
               </p>
 
               <Button

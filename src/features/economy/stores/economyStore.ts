@@ -22,6 +22,8 @@ export const useEconomyStore = create<EconomyState>((set, get) => ({
   honor: 50,
   xp: 0,
   level: 1,
+  population: 15,
+  maxPopulation: 65,
 
   addResource: (type, amount) => {
     set((state) => {

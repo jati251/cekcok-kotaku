@@ -17,7 +17,7 @@ interface QuestState {
   dialogue: DialogueState;
 
   // Actions
-  checkProgress: (type: 'build' | 'harvest' | 'combat' | 'level', key: string, count?: number) => void;
+  checkProgress: (type: 'build' | 'harvest' | 'combat' | 'level' | 'clear' | 'train' | 'visit', key: string, count?: number) => void;
   claimReward: (questId: string) => void;
   openDialogue: (speaker: string, avatar: string, messages: string[]) => void;
   nextDialogueStep: () => void;
