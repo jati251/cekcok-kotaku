@@ -172,11 +172,34 @@ export const LauncherGameDetail: React.FC<LauncherGameDetailProps> = ({ game }) 
                 <SaveStat label="Buildings placed" value={cvCity.buildings.length} span={2} />
               </div>
             ) : (
-              <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
-                <p className="text-xs text-slate-400">
-                  No save data yet. Play the game to generate save state.
-                </p>
-              </div>
+              (() => {
+                const hsKeys: Record<string, { key: string; label: string }> = {
+                  'sky-raid': { key: 'sky_raid_hs', label: 'Highest Altitude Score' },
+                  'moto-rush': { key: 'moto_rush_hs', label: 'Highway Score Record' },
+                  'crazy-wheels': { key: 'crazyWheelsHighScore', label: 'Trial Score Record' },
+                  'snowboard-rush': { key: 'snowboardHS', label: 'Downhill High Score' },
+                };
+                const config = hsKeys[game.id];
+                const storedVal = config ? localStorage.getItem(config.key) : null;
+
+                if (storedVal) {
+                  return (
+                    <div className="grid grid-cols-2 gap-3">
+                      <SaveStat label={config.label} value={parseInt(storedVal, 10).toLocaleString()} span={2} />
+                      <SaveStat label="Game Engine" value="HTML5 Canvas 60FPS" />
+                      <SaveStat label="Status" value="Ready to Play" />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                    <p className="text-xs text-slate-400">
+                      No local records recorded yet. Launch the game to set a score!
+                    </p>
+                  </div>
+                );
+              })()
             )}
           </div>
         )}

@@ -6,28 +6,71 @@ import {
   SettingsModal,
   GameLoadingScreen,
 } from './features/launcher';
-import { EmpiresAndAlliesGame, CityVilleGame, TetrisGame } from './games';
+import {
+  EmpiresAndAlliesGame,
+  CityVilleGame,
+  TetrisGame,
+  DynastyLegendsGame,
+  RubikGame,
+  SkyRaid,
+  SpaceBlast,
+  MotoRush,
+  CrazyWheels,
+  MiniGolf,
+  BumperBrawl,
+  SnowboardRush,
+  BalloonFrenzy,
+} from './games';
 
 export const App: React.FC = () => {
   const { activeTab } = useLauncherStore();
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'launcher':
+        return (
+          <div className="flex flex-col w-full h-full">
+            <LauncherHeader />
+            <LauncherDashboard />
+            <SettingsModal />
+          </div>
+        );
+      case 'cityville':
+        return <CityVilleGame />;
+      case 'tetris':
+        return <TetrisGame />;
+      case 'dynasty-legends':
+        return <DynastyLegendsGame />;
+      case 'rubik-cube':
+        return <RubikGame />;
+      case 'sky-raid':
+        return <SkyRaid />;
+      case 'space-blast':
+        return <SpaceBlast />;
+      case 'moto-rush':
+        return <MotoRush />;
+      case 'crazy-wheels':
+        return <CrazyWheels />;
+      case 'mini-golf':
+        return <MiniGolf />;
+      case 'bumper-brawl':
+        return <BumperBrawl />;
+      case 'snowboard-rush':
+        return <SnowboardRush />;
+      case 'balloon-frenzy':
+        return <BalloonFrenzy />;
+      case 'game':
+      case 'combat':
+      case 'visiting_ally':
+      default:
+        return <EmpiresAndAlliesGame />;
+    }
+  };
+
   return (
     <div className="relative w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col font-sans">
       <GameLoadingScreen />
-
-      {activeTab === 'launcher' ? (
-        <div className="flex flex-col w-full h-full">
-          <LauncherHeader />
-          <LauncherDashboard />
-          <SettingsModal />
-        </div>
-      ) : activeTab === 'tetris' ? (
-        <TetrisGame />
-      ) : activeTab === 'cityville' ? (
-        <CityVilleGame />
-      ) : (
-        <EmpiresAndAlliesGame />
-      )}
+      {renderContent()}
     </div>
   );
 };

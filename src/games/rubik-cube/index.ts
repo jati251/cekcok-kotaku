@@ -1,0 +1,1 @@
+export { RubikGame } from './RubikGame';

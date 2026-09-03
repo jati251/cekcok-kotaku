@@ -15,11 +15,15 @@ import { LAUNCHER_GAMES } from '@/config/launcherGames';
 import type { LauncherGame } from '@/types';
 
 // Icons map by category — each icon is relevant to the genre it represents (R-04)
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   strategy: Swords,
   tycoon: Building2,
   farming: Trees,
   arcade: Joystick,
+  action: Swords,
+  puzzle: Gamepad2,
+  sports: Joystick,
+  racing: Joystick,
 };
 
 interface LauncherSidebarProps {
@@ -75,10 +79,13 @@ export const LauncherSidebar: React.FC<LauncherSidebarProps> = ({
         <div className="flex items-center gap-1 mt-2 overflow-x-auto pb-1">
           {[
             { id: 'all', label: `All (${LAUNCHER_GAMES.length})` },
-            { id: 'playable', label: `Ready (${playableCount})` },
             { id: 'strategy', label: 'Strategy' },
-            { id: 'tycoon', label: 'Tycoon' },
+            { id: 'action', label: 'Action' },
             { id: 'arcade', label: 'Arcade' },
+            { id: 'puzzle', label: 'Puzzle' },
+            { id: 'sports', label: 'Sports' },
+            { id: 'racing', label: 'Racing' },
+            { id: 'tycoon', label: 'Tycoon' },
           ].map((pill) => (
             <button
               key={pill.id}

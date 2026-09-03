@@ -98,12 +98,32 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'empires-and-allies': 'game',
       'cityville': 'cityville',
       'tetris-classic': 'tetris',
+      'dynasty-legends': 'dynasty-legends',
+      'rubik-cube': 'rubik-cube',
+      'sky-raid': 'sky-raid',
+      'space-blast': 'space-blast',
+      'moto-rush': 'moto-rush',
+      'crazy-wheels': 'crazy-wheels',
+      'mini-golf': 'mini-golf',
+      'bumper-brawl': 'bumper-brawl',
+      'snowboard-rush': 'snowboard-rush',
+      'balloon-frenzy': 'balloon-frenzy',
     };
 
     const titles: Record<string, string> = {
       'empires-and-allies': 'Empires & Allies',
       'cityville': 'CityVille',
       'tetris-classic': 'Tetris Classic',
+      'dynasty-legends': 'Dynasty Legends: AI Warlords',
+      'rubik-cube': "Rubik's Cube 3D",
+      'sky-raid': 'Sky Raid',
+      'space-blast': 'Space Blast',
+      'moto-rush': 'Moto Rush',
+      'crazy-wheels': 'Crazy Wheels',
+      'mini-golf': 'Mini Golf',
+      'bumper-brawl': 'Bumper Brawl',
+      'snowboard-rush': 'Snowboard Rush',
+      'balloon-frenzy': 'Balloon Frenzy',
     };
 
     const title = titles[gameId] || gameId;

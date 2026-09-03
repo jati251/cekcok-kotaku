@@ -57,7 +57,7 @@ export const LauncherGridView: React.FC<LauncherGridViewProps> = ({ onSelectGame
           </div>
 
           <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
-            {['all', 'playable', 'strategy', 'tycoon', 'arcade'].map((cat) => (
+            {['all', 'strategy', 'action', 'arcade', 'puzzle', 'sports', 'racing', 'tycoon'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
