@@ -1,2 +1,2 @@
-export * from './empires-and-allies';
-export * from './cityville';
+export * from './empires-and-allies/EmpiresAndAlliesGame';
+export * from './cityville/CityVilleGame';
