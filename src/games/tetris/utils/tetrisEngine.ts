@@ -48,14 +48,14 @@ export function isValidPosition(
   return true;
 }
 
-// Lock the current piece into the board and return lines cleared
+// Lock the current piece into the board and return lines cleared with their row indices
 export function lockPiece(
   board: Board,
   cells: number[][],
   type: TetriminoType,
   x: number,
   y: number
-): { newBoard: Board; cleared: number } {
+): { newBoard: Board; cleared: number; clearedRowIndices: number[] } {
   const newBoard = board.map((row) => [...row]);
 
   for (let r = 0; r < cells.length; r++) {
@@ -69,15 +69,22 @@ export function lockPiece(
     }
   }
 
-  // Clear completed lines
-  const remaining = newBoard.filter((row) => row.some((cell) => cell === null));
-  const cleared = BOARD_HEIGHT - remaining.length;
+  // Detect completed lines
+  const clearedRowIndices: number[] = [];
+  for (let r = 0; r < BOARD_HEIGHT; r++) {
+    if (newBoard[r].every((cell) => cell !== null)) {
+      clearedRowIndices.push(r);
+    }
+  }
+
+  const remaining = newBoard.filter((_, idx) => !clearedRowIndices.includes(idx));
+  const cleared = clearedRowIndices.length;
 
   while (remaining.length < BOARD_HEIGHT) {
     remaining.unshift(Array<CellValue>(BOARD_WIDTH).fill(null));
   }
 
-  return { newBoard: remaining, cleared };
+  return { newBoard: remaining, cleared, clearedRowIndices };
 }
 
 // Spawn position: centered at top
@@ -99,13 +106,15 @@ export function getGhostY(
   return ghostY;
 }
 
-// Score calculation matching original NES Tetris
-export function calcScore(linesCleared: number, level: number): number {
-  const multipliers = [0, 40, 100, 300, 1200];
-  return (multipliers[linesCleared] || 0) * (level + 1);
+// Modern score calculation with combo rewards
+export function calcScore(linesCleared: number, level: number, combo: number = 0): number {
+  const multipliers = [0, 100, 300, 500, 1200];
+  const base = (multipliers[linesCleared] || 0) * (level + 1);
+  const comboBonus = combo > 0 ? combo * 50 * (level + 1) : 0;
+  return base + comboBonus;
 }
 
 // Drop speed decreases with level (in ms)
 export function calcDropInterval(level: number): number {
-  return Math.max(80, 800 - level * 60);
+  return Math.max(75, 800 - level * 65);
 }
