@@ -1,12 +1,11 @@
 import React from 'react';
 import { Volume2, VolumeX, Grid, Save, RotateCcw, Shield } from 'lucide-react';
-import { useLauncherStore } from '../../../stores/launcherStore';
-import { useCityStore } from '../../city-builder/stores/cityStore';
-import { useEconomyStore } from '../../economy/stores/economyStore';
-import { useQuestStore } from '../../quests/stores/questStore';
-import { tauriBridge } from '../../../services/tauriBridge';
-import { Modal } from '../../../components/ui/Modal';
-import { Button } from '../../../components/ui/Button';
+import { useLauncherStore } from "@/stores/launcherStore";
+import { useCityStore, useEconomyStore, useQuestStore } from '@/games/empires-and-allies';
+import { tauriBridge } from '@/services/tauriBridge';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from "@/components/ui/Button";
+import type { PlacedBuilding, Quest } from '@/types';
 
 export const SettingsModal: React.FC = () => {
   const {
@@ -41,7 +40,7 @@ export const SettingsModal: React.FC = () => {
         xp: economy.xp,
         level: economy.level,
       },
-      buildings: city.buildings.map((b) => ({
+      buildings: city.buildings.map((b: PlacedBuilding) => ({
         id: b.id,
         building_type: b.buildingTypeId,
         grid_x: b.gridX,
@@ -51,7 +50,7 @@ export const SettingsModal: React.FC = () => {
         is_completed: b.isCompleted,
         last_harvest_at: b.lastHarvestAt,
       })),
-      quests: quests.quests.map((q) => ({
+      quests: quests.quests.map((q: Quest) => ({
         quest_id: q.id,
         current_count: q.currentCount,
         target_count: q.targetCount,

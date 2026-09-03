@@ -1,17 +1,7 @@
 import React from 'react';
 import { useLauncherStore } from './stores/launcherStore';
 import { LauncherHeader, LauncherDashboard, SettingsModal } from './features/launcher';
-import {
-  IsometricCanvas,
-  BuildMenu,
-  BuildingInspector,
-  WildernessInspector,
-  RecruitmentModal,
-} from './features/city-builder';
-import { ResourceHUD, WarRoomModal } from './features/economy';
-import { QuestTrackerHUD, DialogueModal } from './features/quests';
-import { CombatModal, CampaignMapModal } from './features/combat';
-import { AllyBar, VisitingAllyBanner } from './features/allies';
+import { EmpiresAndAlliesGame, CityVilleGame } from './games';
 
 export const App: React.FC = () => {
   const { activeTab } = useLauncherStore();
@@ -24,32 +14,10 @@ export const App: React.FC = () => {
           <LauncherDashboard />
           <SettingsModal />
         </div>
+      ) : activeTab === 'cityville' ? (
+        <CityVilleGame />
       ) : (
-        <div className="relative w-full h-full">
-          {/* Top Economy HUD */}
-          <ResourceHUD />
-
-          {/* Visiting Ally Top Banner */}
-          <VisitingAllyBanner />
-
-          {/* Main 60fps Isometric Canvas Viewport */}
-          <IsometricCanvas />
-
-          {/* Bottom Ally Friends Dock */}
-          <AllyBar />
-
-          {/* Overlays & Modals */}
-          <BuildMenu />
-          <BuildingInspector />
-          <WildernessInspector />
-          <RecruitmentModal />
-          <QuestTrackerHUD />
-          <DialogueModal />
-          <CampaignMapModal />
-          <CombatModal />
-          <WarRoomModal />
-          <SettingsModal />
-        </div>
+        <EmpiresAndAlliesGame />
       )}
     </div>
   );

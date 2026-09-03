@@ -1,6 +1,6 @@
 import { Play, Clock, CheckCircle2 } from 'lucide-react';
-import type { LauncherGame } from '../../../types';
-import { Button } from '../../../components/ui/Button';
+import type { LauncherGame } from "@/types";
+import { Button } from "@/components/ui/Button";
 import { Badge } from '../../../components/ui/Badge';
 
 interface GameCardProps {

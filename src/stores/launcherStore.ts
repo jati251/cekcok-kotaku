@@ -76,6 +76,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
     soundManager.playBuild();
     if (gameId === 'empires-and-allies') {
       set({ activeTab: 'game', selectedGameId: gameId });
+    } else if (gameId === 'cityville') {
+      set({ activeTab: 'cityville', selectedGameId: gameId });
     }
   },
 

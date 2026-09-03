@@ -1,7 +1,7 @@
 import React from 'react';
 import { Gamepad2, Settings, ShieldCheck } from 'lucide-react';
-import { useLauncherStore } from '../../../stores/launcherStore';
-import { Button } from '../../../components/ui/Button';
+import { useLauncherStore } from "@/stores/launcherStore";
+import { Button } from "@/components/ui/Button";
 
 export const LauncherHeader: React.FC = () => {
   const { commanderName, rankTitle, openSettings } = useLauncherStore();

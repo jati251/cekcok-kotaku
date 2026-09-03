@@ -1,11 +1,10 @@
 import React from 'react';
 import { Play, Flame, Shield, Award, Sparkles, Terminal } from 'lucide-react';
-import { useLauncherStore } from '../../../stores/launcherStore';
-import { useEconomyStore } from '../../economy/stores/economyStore';
-import { useCityStore } from '../../city-builder/stores/cityStore';
-import { LAUNCHER_GAMES } from '../../../config/gameData';
+import { useLauncherStore } from "@/stores/launcherStore";
+import { useEconomyStore, useCityStore } from '@/games/empires-and-allies';
+import { LAUNCHER_GAMES } from "@/config/gameData";
 import { GameCard } from './GameCard';
-import { Button } from '../../../components/ui/Button';
+import { Button } from "@/components/ui/Button";
 
 export const LauncherDashboard: React.FC = () => {
   const { launchGame } = useLauncherStore();

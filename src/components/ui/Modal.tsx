@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { soundManager } from '../../utils/audio';
+import { soundManager } from "@/utils/audio";
 
 interface ModalProps {
   isOpen: boolean;

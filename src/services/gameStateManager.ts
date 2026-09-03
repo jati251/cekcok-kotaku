@@ -1,6 +1,6 @@
 import { tauriBridge } from './tauriBridge';
-import { useEconomyStore } from '../features/economy/stores/economyStore';
-import { useCityStore } from '../features/city-builder/stores/cityStore';
+import { useEconomyStore } from "@/games/empires-and-allies/economy/stores/economyStore";
+import { useCityStore } from "@/games/empires-and-allies/city-builder/stores/cityStore";
 import type { PlacedBuilding } from '../types';
 
 export async function initializeGamePersistence(): Promise<void> {
