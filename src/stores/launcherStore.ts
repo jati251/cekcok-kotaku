@@ -11,6 +11,7 @@ interface LauncherState {
   showGridLines: boolean;
   commanderName: string;
   rankTitle: string;
+  launcherLayoutMode: 'studio' | 'grid';
 
   // Game Loading Screen State
   isLoadingGame: boolean;
@@ -21,6 +22,7 @@ interface LauncherState {
   // Actions
   setActiveTab: (tab: ActiveGameTab) => void;
   setSelectedGameId: (gameId: string) => void;
+  setLauncherLayoutMode: (mode: 'studio' | 'grid') => void;
   openSettings: () => void;
   closeSettings: () => void;
   setSfxVolume: (volume: number) => void;
@@ -39,6 +41,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   showGridLines: true,
   commanderName: 'Commander Jati',
   rankTitle: 'Brigadier General',
+  launcherLayoutMode: 'studio',
 
   isLoadingGame: false,
   loadingProgress: 0,
@@ -53,6 +56,11 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   setSelectedGameId: (gameId) => {
     soundManager.playClick();
     set({ selectedGameId: gameId });
+  },
+
+  setLauncherLayoutMode: (mode) => {
+    soundManager.playClick();
+    set({ launcherLayoutMode: mode });
   },
 
   openSettings: () => {
