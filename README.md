@@ -1,71 +1,59 @@
-# Cekcok Kotaku 🎮⚔️
+# Cekcok Kotaku 🎮⚔️🏙️
 
-> **Cekcok Kotaku** is a high-performance retro social game desktop launcher built with **Tauri v2**, **Rust**, **React 19**, **TypeScript**, **Zustand**, and **Tailwind CSS**. It features a comprehensive, authentic remaster of the classic 2011 social RTS **Empires & Allies**, with rich 2.5D procedural isometric art and complete gameplay loops.
+> **Cekcok Kotaku** is a high-performance retro social game desktop launcher built with **Tauri v2**, **Rust**, **React 19**, **TypeScript**, **Zustand**, and **Tailwind CSS**. It features full playable remasters of legendary social RTS & city-builder titles: **Empires & Allies** (2011) and **CityVille** (2010–2015).
 
 ---
 
-## 🌟 Full Feature Roster
+## 🌟 Playable Games Roster
 
-### 🚀 1. Desktop Game Launcher
-- **Commander Profile & Ranks:** Real-time level progression, rank titles, and military statistics.
-- **Game Library Carousel:** Switch between titles, view feature checklists, and launch active games.
-- **Audio & Grid Settings:** Real-time Web Audio SFX volume slider, mute toggle, and diamond grid overlay switches.
-- **Save Sync & Rust Persistence:** Forced save triggers and safe reset options stored locally on disk.
+### 🏙️ 1. CityVille Retro (Complete 2010–2015 Gameplay Loop)
+- **The Triangle Economy (Coins, Goods, Population):**
+  - **Residences & Population:** Build Cottages, Suburban Homes, Brownstones, and High-Rise Luxury Condominiums. Citizens pay periodic rent in Coins.
+  - **Community Buildings & Population Caps:** Civic facilities (*City Hall*, *Police Station*, *Firehouse*, *Post Office*) raise your city's maximum population capacity.
+  - **Farming Plots & Crops:** Plow fertile plots and plant crops (*Strawberries*, *Carrots*, *Corn*, *Watermelon*) with real-time growth timers to harvest **Goods**.
+  - **Businesses & Restocking:** Retail shops (*Sweet Crust Bakery*, *Java Perk Cafe*, *Toy Emporium*, *Starlight Cinema*) **consume Goods to open for business**. Citizens shop at stocked stores, paying massive Coin payouts and XP!
+  - **Freight Shipping & Train Terminal:** Order long-distance cargo ships and freight trains for bulk Goods delivery.
+  - **Urban Road Network & Traffic Simulation:** Paved asphalt streets with double-yellow lines and crosswalks, featuring animated yellow taxicabs, green goods delivery vans, and walking pedestrians.
+  - **Decorations with Multipliers:** Granite fountains and botanical flower parks boost surrounding business payouts by $+5\%$ to $+10\%$.
+  - **Story Quests:** Storyline directives from Mayor Samantha, Baker Pierre, and Farmer Paul.
 
-### 🏝️ 2. Empires & Allies (Complete Gameplay Systems)
+---
+
+### 🏝️ 2. Empires & Allies (Military Island RTS)
 - **High-Fidelity 2.5D Isometric Engine:**
   - Diamond projection grid with smooth pan (mouse drag) and zoom ($0.5\times$ to $2.0\times$).
-  - Animated multi-layer ocean with shoreline foam and dynamic waves washing onto the golden beach.
-  - Natural tropical palm trees with swaying fronds and coconut clusters.
-  - Accurate depth-sorting (Painter’s algorithm) so tall structures, antennas, and multi-tile buildings occlude tiles behind them.
+  - Animated shoreline foam, dynamic ocean waves, and tropical swaying palms.
+  - Pre-rendered high-definition 2.5D isometric sprites for Headquarters, Barracks, Tank Foundry, and Airfield.
 - **Authentic Building Suite:**
-  - *Command Center / Headquarters (HQ)* ($3\times3$): Reinforced concrete fortress, helipad, waving flag, and $360^\circ$ rotating radar.
-  - *Military Town Hall* ($3\times3$): Raises base population limit by $+50$.
-  - *Officer Cottages & Staff Quarters* ($2\times2$): Residential housing generating gold rent and housing recruits.
+  - *Command Center / Headquarters (HQ)* ($3\times3$): Concrete bunker, helipad, and $360^\circ$ rotating radar.
   - *Military Barracks* ($2\times2$): Trains Vanguard Riflemen and Commandos.
-  - *Armor Foundry* ($2\times2$): Manufactures Grizzly & Mammoth Heavy Tanks; features industrial chimneys with animated rising smoke particles.
-  - *Airfield Hangar* ($3\times3$): Houses Falcon Jets and Stealth Bombers on striped tarmac.
-  - *Naval Shipyard* ($3\times3$, Coastal): Coastal pier extending into the water with moored patrol gunboats.
-  - *Lumber Mill* ($2\times2$): Produces wood with rotating waterwheel and saw blades.
-  - *Gold Treasury* ($2\times2$): Mints coins with timber minecart tracks and gold ore nuggets.
-  - *Fuel Refinery* ($2\times2$): Animated nodding donkey pump jack rocking up and down.
-  - *Patriot Defense Tower* ($1\times1$): Automated surface-to-air missile turret.
-  - *Supply Roads & Fortified Sandbags* ($1\times1$).
+  - *Armor Foundry* ($2\times2$): Heavy tank factory with animated rising smoke particles.
+  - *Airfield Hangar* ($3\times3$): Supersonic jets on striped tarmac.
+  - *Naval Port & Shipyard* ($3\times3$, Coastal): Coastal pier with moored patrol gunboats.
+  - *Lumber Mill*, *Gold Treasury*, and *Fuel Refinery* (animated nodding pump jack).
 - **Wilderness Clearing & Island Expansion:**
-  - Unclaimed island borders contain wild jungle trees, granite boulders, and crashed drone wreckage.
-  - Click any obstacle to spend Energy and Coins to clear the plot, harvest raw wood/coins/XP, and unlock ground for base construction.
+  - Clear wild jungle trees, granite boulders, and crashed drone wreckage to harvest resources and expand buildable ground.
 - **Recruitment Depot & Army Reserve:**
-  - Train 9 unique combat unit types across 5 classes (Infantry, Armor, Artillery, Aircraft, Naval).
-  - Units are stored in your **Army Reserve** and deployed directly into battles.
-  - Population and Housing checks manage recruit mobilization caps.
-- **Archipelago Campaign Map (5 Sectors):**
-  - Interactive world map with 5 escalating difficulty sectors:
-    - *Sector 1: Outer Atoll* (Raven Recon Vanguard)
-    - *Sector 2: Iron Shallows* (Coastal Amphibious Assault)
-    - *Sector 3: Razor Ridge* (Fortified Howitzer Batteries)
-    - *Sector 4: Black Sky Airfield* (Supersonic Interceptors)
-    - *Sector 5: Fortress Castor* (Supreme Boss Encounter!)
-  - Earn stars, massive resource bounties, and rare war materials upon liberation.
-- **Combat with Projectile Ballistics & Screen Shake:**
-  - 4v4 tactical engagement with Rock-Paper-Scissors advantage matrix (+60% Critical Damage on favored matchups).
-  - Animated bullet tracers, tank shell ballistic arcs with smoke contrails, and guided missile plumes.
-  - Impact explosions with dynamic **screen shake**!
-  - Tactical support powers: Air Strike and Field Medikit.
+  - Train 9 unique unit types across Infantry, Armor, Artillery, Aircraft, and Naval classes.
+- **5-Sector Archipelago Campaign Map:**
+  - Liberate island sectors from Raven Syndicate occupation and fight General Castor's boss dreadnought.
+- **Turn-Based Combat Arena:**
+  - 4v4 tactical engagement with Rock-Paper-Scissors advantage matrix (+60% Critical Damage).
+  - Animated bullet tracers, ballistic artillery arcs with smoke trails, and explosive screen shake.
 - **HQ War Room & Superweapons:**
-  - Collect rare battlefield materials (Aluminum, Steel, Rubber, Copper, Microchips) dropped from harvests and victories.
-  - Fabricate superweapons in the War Room: **Tactical Warheads**, **Orbital Ion Cannons**, and **Napalm Carpet Bombs**!
-- **Allies Dock & Neighbor Island Visits:**
-  - Dock featuring friendly commanders (*Major Foley*, *Captain Sophia*, *Lt. Ramirez*).
-  - Visit ally bases, perform 5 daily helper actions (speeding up and assisting installations), and earn valuable **Honor Points**!
-- **Story Campaign Quests & Briefings:**
-  - Step-by-step briefings from Major Foley and General Castor.
-  - Collapsible Quest Tracker HUD with instant reward collection.
-- **Synthesized Web Audio SFX:**
-  - Pure Web Audio API oscillators for clicks, builds, coin chimes, gunfire, heavy shell explosions, and fanfares.
+  - Fabricate Tactical Warheads (Nukes), Orbital Ion Cannons, and Napalm Strikes with rare battlefield materials.
+- **Allies Dock & Island Visits:**
+  - Visit friendly commanders (*Major Foley*, *Captain Sophia*, *Lt. Ramirez*) and perform 5 daily assist actions for Honor points.
 
-### 🦀 3. Native Rust Backend (Tauri v2)
-- **Tauri IPC Commands:** State serialization to `~/.cekcok-kotaku/save_empires_and_allies.json`.
-- **Offline Idle Simulation:** Accurately calculates elapsed real-world time delta while the application is closed to restore player energy (1 energy per 5 minutes) and generate passive island resources.
+---
+
+### 🚀 3. Desktop Game Launcher & Platform
+- **Multi-Game Architecture:** Isolated game workspaces under `src/games/` separated cleanly from the launcher platform.
+- **Commander Profile & Ranks:** Real-time level progression, rank titles, and military stats.
+- **Game Library Carousel:** Switch between titles and launch active games with instant state preservation.
+- **Audio & Grid Settings:** Real-time Web Audio synthesizer SFX volume and mute controls.
+- **Native Rust Backend (Tauri v2):** Save state synchronization and real-world offline idle progression.
+- **Husky Pre-commit Linter:** Pre-commit hook automatically verifies TypeScript compilation (`tsc`) and Vite bundle validation on every git commit.
 
 ---
 
@@ -76,9 +64,9 @@
 - **Frontend:** React 19 + TypeScript (Strict mode enabled, zero `any`)
 - **Package Manager:** `pnpm`
 - **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) with `@tailwindcss/vite`
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **Git Hooks:** [Husky](https://typicode.github.io/husky/)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **Visual FX:** [canvas-confetti](https://github.com/catdad/canvas-confetti)
 
 ---
 
@@ -96,16 +84,16 @@ pnpm install
 
 ### Running Locally
 ```bash
-# Run Web / Frontend Preview
+# Run Web Preview
 pnpm dev
 
-# Run Native Desktop App with Tauri
+# Run Native Desktop App via Tauri
 pnpm tauri dev
 ```
 
 ### Building for Production
 ```bash
-# Typecheck & build web bundle
+# Typecheck & build web bundle (runs automatically via Husky before commit)
 pnpm build
 
 # Build standalone desktop installer
