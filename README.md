@@ -48,10 +48,11 @@
 ---
 
 ### 🚀 3. Desktop Game Launcher & Platform
-- **Multi-Game Architecture:** Isolated game workspaces under `src/games/` separated cleanly from the launcher platform.
+- **Multi-Game Architecture:** Isolated game workspaces under `src/games/` separated cleanly from the launcher platform (`src/features/launcher/`).
+- **Universal Retro Game Loading Screen:** Authentic social game launch splash screen featuring animated progress bars, live status readouts ("Calibrating radar...", "Paving avenues..."), and victory sound chimes upon completion.
 - **Commander Profile & Ranks:** Real-time level progression, rank titles, and military stats.
-- **Game Library Carousel:** Switch between titles and launch active games with instant state preservation.
-- **Audio & Grid Settings:** Real-time Web Audio synthesizer SFX volume and mute controls.
+- **Game Library Carousel:** Switch between **Empires & Allies** and **CityVille Retro** with dedicated "PLAY NOW" controls.
+- **Audio & Grid Settings:** Real-time Web Audio synthesizer SFX volume, mute controls, and isometric grid overlays.
 - **Native Rust Backend (Tauri v2):** Save state synchronization and real-world offline idle progression.
 - **Husky Pre-commit Linter:** Pre-commit hook automatically verifies TypeScript compilation (`tsc`) and Vite bundle validation on every git commit.
 

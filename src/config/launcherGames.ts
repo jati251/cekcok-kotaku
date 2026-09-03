@@ -25,7 +25,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     title: 'CityVille Retro',
     tagline: 'The Ultimate Isometric Metropolis Builder & Franchise Tycoon',
     genre: 'City Simulator / Tycoon',
-    status: 'in_development',
+    status: 'playable',
     releaseYear: '2010 Classic',
     bannerImage: 'city-skyline',
     description:

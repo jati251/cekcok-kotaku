@@ -11,7 +11,13 @@ interface LauncherState {
   showGridLines: boolean;
   commanderName: string;
   rankTitle: string;
-  
+
+  // Game Loading Screen State
+  isLoadingGame: boolean;
+  loadingProgress: number;
+  loadingTitle: string;
+  loadingSubtitle: string;
+
   // Actions
   setActiveTab: (tab: ActiveGameTab) => void;
   setSelectedGameId: (gameId: string) => void;
@@ -33,6 +39,11 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   showGridLines: true,
   commanderName: 'Commander Jati',
   rankTitle: 'Brigadier General',
+
+  isLoadingGame: false,
+  loadingProgress: 0,
+  loadingTitle: '',
+  loadingSubtitle: '',
 
   setActiveTab: (tab) => {
     soundManager.playClick();
@@ -74,11 +85,55 @@ export const useLauncherStore = create<LauncherState>((set) => ({
 
   launchGame: (gameId) => {
     soundManager.playBuild();
-    if (gameId === 'empires-and-allies') {
-      set({ activeTab: 'game', selectedGameId: gameId });
-    } else if (gameId === 'cityville') {
-      set({ activeTab: 'cityville', selectedGameId: gameId });
-    }
+
+    const isEa = gameId === 'empires-and-allies';
+    const title = isEa ? 'Empires & Allies' : 'CityVille Retro';
+
+    set({
+      isLoadingGame: true,
+      loadingProgress: 15,
+      loadingTitle: title,
+      loadingSubtitle: isEa
+        ? 'Establishing Command Station & Satellite Uplink...'
+        : 'Surveying Municipal Valley & Zoning Avenues...',
+    });
+
+    // Step 2: 45%
+    setTimeout(() => {
+      set({
+        loadingProgress: 48,
+        loadingSubtitle: isEa
+          ? 'Mobilizing Vanguard Infantry & Armor Divisions...'
+          : 'Connecting Urban Road Grid & Water Networks...',
+      });
+    }, 450);
+
+    // Step 3: 80%
+    setTimeout(() => {
+      set({
+        loadingProgress: 82,
+        loadingSubtitle: isEa
+          ? 'Calibrating 360-Degree Island Defense Radar...'
+          : 'Stocking Commercial Goods Depot & Bakeries...',
+      });
+    }, 950);
+
+    // Step 4: 100% Launch!
+    setTimeout(() => {
+      set({
+        loadingProgress: 100,
+        loadingSubtitle: isEa ? 'Ready for Deployment!' : 'Metropolis Ready, Welcome Mayor!',
+      });
+      soundManager.playVictory();
+
+      setTimeout(() => {
+        set({
+          isLoadingGame: false,
+          activeTab: isEa ? 'game' : 'cityville',
+          selectedGameId: gameId,
+        });
+      }, 350);
+    }, 1450);
   },
 
   exitToLauncher: () => {
