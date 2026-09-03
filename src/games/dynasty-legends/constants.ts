@@ -1,136 +1,163 @@
+import {
+  HeroType,
+  DifficultyLevel,
+  DifficultyConfig,
+  MapTheme,
+  ComboRank,
+} from './types';
 
-import { HeroType, BattleScenario, DifficultyLevel, DifficultyConfig, MapTheme } from "./types";
+export { SCENARIOS } from './scenarios';
 
 export const CANVAS_WIDTH = window.innerWidth;
 export const CANVAS_HEIGHT = window.innerHeight;
-export const WORLD_SIZE = 2400; // Larger world for armies
-export const TILE_SIZE = 64; 
+export const WORLD_SIZE = 3800; // Grand Battlefield Scale
+export const TILE_SIZE = 64;
 
 // SPEEDS & COMBAT
-export const ENEMY_SPEED = 0.9; 
-export const ARCHER_SPEED = 0.7;
-export const BOSS_SPEED = 1.6; 
-export const CAVALRY_SPEED = 2.8; 
+export const ENEMY_SPEED = 1.1;
+export const ALLIED_SPEED = 1.2;
+export const ARCHER_SPEED = 0.85;
+export const BOSS_SPEED = 1.7;
+export const CAVALRY_SPEED = 3.0;
 
 // WAVE SPAWNING
-export const WAVE_INTERVAL = 300; // Frames between waves
-export const MAX_ENEMIES = 120; // More enemies for "bulk" feel
+export const WAVE_INTERVAL = 260;
+export const MAX_ENEMIES = 140;
+export const MAX_ALLIES = 40;
 
 export const MUSOU_GAUGE_MAX = 100;
-export const MUSOU_DRAIN_RATE = 0.8; // Lasts slightly longer
-export const KILLS_TO_FILL_MUSOU = 1.5;
+export const MUSOU_DRAIN_RATE = 0.7;
+export const KILLS_TO_FILL_MUSOU = 2.0;
 
 // Drops
-export const DROP_CHANCE_HEALTH = 0.03; // Reduced to 3% (Harder)
-export const ITEM_HEAL_AMOUNT = 60;
+export const DROP_CHANCE_HEALTH = 0.05;
+export const DROP_CHANCE_SPECIAL = 0.03;
+export const ITEM_HEAL_AMOUNT = 80;
 
 // Archer Mechanics
-export const ARCHER_RANGE = 350;
-export const ARROW_SPEED = 6;
-export const ARROW_DAMAGE = 10;
+export const ARCHER_RANGE = 380;
+export const ARROW_SPEED = 7;
+export const ARROW_DAMAGE = 12;
 
 // Player Combat Defaults
-export const PLAYER_ATTACK_ARC = Math.PI / 1.5;
-export const PLAYER_MAX_HP = 300;
+export const PLAYER_ATTACK_ARC = Math.PI / 1.4;
+export const PLAYER_MAX_HP = 350;
 
-// --- HERO STATS ---
+// --- HERO PROFILES ---
 export const HERO_STATS = {
-  [HeroType.WARRIOR]: {
-    speed: 3.5, 
-    hp: 300,
-    cooldown: 14,
-    range: 130,
-    desc: "Balanced General. Wide sweeping attacks."
+  [HeroType.GUAN_YU]: {
+    name: 'Guan Yu',
+    title: 'God of War · Lord of the Beautiful Beard',
+    weaponName: 'Green Dragon Crescent Blade',
+    speed: 3.6,
+    hp: 420,
+    cooldown: 13,
+    range: 165,
+    color: '#16a34a',
+    accentColor: '#4ade80',
+    desc: 'Wields the mighty Guan Dao with sweeping broad slashes that decimate soldier clusters.',
   },
-  [HeroType.VIKING]: {
-    speed: 3.0, 
-    hp: 450,
-    cooldown: 24,
-    range: 110, 
-    desc: "Heavy Berserker. Slow but devastating axe strikes."
+  [HeroType.ZHAO_YUN]: {
+    name: 'Zhao Yun',
+    title: 'Dragon of Changban',
+    weaponName: 'Fierce Dragon Spear',
+    speed: 4.5,
+    hp: 330,
+    cooldown: 8,
+    range: 145,
+    color: '#38bdf8',
+    accentColor: '#bae6fd',
+    desc: 'Peerless spear technique with lightning thrusts, exceptional mobility, and quick recovery.',
   },
-  [HeroType.SAMURAI]: {
-    speed: 4.4, 
-    hp: 240,
-    cooldown: 7, 
-    range: 120,
-    desc: "Swift Ronin. Rapid, critical katana slashes."
-  }
+  [HeroType.LU_BU]: {
+    name: 'Lu Bu',
+    title: 'The Flying General · Peerless Among Men',
+    weaponName: 'Sky Piercer Halberd',
+    speed: 4.0,
+    hp: 550,
+    cooldown: 18,
+    range: 190,
+    color: '#dc2626',
+    accentColor: '#f87171',
+    desc: 'Unrivaled raw power. Each swing creates ground shockwaves that shatter enemy armor.',
+  },
+  [HeroType.LU_XUN]: {
+    name: 'Lu Xun',
+    title: 'Grand Strategist of Wu',
+    weaponName: 'Twin Swallow Sabres',
+    speed: 4.3,
+    hp: 310,
+    cooldown: 7,
+    range: 135,
+    color: '#f97316',
+    accentColor: '#fed7aa',
+    desc: 'Dual blades infused with flame whirlwinds. Fast combo strikes build Musou rapidly.',
+  },
 };
 
 // Weapon Evolution Stats
 export const WEAPON_TIERS = {
-  [HeroType.WARRIOR]: [
-    { kills: 0, range: 130, damage: 25, name: "Iron Blade" },
-    { kills: 30, range: 160, damage: 45, name: "Steel Glaive" },
-    { kills: 70, range: 190, damage: 70, name: "Golden Halberd" },
-    { kills: 120, range: 230, damage: 120, name: "Dragon Slayer" }
+  [HeroType.GUAN_YU]: [
+    { kills: 0, range: 165, damage: 35, name: 'Iron Crescent Blade' },
+    { kills: 40, range: 185, damage: 60, name: 'Dragonhead Glaive' },
+    { kills: 90, range: 215, damage: 95, name: 'Azure Dragon Blade' },
+    { kills: 160, range: 250, damage: 155, name: 'Divine Green Dragon' },
   ],
-  [HeroType.VIKING]: [
-    { kills: 0, range: 110, damage: 40, name: "Hand Axe" },
-    { kills: 30, range: 120, damage: 65, name: "Bearded Axe" },
-    { kills: 70, range: 130, damage: 90, name: "Runed Greataxe" },
-    { kills: 120, range: 150, damage: 150, name: "Mjolnir's Might" }
+  [HeroType.ZHAO_YUN]: [
+    { kills: 0, range: 145, damage: 22, name: 'Steel Pike' },
+    { kills: 40, range: 160, damage: 40, name: 'Silver Dragon Spear' },
+    { kills: 90, range: 180, damage: 70, name: 'Thunder Drake Lance' },
+    { kills: 160, range: 210, damage: 120, name: 'Heavenly Dragon Pierce' },
   ],
-  [HeroType.SAMURAI]: [
-    { kills: 0, range: 120, damage: 15, name: "Uchigatana" },
-    { kills: 30, range: 130, damage: 25, name: "Tachi" },
-    { kills: 70, range: 140, damage: 40, name: "Muramasa" },
-    { kills: 120, range: 150, damage: 70, name: "Masamune" }
-  ]
+  [HeroType.LU_BU]: [
+    { kills: 0, range: 190, damage: 55, name: 'Heavy Battleaxe' },
+    { kills: 40, range: 210, damage: 85, name: 'Demon Cleaver' },
+    { kills: 90, range: 235, damage: 130, name: 'Sky Piercing Halberd' },
+    { kills: 160, range: 275, damage: 210, name: 'Asura God Sunderer' },
+  ],
+  [HeroType.LU_XUN]: [
+    { kills: 0, range: 135, damage: 20, name: 'Bronze Daggers' },
+    { kills: 40, range: 150, damage: 36, name: 'Crimson Swallow Sabres' },
+    { kills: 90, range: 170, damage: 62, name: 'Firestorm Twin Blades' },
+    { kills: 160, range: 195, damage: 105, name: 'Phoenix Fire Wings' },
+  ],
 };
 
-export const COLORS = {
-  PLAYER: '#3b82f6', 
-  PLAYER_DARK: '#1e40af',
-  PLAYER_ATTACK: '#60a5fa',
-  
-  HERO_WARRIOR: '#3b82f6', 
-  HERO_VIKING: '#7f1d1d',  
-  HERO_SAMURAI: '#1f2937', 
-  
-  ENEMY: '#b91c1c', // Deep Red
-  ENEMY_DARK: '#7f1d1d',
-  ENEMY_ARCHER: '#92400e', // Brown/Leather
-  ENEMY_CAPTAIN: '#fca5a5', // Pinkish Red
-  BOSS: '#450a0a', // Almost black red
-  BOSS_GOLD: '#fbbf24',
-  
-  // Projectiles
-  ARROW: '#fef3c7',
-  ARROW_TRAIL: '#92400e',
+export const COMBO_RANKS: { rank: ComboRank; threshold: number; label: string; color: string }[] = [
+  { rank: 'SSS', threshold: 120, label: 'TRUE WARRIOR OF THE THREE KINGDOMS!', color: '#eab308' },
+  { rank: 'SS', threshold: 80, label: 'SUPREME WARLORD!', color: '#ef4444' },
+  { rank: 'S', threshold: 50, label: 'SENSATIONAL!', color: '#ec4899' },
+  { rank: 'A', threshold: 30, label: 'AWESOME!', color: '#a855f7' },
+  { rank: 'B', threshold: 18, label: 'GREAT!', color: '#3b82f6' },
+  { rank: 'C', threshold: 8, label: 'GOOD!', color: '#10b981' },
+  { rank: 'D', threshold: 0, label: 'FIGHTING', color: '#94a3b8' },
+];
 
-  // Units
+export const COLORS = {
+  PLAYER: '#3b82f6',
+  ALLIED: '#38bdf8',
+  ALLIED_DARK: '#0284c7',
+  ALLIED_BANNER: '#0284c7',
+
+  ENEMY: '#dc2626',
+  ENEMY_DARK: '#991b1b',
+  ENEMY_ARCHER: '#ea580c',
+  ENEMY_CAPTAIN: '#f43f5e',
+  BOSS: '#450a0a',
+  BOSS_GOLD: '#fbbf24',
+
+  ARROW: '#fef3c7',
+  ARROW_TRAIL: '#ea580c',
+
   SKIN: '#ffcdb2',
   SKIN_SHADOW: '#e0a899',
-  HORSE_BODY: '#5F4025',
-  HORSE_MANE: '#28180B',
-  
-  // UI
-  MUSOU_ACTIVE: '#fbbf24', 
+  HORSE_BODY: '#451a03',
+  HORSE_MANE: '#1c1917',
+
+  MUSOU_ACTIVE: '#fbbf24',
   TEXT_DAMAGE: '#ffffff',
   TEXT_CRIT: '#fbbf24',
   TEXT_HEAL: '#4ade80',
-  
-  // Environment
-  GROUND_BASE: '#3f4d3a', // Desaturated battlefield green
-  GROUND_VAR_1: '#4a5944', 
-  GRASS_DARK: '#283324',
-  GRASS_LIGHT: '#586e4e', 
-  
-  TREE_LEAVES: '#365314',
-  TREE_LEAVES_LIGHT: '#4d7c0f',
-  TREE_LEAVES_SHADOW: '#1a2e05',
-  TREE_TRUNK: '#451a03',
-  
-  BUILDING_ROOF: '#7f1d1d',
-  BUILDING_ROOF_SHADOW: '#450a0a',
-  BUILDING_WALL: '#e5e5e5',
-  BUILDING_WOOD: '#451a03',
-  
-  ROCK: '#57534e',
-  ROCK_LIGHT: '#78716c',
-  ROCK_DARK: '#292524',
 };
 
 // --- MAP THEMES ---
@@ -150,227 +177,153 @@ export interface MapThemeConfig {
   rockLight: string;
   rockDark: string;
   ambientParticleColor: string;
+  ambientParticleType: 'ember' | 'snow' | 'leaf' | 'dust';
   ambientParticleRate: number;
   fogColor: string;
 }
 
 export const MAP_THEMES: Record<MapTheme, MapThemeConfig> = {
   [MapTheme.GRASSLAND]: {
-    groundBase: '#3f4d3a', groundVar1: '#4a5944',
-    grassDark: '#283324', grassLight: '#586e4e',
-    treeLeaves: '#365314', treeLeavesLight: '#4d7c0f', treeLeavesShadow: '#1a2e05',
-    treeTrunk: '#451a03',
-    buildingRoof: '#7f1d1d', buildingRoofShadow: '#450a0a', buildingWall: '#e5e5e5',
-    rock: '#57534e', rockLight: '#78716c', rockDark: '#292524',
-    ambientParticleColor: '#a3e635', ambientParticleRate: 0.02,
-    fogColor: 'rgba(180,200,160,0.08)',
+    groundBase: '#2d3728',
+    groundVar1: '#374332',
+    grassDark: '#1c2419',
+    grassLight: '#46563e',
+    treeLeaves: '#2e4c1e',
+    treeLeavesLight: '#44722c',
+    treeLeavesShadow: '#1a2c11',
+    treeTrunk: '#3e2415',
+    buildingRoof: '#881337',
+    buildingRoofShadow: '#4c0519',
+    buildingWall: '#d6d3d1',
+    rock: '#57534e',
+    rockLight: '#78716c',
+    rockDark: '#292524',
+    ambientParticleColor: '#84cc16',
+    ambientParticleType: 'leaf',
+    ambientParticleRate: 0.05,
+    fogColor: 'rgba(30, 41, 20, 0.1)',
+  },
+  [MapTheme.HULAO_SNOW]: {
+    groundBase: '#475569',
+    groundVar1: '#64748b',
+    grassDark: '#334155',
+    grassLight: '#94a3b8',
+    treeLeaves: '#475569',
+    treeLeavesLight: '#cbd5e1',
+    treeLeavesShadow: '#1e293b',
+    treeTrunk: '#334155',
+    buildingRoof: '#991b1b',
+    buildingRoofShadow: '#450a0a',
+    buildingWall: '#f1f5f9',
+    rock: '#94a3b8',
+    rockLight: '#e2e8f0',
+    rockDark: '#475569',
+    ambientParticleColor: '#f8fafc',
+    ambientParticleType: 'snow',
+    ambientParticleRate: 0.12,
+    fogColor: 'rgba(226, 232, 240, 0.15)',
+  },
+  [MapTheme.CHIBI_FIRE]: {
+    groundBase: '#291e1a',
+    groundVar1: '#3b2820',
+    grassDark: '#1a120e',
+    grassLight: '#4a3225',
+    treeLeaves: '#78350f',
+    treeLeavesLight: '#b45309',
+    treeLeavesShadow: '#451a03',
+    treeTrunk: '#1c1917',
+    buildingRoof: '#b91c1c',
+    buildingRoofShadow: '#450a0a',
+    buildingWall: '#78716c',
+    rock: '#44403c',
+    rockLight: '#78716c',
+    rockDark: '#1c1917',
+    ambientParticleColor: '#f97316',
+    ambientParticleType: 'ember',
+    ambientParticleRate: 0.15,
+    fogColor: 'rgba(120, 53, 15, 0.2)',
+  },
+  [MapTheme.RAVINE]: {
+    groundBase: '#382e25',
+    groundVar1: '#4a3d31',
+    grassDark: '#261f18',
+    grassLight: '#5c4b3c',
+    treeLeaves: '#365314',
+    treeLeavesLight: '#4d7c0f',
+    treeLeavesShadow: '#1a2e05',
+    treeTrunk: '#292524',
+    buildingRoof: '#7f1d1d',
+    buildingRoofShadow: '#450a0a',
+    buildingWall: '#a8a29e',
+    rock: '#57534e',
+    rockLight: '#78716c',
+    rockDark: '#292524',
+    ambientParticleColor: '#d97706',
+    ambientParticleType: 'dust',
+    ambientParticleRate: 0.06,
+    fogColor: 'rgba(74, 61, 49, 0.15)',
   },
   [MapTheme.DESERT]: {
-    groundBase: '#a9845a', groundVar1: '#b8936a',
-    grassDark: '#8a6e4a', grassLight: '#c4a87a',
-    treeLeaves: '#7a5a3a', treeLeavesLight: '#9a7a4a', treeLeavesShadow: '#4a3a2a',
-    treeTrunk: '#5a3a1a',
-    buildingRoof: '#8a6a3a', buildingRoofShadow: '#5a4a2a', buildingWall: '#d4c4a4',
-    rock: '#8a7a5a', rockLight: '#b4a47a', rockDark: '#5a4a3a',
-    ambientParticleColor: '#d4b47a', ambientParticleRate: 0.05,
-    fogColor: 'rgba(220,200,160,0.12)',
-  },
-  [MapTheme.SNOW]: {
-    groundBase: '#c8c8d0', groundVar1: '#d4d4dc',
-    grassDark: '#b0b0b8', grassLight: '#e0e0e8',
-    treeLeaves: '#8a8a94', treeLeavesLight: '#b0b0b8', treeLeavesShadow: '#6a6a74',
-    treeTrunk: '#5a5a5a',
-    buildingRoof: '#8a2a2a', buildingRoofShadow: '#5a1a1a', buildingWall: '#e8e8f0',
-    rock: '#9a9aa4', rockLight: '#c0c0c8', rockDark: '#6a6a74',
-    ambientParticleColor: '#e8e8f0', ambientParticleRate: 0.08,
-    fogColor: 'rgba(200,200,220,0.15)',
-  },
-  [MapTheme.VOLCANIC]: {
-    groundBase: '#2a1a1a', groundVar1: '#3a2222',
-    grassDark: '#1a1010', grassLight: '#3a2828',
-    treeLeaves: '#6a2a2a', treeLeavesLight: '#8a3a3a', treeLeavesShadow: '#3a1a1a',
-    treeTrunk: '#4a2020',
-    buildingRoof: '#5a1a1a', buildingRoofShadow: '#3a0a0a', buildingWall: '#6a4a4a',
-    rock: '#4a3a3a', rockLight: '#6a4a4a', rockDark: '#2a1a1a',
-    ambientParticleColor: '#ff6a00', ambientParticleRate: 0.06,
-    fogColor: 'rgba(60,20,10,0.2)',
-  },
-  [MapTheme.FOREST]: {
-    groundBase: '#2a3a2a', groundVar1: '#3a4a3a',
-    grassDark: '#1a2a1a', grassLight: '#4a6a4a',
-    treeLeaves: '#2a5a2a', treeLeavesLight: '#3a7a3a', treeLeavesShadow: '#1a3a1a',
-    treeTrunk: '#3a2a1a',
-    buildingRoof: '#5a3a2a', buildingRoofShadow: '#3a2a1a', buildingWall: '#8a7a6a',
-    rock: '#5a5a4a', rockLight: '#7a7a6a', rockDark: '#3a3a2a',
-    ambientParticleColor: '#6aaa6a', ambientParticleRate: 0.03,
-    fogColor: 'rgba(40,60,30,0.12)',
+    groundBase: '#78593a',
+    groundVar1: '#8c6b47',
+    grassDark: '#5e4329',
+    grassLight: '#9e7b54',
+    treeLeaves: '#545229',
+    treeLeavesLight: '#7c7a3d',
+    treeLeavesShadow: '#363417',
+    treeTrunk: '#45321f',
+    buildingRoof: '#883b13',
+    buildingRoofShadow: '#4c1e05',
+    buildingWall: '#d6c7b2',
+    rock: '#786857',
+    rockLight: '#9c8874',
+    rockDark: '#4a3e31',
+    ambientParticleColor: '#eab308',
+    ambientParticleType: 'dust',
+    ambientParticleRate: 0.08,
+    fogColor: 'rgba(120, 89, 58, 0.15)',
   },
 };
 
-// --- DIFFICULTY CONFIGURATIONS ---
 export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   [DifficultyLevel.EASY]: {
     label: 'Easy',
-    description: 'Relaxed. Enemies are weaker and drops are plentiful.',
+    description: 'Relaxed campaign experience. Enemies have reduced health.',
     enemyHpMult: 0.7,
     enemyDmgMult: 0.5,
-    enemySpeedMult: 0.8,
+    enemySpeedMult: 0.85,
     waveSizeBonus: -2,
-    waveIntervalReduction: -60,
-    bossHpMult: 0.6,
-    bossExtraAttacks: 0,
-    dropChanceMult: 2.0,
-    cavalryThreshold: 60,
-    archerFireRateReduction: 30,
+    bossHpMult: 0.65,
+    dropChanceMult: 1.8,
   },
   [DifficultyLevel.NORMAL]: {
     label: 'Normal',
-    description: 'Standard battlefield experience.',
+    description: 'Authentic Musou battlefield warfare with balanced forces.',
     enemyHpMult: 1.0,
     enemyDmgMult: 1.0,
     enemySpeedMult: 1.0,
     waveSizeBonus: 0,
-    waveIntervalReduction: 0,
     bossHpMult: 1.0,
-    bossExtraAttacks: 0,
     dropChanceMult: 1.0,
-    cavalryThreshold: 40,
-    archerFireRateReduction: 0,
   },
   [DifficultyLevel.HARD]: {
     label: 'Hard',
-    description: 'Formidable. Enemies are tougher and more aggressive.',
-    enemyHpMult: 1.5,
-    enemyDmgMult: 1.5,
-    enemySpeedMult: 1.2,
+    description: 'Aggressive enemy officers and tough fortress garrisons.',
+    enemyHpMult: 1.45,
+    enemyDmgMult: 1.4,
+    enemySpeedMult: 1.15,
     waveSizeBonus: 3,
-    waveIntervalReduction: -60,
-    bossHpMult: 1.8,
-    bossExtraAttacks: 1,
-    dropChanceMult: 0.5,
-    cavalryThreshold: 25,
-    archerFireRateReduction: -30,
+    bossHpMult: 1.6,
+    dropChanceMult: 0.6,
   },
-  [DifficultyLevel.NIGHTMARE]: {
-    label: 'Nightmare',
-    description: 'Death awaits at every turn. Only the strongest survive.',
+  [DifficultyLevel.CHAOS]: {
+    label: 'Chaos',
+    description: 'Relentless hordes and lethal officers. For master warlords only.',
     enemyHpMult: 2.2,
-    enemyDmgMult: 2.5,
-    enemySpeedMult: 1.5,
+    enemyDmgMult: 2.2,
+    enemySpeedMult: 1.35,
     waveSizeBonus: 6,
-    waveIntervalReduction: -120,
-    bossHpMult: 3.0,
-    bossExtraAttacks: 2,
-    dropChanceMult: 0.17,
-    cavalryThreshold: 10,
-    archerFireRateReduction: -60,
-  }
+    bossHpMult: 2.5,
+    dropChanceMult: 0.35,
+  },
 };
-
-// Enemy scaling over time (per 30 seconds)
-export const ENEMY_SCALING_PER_30S = {
-  hpBonus: 0.05,    // +5% HP every 30s
-  dmgBonus: 0.03,   // +3% damage every 30s
-  speedBonus: 0.02, // +2% speed every 30s
-  maxScale: 2.0,    // Cap at 2x after ~5 minutes (100% increase)
-};
-
-// Boss attack patterns
-export const BOSS_CHARGE_SPEED_MULT = 3.0;
-export const BOSS_AOE_RADIUS = 120;
-export const BOSS_AOE_DAMAGE = 20;
-export const BOSS_SUMMON_COUNT = 3;
-
-// HARDCODED SCENARIOS
-export const SCENARIOS: BattleScenario[] = [
-  {
-    title: "Rebellion of the Yellow Turbans",
-    description: "A fanatical sect has risen. Their numbers are endless, and their faith makes them fearless.",
-    bossName: "Zhang Jiao",
-    bossQuote: "The Blue Sky is dead! The Yellow Sky shall rise!",
-    heroObjective: "Crush the peasant rebellion.",
-    requiredKills: 80,
-    mapTheme: MapTheme.GRASSLAND
-  },
-  {
-    title: "The Tiger Cage of Hulao",
-    description: "The coalition has cornered the tyrant, but his greatest weapon stands at the gate.",
-    bossName: "Lu Bu",
-    bossQuote: "Do not pursue Lu Bu!",
-    heroObjective: "Survive the God of War.",
-    requiredKills: 100,
-    mapTheme: MapTheme.FOREST
-  },
-  {
-    title: "Flames of Red Cliffs",
-    description: "The river burns. The northern fleet is chained together, creating a massive platform of fire.",
-    bossName: "Cao Cao",
-    bossQuote: "Impossible... My ambition cannot end here!",
-    heroObjective: "Defeat the Wei forces amidst the fire.",
-    requiredKills: 120,
-    mapTheme: MapTheme.VOLCANIC
-  },
-  {
-    title: "Battle of Fan Castle",
-    description: "Torrential rains have flooded the castle. The God of War, Guan Yu, approaches.",
-    bossName: "Guan Yu",
-    bossQuote: "My blade remains sharp. Come, face your destiny.",
-    heroObjective: "Defeat the God of War.",
-    requiredKills: 110,
-    mapTheme: MapTheme.SNOW
-  },
-  {
-    title: "The Fall of Shu",
-    description: "The northern army has bypassed the mountains. The capital is defenseless.",
-    bossName: "Deng Ai",
-    bossQuote: "Speed is the essence of war.",
-    heroObjective: "Defend the capital gates.",
-    requiredKills: 90,
-    mapTheme: MapTheme.FOREST
-  },
-  {
-    title: "Defense of Changban",
-    description: "One bridge. One warrior. A million soldiers.",
-    bossName: "Xiahou Dun",
-    bossQuote: "Out of my way, scum!",
-    heroObjective: "Hold the bridge at all costs.",
-    requiredKills: 150,
-    mapTheme: MapTheme.GRASSLAND
-  },
-  {
-    title: "Showdown at Wuzhang Plains",
-    description: "The final battle between the Dragon and the Tiger. The stars are falling.",
-    bossName: "Sima Yi",
-    bossQuote: "The heavens have revealed your fate.",
-    heroObjective: "Break the Strategist's formation.",
-    requiredKills: 130,
-    mapTheme: MapTheme.DESERT
-  },
-  {
-    title: "Assault on He Fei",
-    description: "The Demon of He Fei guards the castle. The sounds of bells strike terror.",
-    bossName: "Zhang Liao",
-    bossQuote: "Does anyone else wish to die?!",
-    heroObjective: "Silence the Demon's bells.",
-    requiredKills: 100,
-    mapTheme: MapTheme.GRASSLAND
-  },
-  {
-    title: "Revenge at Yi Ling",
-    description: "Consumed by rage, the Shu army marches into a fire trap.",
-    bossName: "Lu Xun",
-    bossQuote: "Your anger blinds you. Burn!",
-    heroObjective: "Escape the fire trap.",
-    requiredKills: 110,
-    mapTheme: MapTheme.VOLCANIC
-  },
-  {
-    title: "Skirmish at Guandu",
-    description: "Supply depots are the target. Whoever controls the food, controls the war.",
-    bossName: "Yuan Shao",
-    bossQuote: "My noble heritage is unmatched!",
-    heroObjective: "Raid the supply depot.",
-    requiredKills: 70,
-    mapTheme: MapTheme.DESERT
-  }
-];

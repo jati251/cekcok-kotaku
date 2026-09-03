@@ -1,7 +1,16 @@
-
 import React, { useState } from 'react';
 import { GameStatus, BattleScenario, HeroType, DifficultyLevel, MapTheme } from '../types';
-import { Sword, Skull, Trophy, Loader2, Shield, Zap, Hammer, ChevronRight, Map as MapIcon, Mountain, Flame, Snowflake, Sun } from 'lucide-react';
+import {
+  Sword,
+  Skull,
+  Trophy,
+  Map as MapIcon,
+  Flame,
+  Snowflake,
+  Mountain,
+  ChevronRight,
+  ArrowLeft,
+} from 'lucide-react';
 import * as Constants from '../constants';
 
 interface MenuOverlayProps {
@@ -14,29 +23,36 @@ interface MenuOverlayProps {
   selectedScenarioIndex: number;
 }
 
-const DIFFICULTY_ORDER = [DifficultyLevel.EASY, DifficultyLevel.NORMAL, DifficultyLevel.HARD, DifficultyLevel.NIGHTMARE];
+const DIFFICULTY_ORDER = [
+  DifficultyLevel.EASY,
+  DifficultyLevel.NORMAL,
+  DifficultyLevel.HARD,
+  DifficultyLevel.CHAOS,
+];
 
 const MAP_THEME_ICONS: Record<MapTheme, React.ReactNode> = {
-  [MapTheme.GRASSLAND]: <MapIcon size={16} />,
-  [MapTheme.DESERT]: <Sun size={16} />,
-  [MapTheme.SNOW]: <Snowflake size={16} />,
-  [MapTheme.VOLCANIC]: <Flame size={16} />,
-  [MapTheme.FOREST]: <Mountain size={16} />,
+  [MapTheme.GRASSLAND]: <MapIcon className="w-4 h-4 text-emerald-400" />,
+  [MapTheme.HULAO_SNOW]: <Snowflake className="w-4 h-4 text-sky-300" />,
+  [MapTheme.CHIBI_FIRE]: <Flame className="w-4 h-4 text-rose-500" />,
+  [MapTheme.RAVINE]: <Mountain className="w-4 h-4 text-amber-500" />,
+  [MapTheme.DESERT]: <MapIcon className="w-4 h-4 text-yellow-500" />,
 };
 
-const MAP_THEME_COLORS: Record<MapTheme, string> = {
-  [MapTheme.GRASSLAND]: 'text-green-400',
-  [MapTheme.DESERT]: 'text-yellow-400',
-  [MapTheme.SNOW]: 'text-blue-200',
-  [MapTheme.VOLCANIC]: 'text-red-400',
-  [MapTheme.FOREST]: 'text-emerald-400',
-};
-
-export const MenuOverlay: React.FC<MenuOverlayProps> = ({ status, scenario, onStart, onRestart, koCount, onSelectScenario, selectedScenarioIndex }) => {
-  const [selectionStep, setSelectionStep] = useState<'MAIN' | 'SCENARIO_SELECT' | 'HERO_SELECT' | 'DIFFICULTY_SELECT'>('MAIN');
+export const MenuOverlay: React.FC<MenuOverlayProps> = ({
+  status,
+  scenario,
+  onStart,
+  onRestart,
+  koCount,
+  onSelectScenario,
+  selectedScenarioIndex,
+}) => {
+  const [selectionStep, setSelectionStep] = useState<
+    'MAIN' | 'SCENARIO_SELECT' | 'HERO_SELECT' | 'DIFFICULTY_SELECT'
+  >('MAIN');
   const [pendingHero, setPendingHero] = useState<HeroType | null>(null);
 
-  if (status === GameStatus.PLAYING) return null;
+  if (status === GameStatus.PLAYING || status === GameStatus.STORY_INTRO) return null;
 
   const handleScenarioSelect = (index: number) => {
     onSelectScenario(index);
@@ -54,231 +70,289 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({ status, scenario, onSt
     }
   };
 
-  const getDifficultyColor = (d: DifficultyLevel): string => {
-    switch (d) {
-      case DifficultyLevel.EASY: return 'text-green-400 border-green-500/50 hover:border-green-400';
-      case DifficultyLevel.NORMAL: return 'text-blue-400 border-blue-500/50 hover:border-blue-400';
-      case DifficultyLevel.HARD: return 'text-orange-400 border-orange-500/50 hover:border-orange-400';
-      case DifficultyLevel.NIGHTMARE: return 'text-red-400 border-red-500/50 hover:border-red-400';
-    }
-  };
-
-  const getDifficultyBg = (d: DifficultyLevel): string => {
-    switch (d) {
-      case DifficultyLevel.EASY: return 'from-green-900/30 to-green-800/10';
-      case DifficultyLevel.NORMAL: return 'from-blue-900/30 to-blue-800/10';
-      case DifficultyLevel.HARD: return 'from-orange-900/30 to-orange-800/10';
-      case DifficultyLevel.NIGHTMARE: return 'from-red-900/40 to-red-800/20';
-    }
-  };
-
-  const getDifficultyIcon = (d: DifficultyLevel): string => {
-    switch (d) {
-      case DifficultyLevel.EASY: return '★';
-      case DifficultyLevel.NORMAL: return '★★';
-      case DifficultyLevel.HARD: return '★★★';
-      case DifficultyLevel.NIGHTMARE: return '★★★★';
-    }
-  };
-
-  const renderHeroCard = (type: HeroType, icon: React.ReactNode, name: string) => {
-    const stats = Constants.HERO_STATS[type];
+  const renderHeroCard = (heroType: HeroType) => {
+    const hero = Constants.HERO_STATS[heroType];
     return (
-      <button 
-        onClick={() => handleHeroSelect(type)}
-        className="group flex flex-col items-center bg-gray-800/80 hover:bg-gray-700 border-2 border-gray-600 hover:border-blue-400 p-6 rounded-xl transition-all hover:scale-105 w-full max-w-xs"
+      <button
+        key={heroType}
+        onClick={() => handleHeroSelect(heroType)}
+        className="group relative flex flex-col items-start bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-amber-400 p-5 rounded-2xl transition-all hover:scale-[1.02] shadow-xl text-left cursor-pointer overflow-hidden"
       >
-        <div className="mb-4 p-4 rounded-full bg-gray-900 group-hover:bg-blue-900 transition-colors text-white">
-          {icon}
+        <div
+          className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl -mr-8 -mt-8 opacity-20 pointer-events-none transition group-hover:opacity-40"
+          style={{ backgroundColor: hero.color }}
+        />
+
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-md border"
+            style={{ backgroundColor: hero.color, borderColor: hero.accentColor }}
+          >
+            {hero.name.slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white tracking-wide">{hero.name}</h3>
+            <p className="text-[11px] text-amber-400/90 font-mono">{hero.weaponName}</p>
+          </div>
         </div>
-        <h3 className="text-xl font-bold text-white cinzel mb-2">{name}</h3>
-        <div className="text-xs text-gray-400 mb-4 h-10">{stats.desc}</div>
-        <div className="w-full grid grid-cols-2 gap-2 text-xs">
-           <div className="flex justify-between"><span className="text-gray-500">HP</span> <span className="text-green-400">{stats.hp}</span></div>
-           <div className="flex justify-between"><span className="text-gray-500">SPD</span> <span className="text-yellow-400">{stats.speed}</span></div>
-           <div className="flex justify-between"><span className="text-gray-500">DMG</span> <span className="text-red-400">{type === HeroType.VIKING ? 'Extreme' : (type === HeroType.SAMURAI ? 'High' : 'Med')}</span></div>
-           <div className="flex justify-between"><span className="text-gray-500">ATK</span> <span className="text-blue-400">{type === HeroType.VIKING ? 'Slow' : (type === HeroType.SAMURAI ? 'Fast' : 'Avg')}</span></div>
+
+        <p className="text-xs text-slate-300 mb-4 h-10 leading-relaxed">{hero.desc}</p>
+
+        <div className="w-full grid grid-cols-2 gap-2 text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+          <div className="flex justify-between">
+            <span className="text-slate-500">Max HP</span>
+            <span className="font-mono text-emerald-400 font-bold">{hero.hp}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Speed</span>
+            <span className="font-mono text-sky-400 font-bold">{hero.speed}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Reach</span>
+            <span className="font-mono text-amber-400 font-bold">{hero.range}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Pace</span>
+            <span className="font-mono text-rose-400 font-bold">
+              {hero.cooldown <= 8 ? 'Very Fast' : hero.cooldown <= 14 ? 'Fast' : 'Heavy'}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 w-full flex items-center justify-between text-xs font-semibold text-amber-400 group-hover:translate-x-1 transition-transform">
+          <span>Deploy General</span>
+          <ChevronRight className="w-4 h-4" />
         </div>
       </button>
     );
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      
-      {/* MAIN MENU */}
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-6 select-none font-sans">
+      {/* MAIN TITLE SCREEN */}
       {status === GameStatus.MENU && selectionStep === 'MAIN' && (
-        <div className="text-center max-w-2xl animate-in fade-in zoom-in duration-500">
-          <div className="flex justify-center mb-6">
-             <Sword size={80} className="text-blue-500 animate-pulse" />
+        <div className="text-center max-w-2xl animate-in fade-in zoom-in-95 duration-500 space-y-6">
+          <div className="inline-flex p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mb-2">
+            <Sword className="w-12 h-12" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white cinzel mb-4 tracking-tighter">
-            DYNASTY LEGENDS
-          </h1>
-          <h2 className="text-2xl text-blue-400 mb-8 cinzel">Warlords of Legend</h2>
-          <p className="text-gray-400 mb-8 max-w-lg mx-auto leading-relaxed">
-            Choose your warrior and slash through hundreds of enemies across legendary battlefields.
+          <div className="space-y-2">
+            <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 tracking-tight">
+              DYNASTY LEGENDS
+            </h1>
+            <p className="text-base sm:text-lg text-slate-300 font-medium">
+              Warlords of the Three Kingdoms · Story Campaign
+            </p>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+            Lead historical generals across grand battlefields. Slay rebel vanguards, capture tactical
+            supply outposts, and duel legendary warlords in Musou combat!
           </p>
-          <button 
-            onClick={() => setSelectionStep('SCENARIO_SELECT')}
-            className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl rounded-sm transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-          >
-            <span className="cinzel">ENTER BATTLEFIELD</span>
-            <div className="absolute inset-0 border border-white/20 transform translate-x-1 translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform" />
-          </button>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => setSelectionStep('SCENARIO_SELECT')}
+              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider transition-all hover:scale-105 shadow-xl shadow-amber-500/20 cursor-pointer"
+            >
+              Start Campaign
+            </button>
+          </div>
         </div>
       )}
 
       {/* SCENARIO SELECTION */}
       {status === GameStatus.MENU && selectionStep === 'SCENARIO_SELECT' && (
-        <div className="text-center w-full max-w-5xl animate-in slide-in-from-right duration-300 max-h-screen overflow-y-auto py-8">
-          <h2 className="text-4xl font-bold text-white cinzel mb-2">SELECT BATTLE</h2>
-          <p className="text-gray-400 mb-6">Choose your battlefield and foe</p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+        <div className="w-full max-w-5xl animate-in fade-in slide-in-from-right-4 duration-300 space-y-6 max-h-[90vh] overflow-y-auto pr-1">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-100">CAMPAIGN CHAPTERS</h2>
+              <p className="text-xs text-slate-400">Select a historical battle scenario and objective</p>
+            </div>
+            <button
+              onClick={() => setSelectionStep('MAIN')}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Constants.SCENARIOS.map((s, index) => (
               <button
-                key={index}
+                key={s.id}
                 onClick={() => handleScenarioSelect(index)}
-                className={`group text-left p-4 rounded-xl border-2 transition-all hover:scale-105 ${
-                  selectedScenarioIndex === index 
-                    ? 'border-blue-400 bg-blue-900/30' 
-                    : 'border-gray-700 bg-gray-800/60 hover:border-blue-500/50'
+                className={`group text-left p-5 rounded-2xl border transition-all hover:scale-[1.01] cursor-pointer ${
+                  selectedScenarioIndex === index
+                    ? 'bg-slate-900 border-amber-500/80 shadow-lg shadow-amber-500/10'
+                    : 'bg-slate-900/60 hover:bg-slate-900/90 border-slate-800 hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-white cinzel text-sm truncate">{s.title}</h3>
-                  <span className={`text-xs flex items-center gap-1 ${MAP_THEME_COLORS[s.mapTheme]}`}>
-                    {MAP_THEME_ICONS[s.mapTheme]}
-                    {s.mapTheme.charAt(0) + s.mapTheme.slice(1).toLowerCase()}
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider font-mono">
+                    {s.chapter}
                   </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                    {MAP_THEME_ICONS[s.mapTheme]}
+                    <span className="text-[11px] font-mono">{s.subtitle}</span>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mb-3 line-clamp-2">{s.description}</p>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-yellow-400 font-bold">{s.bossName}</span>
-                  <span className="text-red-400">{s.requiredKills} kills</span>
+
+                <h3 className="text-lg font-bold text-slate-100 mb-1 group-hover:text-amber-300 transition-colors">
+                  {s.title}
+                </h3>
+                <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+                  {s.description}
+                </p>
+
+                <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Enemy Boss:</span>
+                    <span className="font-bold text-rose-400">{s.bossName}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Objectives:</span>
+                    <span className="font-mono text-slate-300">{s.objectives.length} Missions</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Tactical Bases:</span>
+                    <span className="font-mono text-sky-400">{s.bases.length} Forts</span>
+                  </div>
                 </div>
               </button>
             ))}
           </div>
-
-          <button 
-            onClick={() => setSelectionStep('MAIN')}
-            className="mt-8 text-gray-500 hover:text-white underline"
-          >
-            Back
-          </button>
         </div>
       )}
 
       {/* HERO SELECTION */}
       {status === GameStatus.MENU && selectionStep === 'HERO_SELECT' && (
-        <div className="text-center w-full max-w-5xl animate-in slide-in-from-right duration-300">
-          <h2 className="text-4xl font-bold text-white cinzel mb-2">CHOOSE YOUR HERO</h2>
-          <p className="text-gray-400 mb-8">Select your combat style</p>
-          
-          <div className="flex flex-col md:flex-row gap-4 justify-center items-stretch">
-             {renderHeroCard(HeroType.WARRIOR, <Shield size={32} />, "Dynasty General")}
-             {renderHeroCard(HeroType.VIKING, <Hammer size={32} />, "Norse Viking")}
-             {renderHeroCard(HeroType.SAMURAI, <Zap size={32} />, "Ronin Samurai")}
+        <div className="w-full max-w-5xl animate-in fade-in slide-in-from-right-4 duration-300 space-y-6 max-h-[90vh] overflow-y-auto pr-1">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-100">CHOOSE YOUR WARLORD</h2>
+              <p className="text-xs text-slate-400">
+                Deploy a legendary Three Kingdoms general with distinct weapons and combat styles
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectionStep('SCENARIO_SELECT')}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Chapters
+            </button>
           </div>
 
-          <button 
-            onClick={() => setSelectionStep('SCENARIO_SELECT')}
-            className="mt-8 text-gray-500 hover:text-white underline"
-          >
-            Back
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {renderHeroCard(HeroType.GUAN_YU)}
+            {renderHeroCard(HeroType.ZHAO_YUN)}
+            {renderHeroCard(HeroType.LU_BU)}
+            {renderHeroCard(HeroType.LU_XUN)}
+          </div>
         </div>
       )}
 
       {/* DIFFICULTY SELECTION */}
       {status === GameStatus.MENU && selectionStep === 'DIFFICULTY_SELECT' && (
-        <div className="text-center w-full max-w-3xl animate-in slide-in-from-right duration-300">
-          <h2 className="text-4xl font-bold text-white cinzel mb-2">SELECT DIFFICULTY</h2>
-          <p className="text-gray-400 mb-8">Choose your challenge</p>
-          
-          <div className="flex flex-col gap-4 items-center">
-            {DIFFICULTY_ORDER.map((d) => {
-              const config = Constants.DIFFICULTY_CONFIGS[d];
+        <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-300 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-100">BATTLE DIFFICULTY</h2>
+              <p className="text-xs text-slate-400">Select battlefield challenge intensity</p>
+            </div>
+            <button
+              onClick={() => setSelectionStep('HERO_SELECT')}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Heroes
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {DIFFICULTY_ORDER.map((diff) => {
+              const cfg = Constants.DIFFICULTY_CONFIGS[diff];
               return (
                 <button
-                  key={d}
-                  onClick={() => handleDifficultySelect(d)}
-                  className={`group w-full max-w-lg p-5 rounded-xl border-2 bg-gradient-to-r ${getDifficultyBg(d)} ${getDifficultyColor(d)} transition-all hover:scale-105 text-left`}
+                  key={diff}
+                  onClick={() => handleDifficultySelect(diff)}
+                  className="group flex items-center justify-between p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-400 transition-all text-left cursor-pointer"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-2xl">{getDifficultyIcon(d)}</span>
-                        <span className="text-2xl font-black cinzel">{config.label}</span>
-                      </div>
-                      <p className="text-sm text-gray-400 ml-1">{config.description}</p>
-                      <div className="flex gap-4 mt-2 text-xs text-gray-500 ml-1">
-                        <span>HP x{config.enemyHpMult}</span>
-                        <span>DMG x{config.enemyDmgMult}</span>
-                        <span>SPD x{config.enemySpeedMult}</span>
-                      </div>
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-base text-slate-100 group-hover:text-amber-300 transition-colors">
+                      {cfg.label}
                     </div>
-                    <ChevronRight size={24} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-xs text-slate-400">{cfg.description}</p>
                   </div>
+                  <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
                 </button>
               );
             })}
           </div>
-
-          <button 
-            onClick={() => setSelectionStep('HERO_SELECT')}
-            className="mt-8 text-gray-500 hover:text-white underline"
-          >
-            Back
-          </button>
         </div>
       )}
 
-      {/* LOADING */}
-      {status === GameStatus.LOADING && (
-        <div className="text-center">
-          <Loader2 size={64} className="text-blue-500 animate-spin mx-auto mb-6" />
-          <h2 className="text-2xl text-white cinzel">Preparing the Battlefield...</h2>
-          <p className="text-gray-400 mt-2">Deploying Forces...</p>
-        </div>
-      )}
-
-      {/* VICTORY / DEFEAT */}
-      {(status === GameStatus.VICTORY || status === GameStatus.DEFEAT) && (
-        <div className="text-center max-w-xl bg-gray-900/90 p-8 rounded-lg border border-gray-700 shadow-2xl">
-          <div className="flex justify-center mb-4">
-            {status === GameStatus.VICTORY ? (
-                <Trophy size={64} className="text-yellow-400" />
-            ) : (
-                <Skull size={64} className="text-red-500" />
-            )}
+      {/* VICTORY SCREEN */}
+      {status === GameStatus.VICTORY && (
+        <div className="text-center max-w-md bg-slate-900/95 border border-amber-500/50 p-8 rounded-2xl shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
+          <div className="inline-flex p-4 rounded-2xl bg-amber-500/10 text-amber-400">
+            <Trophy className="w-12 h-12" />
           </div>
-          
-          <h2 className={`text-5xl font-black cinzel mb-2 ${status === GameStatus.VICTORY ? 'text-yellow-400' : 'text-red-500'}`}>
-            {status === GameStatus.VICTORY ? 'VICTORY' : 'DEFEAT'}
-          </h2>
-          
-          <div className="text-2xl text-white mb-6 font-mono">
-            ENEMIES DEFEATED: <span className="text-blue-400 font-bold">{koCount}</span>
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-amber-300">VICTORY ACHIEVED!</h2>
+            <p className="text-xs text-slate-400">All tactical battlefield objectives completed</p>
           </div>
-          
-          {scenario && (
-             <div className="mb-8 p-4 bg-gray-800 rounded text-sm text-gray-300 italic">
-                "{status === GameStatus.VICTORY ? `The army of ${scenario.bossName} scatters in fear!` : `${scenario.bossName} stands over your fallen form. '${scenario.bossQuote}'`}"
-             </div>
-          )}
 
-          <button 
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <div className="flex justify-between text-slate-300">
+              <span>Battle Scenario:</span>
+              <span className="font-bold text-amber-400">{scenario?.title}</span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span>Enemies Defeated:</span>
+              <span className="font-mono text-emerald-400 font-bold">{koCount} K.O.</span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span>Boss Subdued:</span>
+              <span className="font-bold text-rose-400">{scenario?.bossName}</span>
+            </div>
+          </div>
+
+          <button
             onClick={onRestart}
-            className="px-8 py-3 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors cinzel"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm uppercase tracking-wider transition cursor-pointer"
           >
-            FIGHT AGAIN
+            Return to Campaign Map
           </button>
         </div>
       )}
 
+      {/* DEFEAT SCREEN */}
+      {status === GameStatus.DEFEAT && (
+        <div className="text-center max-w-md bg-slate-900/95 border border-rose-600/50 p-8 rounded-2xl shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
+          <div className="inline-flex p-4 rounded-2xl bg-rose-500/10 text-rose-500">
+            <Skull className="w-12 h-12" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-rose-400">GENERAL DEFEATED</h2>
+            <p className="text-xs text-slate-400">Your forces were overwhelmed in battle</p>
+          </div>
+
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <div className="flex justify-between text-slate-300">
+              <span>Fallen In:</span>
+              <span className="font-bold text-slate-200">{scenario?.title}</span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span>Enemies Vanquished:</span>
+              <span className="font-mono text-amber-400 font-bold">{koCount} K.O.</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onRestart}
+            className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm uppercase tracking-wider transition cursor-pointer"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
     </div>
   );
 };
