@@ -399,18 +399,20 @@ export const drawEntity = (
   const idleBob = Math.sin(time * 2) * (1.5 * scale);
   const bodyTop = -32 * scale + bounce + idleBob;
   const isAttacking = entity.attackProgress > 0;
-
-  // Animated Marching Feet / Legs
-  const legSwing = Math.sin(entity.walkFrame * 2) * (5 * scale);
-  const legLift = Math.abs(Math.cos(entity.walkFrame * 2)) * (3 * scale);
-  ctx.fillStyle = isPlayer ? '#0f172a' : isAllied ? '#075985' : '#1e293b';
-  ctx.fillRect(-6 * scale + legSwing, bodyTop + 18 * scale - (legSwing > 0 ? legLift : 0), 4 * scale, 9 * scale);
-  ctx.fillRect(2 * scale - legSwing, bodyTop + 18 * scale - (legSwing < 0 ? legLift : 0), 4 * scale, 9 * scale);
-
   // Character body rendered in facing-direction context
   ctx.save();
   const facingX = Math.cos(entity.facing);
   ctx.scale(facingX > 0 ? 1 : -1, 1);
+
+  // Animated Marching Feet / Boots (only when alive)
+  if (!entity.isDead) {
+    const isMoving = Math.hypot(entity.velocity.x, entity.velocity.y) > 0.15;
+    const legSwing = isMoving ? Math.sin(entity.walkFrame * 2.5) * (4 * scale) : 0;
+    const legLift = isMoving ? Math.abs(Math.cos(entity.walkFrame * 2.5)) * (2.5 * scale) : 0;
+    ctx.fillStyle = isPlayer ? '#0f172a' : isAllied ? '#075985' : '#1e293b';
+    ctx.fillRect(-5 * scale + legSwing, bodyTop + 19 * scale - (legSwing > 0 ? legLift : 0), 4 * scale, 7 * scale);
+    ctx.fillRect(1 * scale - legSwing, bodyTop + 19 * scale - (legSwing < 0 ? legLift : 0), 4 * scale, 7 * scale);
+  }
 
   // Musou Golden Flame Aura
   if (isPlayer && isMusouActive) {

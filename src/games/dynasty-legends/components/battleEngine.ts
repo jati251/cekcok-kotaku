@@ -459,3 +459,37 @@ export function applyHordeSeparationPhysics(entities: Entity[]) {
     }
   }
 }
+
+export function resolvePropCollisions(entities: Entity[], props: MapProp[]) {
+  for (const e of entities) {
+    if (e.isDead) continue;
+    for (const p of props) {
+      if (p.type === PropType.ROCK) {
+        const dx = e.position.x - p.x;
+        const dy = e.position.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        const minDist = e.radius + 18;
+        if (dist < minDist && dist > 0.001) {
+          const overlap = minDist - dist;
+          e.position.x += (dx / dist) * overlap;
+          e.position.y += (dy / dist) * overlap;
+        }
+      } else if (p.type === PropType.BARRICADE || p.type === PropType.BUILDING) {
+        const halfW = (p.type === PropType.BUILDING ? 45 : 24) + e.radius;
+        const halfH = (p.type === PropType.BUILDING ? 35 : 14) + e.radius;
+        const dx = e.position.x - p.x;
+        const dy = e.position.y - p.y;
+        if (Math.abs(dx) < halfW && Math.abs(dy) < halfH) {
+          const ox = halfW - Math.abs(dx);
+          const oy = halfH - Math.abs(dy);
+          if (ox < oy) {
+            e.position.x += dx > 0 ? ox : -ox;
+          } else {
+            e.position.y += dy > 0 ? oy : -oy;
+          }
+        }
+      }
+    }
+  }
+}
+

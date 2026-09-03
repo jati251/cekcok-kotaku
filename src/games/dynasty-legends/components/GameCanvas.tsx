@@ -31,6 +31,7 @@ import {
   executeEnemyCombat,
   updateDeadEntities,
   applyHordeSeparationPhysics,
+  resolvePropCollisions,
 } from './battleEngine';
 import {
   updateCombatEffects,
@@ -46,7 +47,7 @@ import {
   resolveRankAndWeapon,
 } from './combatActions';
 import { audioEngine } from '../services/audioEngine';
-import { nativeSimulateHorde, isTauriEnvironment } from '../services/rustDynastyBridge';
+import { isTauriEnvironment } from '../services/rustDynastyBridge';
 
 interface GameCanvasProps {
   status: GameStatus;
@@ -350,35 +351,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       }
 
-      // Flocking & Rust Native Acceleration
-      if (isRustActiveRef.current && timeRef.current % 0.032 < 0.017) {
-        const hordeData = entitiesRef.current.map((e) => ({
-          id: e.id,
-          x: e.position.x,
-          y: e.position.y,
-          vx: e.velocity.x,
-          vy: e.velocity.y,
-          radius: e.radius,
-          health: e.health,
-          is_allied: !!e.isAllied,
-          is_dead: !!e.isDead,
-          hit_flash: e.hitFlashTimer || 0,
-          hit_stun: e.hitStunTimer || 0,
-        }));
-        nativeSimulateHorde(hordeData, Constants.WORLD_SIZE).then((resolved) => {
-          if (resolved) {
-            resolved.forEach((re, idx) => {
-              const ent = entitiesRef.current[idx];
-              if (ent && ent.id === re.id) {
-                ent.position.x = re.x;
-                ent.position.y = re.y;
-              }
-            });
-          }
-        });
-      } else {
-        applyHordeSeparationPhysics(entitiesRef.current);
-      }
+      // Unit Separation & Horde Physics
+      applyHordeSeparationPhysics(entitiesRef.current);
+
+      // Solid Collision with Battlefield Obstacles (rocks, barricades, buildings)
+      resolvePropCollisions(entitiesRef.current, propsRef.current);
 
       // Enemy Combat (AI attacks player, deals damage, triggers hit flash & damage numbers)
       if (player) {
