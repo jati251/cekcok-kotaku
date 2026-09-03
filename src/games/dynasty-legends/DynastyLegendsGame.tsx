@@ -38,6 +38,8 @@ export const DynastyLegendsGame: React.FC = () => {
     combo: number;
     comboRank: ComboRank;
     weaponName?: string;
+    liveMinimap?: MinimapData;
+    isRustEngine?: boolean;
   }>({
     hp: Constants.PLAYER_MAX_HP,
     musou: 0,
@@ -120,7 +122,9 @@ export const DynastyLegendsGame: React.FC = () => {
       currentObj?: MissionObjective,
       combo?: number,
       comboRank?: ComboRank,
-      weaponName?: string
+      weaponName?: string,
+      minimap?: MinimapData,
+      isRust?: boolean
     ) => {
       setStats({
         hp,
@@ -132,6 +136,8 @@ export const DynastyLegendsGame: React.FC = () => {
         combo: combo || 0,
         comboRank: comboRank || 'D',
         weaponName,
+        liveMinimap: minimap,
+        isRustEngine: isRust,
       });
     },
     []
@@ -145,7 +151,7 @@ export const DynastyLegendsGame: React.FC = () => {
     setStatus(GameStatus.MENU);
   };
 
-  const minimapData: MinimapData = {
+  const defaultMinimap: MinimapData = {
     playerX: 600,
     playerY: 600,
     worldSize: Constants.WORLD_SIZE,
@@ -207,8 +213,9 @@ export const DynastyLegendsGame: React.FC = () => {
             comboCount={stats.combo}
             comboRank={stats.comboRank}
             weaponName={stats.weaponName}
-            minimapData={minimapData}
+            minimapData={stats.liveMinimap || defaultMinimap}
             announcement={announcement}
+            isRustEngine={stats.isRustEngine}
             onPause={handleTogglePause}
           />
 

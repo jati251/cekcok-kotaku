@@ -1,7 +1,8 @@
-import React from 'react';
-import { Shield, Swords, Zap, Skull, Flag, Flame, Pause, Trophy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Swords, Zap, Skull, Flag, Flame, Pause, Trophy, Volume2, VolumeX } from 'lucide-react';
 import { DifficultyLevel, MissionObjective, TacticalBase, ComboRank, BattleAnnouncement } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { audioEngine } from '../services/audioEngine';
 
 interface GameHUDProps {
   health: number;
@@ -26,6 +27,7 @@ interface GameHUDProps {
   weaponName?: string;
   minimapData?: MinimapData;
   announcement?: BattleAnnouncement | null;
+  isRustEngine?: boolean;
   onPause?: () => void;
 }
 
@@ -79,34 +81,44 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   weaponName,
   minimapData,
   announcement,
+  isRustEngine,
   onPause,
 }) => {
+  const [isMuted, setIsMuted] = useState(audioEngine.getIsMuted());
+
+  const handleToggleSound = () => {
+    const muted = audioEngine.toggleMute();
+    setIsMuted(muted);
+  };
+
   const healthPct = Math.max(0, (health / maxHealth) * 100);
   const musouPct = Math.max(0, (musou / musouMax) * 100);
   const bossHpPct = bossMaxHp && bossHp !== undefined ? Math.max(0, (bossHp / bossMaxHp) * 100) : 0;
 
   const renderMinimap = () => {
     if (!minimapData) return null;
-    const mapSize = 130;
+    const mapSize = 136;
     const { playerX, playerY, worldSize, enemies, bases = [], cameraX, cameraY, viewWidth, viewHeight } =
       minimapData;
     const scale = mapSize / worldSize;
 
     return (
       <div
-        className="relative rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950/85 backdrop-blur-md shadow-2xl"
+        className="relative rounded-xl overflow-hidden border-2 border-slate-700/90 bg-slate-950/90 backdrop-blur-md shadow-2xl"
         style={{ width: mapSize, height: mapSize }}
       >
+        {/* Camera viewport rectangle */}
         <div
-          className="absolute border border-blue-400/50 bg-blue-500/10 pointer-events-none"
+          className="absolute border border-amber-400/60 bg-amber-400/10 pointer-events-none"
           style={{
-            left: (cameraX - viewWidth / 2) * scale,
-            top: (cameraY - viewHeight / 2) * scale,
-            width: viewWidth * scale,
-            height: viewHeight * scale,
+            left: Math.max(0, (cameraX - viewWidth / 2) * scale),
+            top: Math.max(0, (cameraY - viewHeight / 2) * scale),
+            width: Math.min(mapSize, viewWidth * scale),
+            height: Math.min(mapSize, viewHeight * scale),
           }}
         />
 
+        {/* Tactical Bases */}
         {bases.map((base) => {
           const isAllied = base.affiliation === 'ALLIED';
           return (
@@ -125,27 +137,29 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           );
         })}
 
+        {/* Active Enemies */}
         {enemies.map((e, i) => (
           <div
             key={i}
             className={`absolute rounded-full ${
-              e.isBoss ? 'bg-amber-400 w-2.5 h-2.5 z-10 shadow' : 'bg-rose-500 w-1 h-1'
+              e.isBoss ? 'bg-amber-300 w-2.5 h-2.5 z-10 shadow-lg border border-white animate-pulse' : 'bg-rose-500 w-1.5 h-1.5'
             }`}
             style={{
-              left: e.x * scale - (e.isBoss ? 5 : 2),
-              top: e.y * scale - (e.isBoss ? 5 : 2),
+              left: e.x * scale - (e.isBoss ? 5 : 3),
+              top: e.y * scale - (e.isBoss ? 5 : 3),
             }}
           />
         ))}
 
+        {/* Player General Dot */}
         <div
-          className="absolute bg-emerald-400 rounded-full z-20 border border-white"
+          className="absolute bg-emerald-400 rounded-full z-20 border-2 border-white"
           style={{
-            left: playerX * scale - 4,
-            top: playerY * scale - 4,
-            width: 8,
-            height: 8,
-            boxShadow: '0 0 8px rgba(52, 211, 153, 0.9)',
+            left: playerX * scale - 4.5,
+            top: playerY * scale - 4.5,
+            width: 9,
+            height: 9,
+            boxShadow: '0 0 10px rgba(52, 211, 153, 1)',
           }}
         />
       </div>
@@ -163,9 +177,18 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             animate={{ opacity: 1, x: 0 }}
             className="bg-slate-950/85 backdrop-blur-md border-l-4 border-amber-500 px-4 py-2.5 text-white rounded-r-xl shadow-xl border border-slate-800/80"
           >
-            <div className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-              {chapterTitle || 'Campaign Battle'}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">
+                {chapterTitle || 'Campaign Battle'}
+              </span>
+              <div className="flex items-center gap-1.5 text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700">
+                <span className={`w-1.5 h-1.5 rounded-full ${isRustEngine ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400'}`} />
+                <span className={isRustEngine ? 'text-emerald-300 font-bold' : 'text-sky-300'}>
+                  {isRustEngine ? 'RUST ENGINE' : 'JS ENGINE'}
+                </span>
+              </div>
             </div>
+
             <h2 className="text-sm sm:text-base font-bold text-slate-100 truncate tracking-wide">
               {scenarioTitle}
             </h2>
@@ -225,7 +248,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           )}
         </div>
 
-        {/* Right Column: Minimap, KO Count & Pause Button */}
+        {/* Right Column: Minimap, KO Count & Actions */}
         <div className="flex items-start gap-3">
           <div className="hidden sm:block">{renderMinimap()}</div>
 
@@ -248,15 +271,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </div>
             </motion.div>
 
-            {onPause && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={onPause}
-                className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-medium cursor-pointer shadow-lg transition"
+                onClick={handleToggleSound}
+                className="pointer-events-auto p-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow-lg transition"
+                title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               >
-                <Pause className="w-3.5 h-3.5" />
-                <span>Pause [ESC]</span>
+                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
               </button>
-            )}
+
+              {onPause && (
+                <button
+                  onClick={onPause}
+                  className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-medium cursor-pointer shadow-lg transition"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>Pause [ESC]</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -292,7 +325,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Center Combo Meter with Framer Motion Punch Animation */}
+      {/* Center Combo Meter */}
       <AnimatePresence>
         {comboCount > 2 && (
           <motion.div
@@ -363,7 +396,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 transition={{ repeat: Infinity, duration: 0.8 }}
                 className="text-amber-300 font-bold"
               >
-                MUSOU READY! [PRESS SPACE / TAP]
+                MUSOU READY! [SPACE / TAP]
               </motion.span>
             )}
           </div>
@@ -387,6 +420,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             </span>
             <span className="font-mono text-slate-400">
               {Math.ceil(health)} / {maxHealth}
+              <span className="text-slate-500 text-[10px] ml-2">[SHIFT: DASH]</span>
             </span>
           </div>
           <div className="h-4 w-full bg-slate-900 rounded-md border border-slate-700 overflow-hidden shadow-inner">

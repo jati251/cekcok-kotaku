@@ -96,6 +96,28 @@ export interface Entity {
   isAllied?: boolean;
   hitFlashTimer?: number;
   hitStunTimer?: number;
+  dashTimer?: number;
+}
+
+export interface FireZone {
+  x: number;
+  y: number;
+  radius: number;
+  life: number;
+  maxLife: number;
+}
+
+export interface MinimapData {
+  playerX: number;
+  playerY: number;
+  worldSize: number;
+  enemies: { x: number; y: number; isBoss: boolean }[];
+  bases?: TacticalBase[];
+  items: { x: number; y: number }[];
+  cameraX: number;
+  cameraY: number;
+  viewWidth: number;
+  viewHeight: number;
 }
 
 export interface SlashArc {
