@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Swords, Zap, Skull, Flag, Flame } from 'lucide-react';
 import { DifficultyLevel, MissionObjective, TacticalBase, ComboRank } from '../types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface GameHUDProps {
   health: number;
@@ -92,7 +93,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         className="relative rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950/85 backdrop-blur-md shadow-2xl"
         style={{ width: mapSize, height: mapSize }}
       >
-        {/* Camera viewport rect */}
         <div
           className="absolute border border-blue-400/50 bg-blue-500/10 pointer-events-none"
           style={{
@@ -103,7 +103,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           }}
         />
 
-        {/* Bases */}
         {bases.map((base) => {
           const isAllied = base.affiliation === 'ALLIED';
           return (
@@ -122,7 +121,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           );
         })}
 
-        {/* Enemies */}
         {enemies.map((e, i) => (
           <div
             key={i}
@@ -136,7 +134,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           />
         ))}
 
-        {/* Player */}
         <div
           className="absolute bg-emerald-400 rounded-full z-20 border border-white"
           style={{
@@ -153,12 +150,15 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 sm:p-6 select-none font-sans">
-      {/* Top Bar: Scenario info, Morale, and Objectives */}
+      {/* Top Bar */}
       <div className="flex justify-between items-start gap-4">
-        {/* Left Column: Mission info & Objective card */}
         <div className="flex flex-col gap-2.5 max-w-sm sm:max-w-md">
           {/* Scenario Header */}
-          <div className="bg-slate-950/85 backdrop-blur-md border-l-4 border-amber-500 px-4 py-2.5 text-white rounded-r-xl shadow-xl border border-slate-800/80">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-slate-950/85 backdrop-blur-md border-l-4 border-amber-500 px-4 py-2.5 text-white rounded-r-xl shadow-xl border border-slate-800/80"
+          >
             <div className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">
               {chapterTitle || 'Campaign Battle'}
             </div>
@@ -174,7 +174,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 {DIFFICULTY_LABELS[difficulty]}
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Morale Tug-of-War Bar */}
           <div className="bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800/80 shadow-lg">
@@ -187,20 +187,27 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </span>
             </div>
             <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
-              <div
-                className="h-full bg-gradient-to-r from-sky-600 to-sky-400 transition-all duration-300"
-                style={{ width: `${alliedMorale}%` }}
+              <motion.div
+                className="h-full bg-gradient-to-r from-sky-600 to-sky-400"
+                animate={{ width: `${alliedMorale}%` }}
+                transition={{ ease: 'easeInOut', duration: 0.3 }}
               />
-              <div
-                className="h-full bg-gradient-to-l from-rose-600 to-rose-400 transition-all duration-300"
-                style={{ width: `${enemyMorale}%` }}
+              <motion.div
+                className="h-full bg-gradient-to-l from-rose-600 to-rose-400"
+                animate={{ width: `${enemyMorale}%` }}
+                transition={{ ease: 'easeInOut', duration: 0.3 }}
               />
             </div>
           </div>
 
           {/* Current Tactical Objective */}
           {currentObjective && (
-            <div className="bg-slate-950/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-amber-500/40 shadow-lg">
+            <motion.div
+              key={currentObjective.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-slate-950/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-amber-500/40 shadow-lg"
+            >
               <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
                 Current Objective: {currentObjective.title}
               </div>
@@ -210,7 +217,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   Progress: {currentObjective.currentCount} / {currentObjective.targetCount}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -218,7 +225,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         <div className="flex items-start gap-3">
           <div className="hidden sm:block">{renderMinimap()}</div>
 
-          <div className="bg-slate-950/85 backdrop-blur-md px-4 sm:px-6 py-2 rounded-xl border-b-2 border-rose-600 shadow-xl border border-slate-800/80">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-slate-950/85 backdrop-blur-md px-4 sm:px-6 py-2 rounded-xl border-b-2 border-rose-600 shadow-xl border border-slate-800/80"
+          >
             <div className="text-right">
               <div className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">
                 K.O. Count
@@ -230,34 +241,47 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 <div className="text-[10px] text-amber-300/80 font-mono mt-0.5">{weaponName}</div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Center Combo Meter */}
-      {comboCount > 2 && (
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 pointer-events-none animate-in fade-in zoom-in-75 duration-200">
-          <div className="flex flex-col items-start">
-            <div
-              className="text-4xl sm:text-6xl font-black italic tracking-tighter drop-shadow-2xl"
-              style={{ color: comboRankColor }}
-            >
-              {comboCount}
-              <span className="text-lg sm:text-2xl not-italic ml-1">HITS!</span>
+      {/* Center Combo Meter with Framer Motion Punch Animation */}
+      <AnimatePresence>
+        {comboCount > 2 && (
+          <motion.div
+            key={comboCount}
+            initial={{ scale: 1.35, y: -8, opacity: 0.9 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+            className="absolute left-8 top-1/2 -translate-y-1/2 pointer-events-none"
+          >
+            <div className="flex flex-col items-start">
+              <div
+                className="text-4xl sm:text-6xl font-black italic tracking-tighter drop-shadow-2xl"
+                style={{ color: comboRankColor }}
+              >
+                {comboCount}
+                <span className="text-lg sm:text-2xl not-italic ml-1">HITS!</span>
+              </div>
+              <div
+                className="text-xs sm:text-sm font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/60 border border-slate-800"
+                style={{ color: comboRankColor }}
+              >
+                {comboRank} {comboRankLabel ? `· ${comboRankLabel}` : ''}
+              </div>
             </div>
-            <div
-              className="text-xs sm:text-sm font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/60 border border-slate-800"
-              style={{ color: comboRankColor }}
-            >
-              {comboRank} {comboRankLabel ? `· ${comboRankLabel}` : ''}
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Boss Health Bar */}
       {bossMaxHp && bossHp !== undefined && bossHp > 0 && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-80 sm:w-96 z-10 animate-in fade-in slide-in-from-top-4 duration-300">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-20 left-1/2 -translate-x-1/2 w-80 sm:w-96 z-10"
+        >
           <div className="bg-slate-950/90 backdrop-blur-md border border-rose-600/70 rounded-xl p-3 shadow-2xl">
             <div className="flex justify-between text-xs text-rose-400 mb-1 font-bold">
               <span className="tracking-wide flex items-center gap-1.5">
@@ -269,42 +293,46 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </span>
             </div>
             <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-rose-900/50">
-              <div
-                className="h-full bg-gradient-to-r from-rose-600 via-amber-500 to-yellow-400 transition-all duration-200"
-                style={{ width: `${bossHpPct}%` }}
+              <motion.div
+                className="h-full bg-gradient-to-r from-rose-600 via-amber-500 to-yellow-400"
+                animate={{ width: `${bossHpPct}%` }}
+                transition={{ ease: 'easeOut', duration: 0.2 }}
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Bottom Bar: Player Health, Musou, and Controls Tip */}
       <div className="flex flex-col gap-2 w-full max-w-md bg-slate-950/85 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800/80 shadow-2xl">
-        {/* Spirit / Musou Gauge */}
         <div className="relative">
           <div className="flex justify-between text-[11px] font-bold text-amber-400 mb-1 uppercase tracking-wider">
             <span className="flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 fill-current" /> Musou Spirit
             </span>
             {musou >= musouMax && (
-              <span className="animate-pulse text-amber-300 font-bold">
+              <motion.span
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 0.8 }}
+                className="text-amber-300 font-bold"
+              >
                 MUSOU READY! [PRESS SPACE / TAP]
-              </span>
+              </motion.span>
             )}
           </div>
           <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 relative shadow-inner">
-            <div
-              className={`h-full transition-all duration-100 ${
+            <motion.div
+              className={`h-full ${
                 isMusouActive
                   ? 'bg-white animate-pulse'
                   : 'bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-300'
               }`}
-              style={{ width: `${musouPct}%` }}
+              animate={{ width: `${musouPct}%` }}
+              transition={{ ease: 'easeOut', duration: 0.15 }}
             />
           </div>
         </div>
 
-        {/* Health Bar */}
         <div>
           <div className="flex items-center justify-between text-[11px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">
             <span className="flex items-center gap-1">
@@ -315,13 +343,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             </span>
           </div>
           <div className="h-4 w-full bg-slate-900 rounded-md border border-slate-700 overflow-hidden shadow-inner">
-            <div
-              className={`h-full transition-all duration-300 ${
+            <motion.div
+              className={`h-full ${
                 healthPct < 25
                   ? 'bg-rose-600 animate-pulse'
                   : 'bg-gradient-to-r from-emerald-600 to-emerald-400'
               }`}
-              style={{ width: `${healthPct}%` }}
+              animate={{ width: `${healthPct}%` }}
+              transition={{ ease: 'easeOut', duration: 0.2 }}
             />
           </div>
         </div>

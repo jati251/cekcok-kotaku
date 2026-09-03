@@ -82,6 +82,19 @@ export interface Entity {
   attackProgress: number;
   weaponLevel: number;
   isAllied?: boolean;
+  hitFlashTimer?: number;
+  hitStunTimer?: number;
+}
+
+export interface SlashArc {
+  x: number;
+  y: number;
+  angle: number;
+  radius: number;
+  arcLength: number;
+  color: string;
+  life: number;
+  maxLife: number;
 }
 
 export interface Projectile {

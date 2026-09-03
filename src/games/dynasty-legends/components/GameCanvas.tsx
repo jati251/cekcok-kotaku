@@ -2,12 +2,12 @@ import React, { useRef, useEffect } from 'react';
 import {
   Entity,
   EntityType,
+  Particle,
   DamageText,
   GameStatus,
   Vector2,
   MapProp,
   Item,
-  ItemType,
   HeroType,
   MobileInputState,
   DifficultyLevel,
@@ -15,18 +15,11 @@ import {
   TacticalBase,
   BaseAffiliation,
   Shockwave,
+  SlashArc,
   ComboRank,
   MissionObjective,
 } from '../types';
 import * as Constants from '../constants';
-import {
-  ZOOM_LEVEL,
-  drawEntity,
-  drawProp,
-  drawItem,
-  drawTacticalBase,
-  drawShockwave,
-} from './renderHelpers';
 import {
   createPlayerEntity,
   spawnAlliedSoldier,
@@ -38,7 +31,13 @@ import {
   calculateArmyMorale,
   executePlayerAttack,
   executeMusouBlast,
+  applyHordeSeparationPhysics,
 } from './battleEngine';
+import {
+  updateCombatEffects,
+  handleItemPickups,
+  renderBattlefieldScene,
+} from './combatEffects';
 
 interface GameCanvasProps {
   status: GameStatus;
@@ -74,6 +73,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const playerRef = useRef<Entity | null>(null);
   const entitiesRef = useRef<Entity[]>([]);
   const propsRef = useRef<MapProp[]>([]);
+  const particlesRef = useRef<Particle[]>([]);
+  const slashesRef = useRef<SlashArc[]>([]);
   const shockwavesRef = useRef<Shockwave[]>([]);
   const damageTextsRef = useRef<DamageText[]>([]);
   const itemsRef = useRef<Item[]>([]);
@@ -82,6 +83,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   const keysRef = useRef<{ [key: string]: boolean }>({});
   const cameraRef = useRef<Vector2>({ x: 600, y: 600 });
+  const screenShakeRef = useRef({ intensity: 0, duration: 0 });
   const timeRef = useRef(0);
   const waveTimerRef = useRef(0);
   const isMusouActiveRef = useRef(false);
@@ -129,6 +131,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
     }
 
+    particlesRef.current = [];
+    slashesRef.current = [];
+    shockwavesRef.current = [];
     musouGaugeRef.current = 0;
     koCountRef.current = 0;
     bossSpawnedRef.current = false;
@@ -180,11 +185,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       isMusouActiveRef.current,
       objectivesRef.current,
       damageTextsRef.current,
+      particlesRef.current,
+      slashesRef.current,
       itemsRef.current,
       scenario.bossName
     );
 
     if (res.hitCount > 0) {
+      screenShakeRef.current = { intensity: 4, duration: 5 };
       comboCountRef.current += res.hitCount;
       comboTimerRef.current = 120;
       if (!isMusouActiveRef.current) {
@@ -202,10 +210,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const triggerMusou = () => {
     if (musouGaugeRef.current < Constants.MUSOU_GAUGE_MAX || isMusouActiveRef.current) return;
     isMusouActiveRef.current = true;
+    screenShakeRef.current = { intensity: 14, duration: 18 };
 
     const player = playerRef.current;
     if (player) {
-      const kills = executeMusouBlast(player, entitiesRef.current, shockwavesRef.current);
+      const kills = executeMusouBlast(player, entitiesRef.current, shockwavesRef.current, particlesRef.current);
       koCountRef.current += kills;
       if (kills > 0) {
         const won = updateObjectiveProgress(objectivesRef.current, 'kill_count', kills);
@@ -229,6 +238,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       timeRef.current += 0.016;
       const player = playerRef.current;
 
+      // Handle screen shake
+      if (screenShakeRef.current.duration > 0) {
+        screenShakeRef.current.duration--;
+      }
+
+      // Handle Player Movement with momentum
       if (player && !player.isDead) {
         let mx = 0;
         let my = 0;
@@ -245,15 +260,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
 
         const heroCfg = Constants.HERO_STATS[player.heroType || HeroType.GUAN_YU];
-        const speed = heroCfg.speed * (isMusouActiveRef.current ? 1.3 : 1.0);
+        const maxSpeed = heroCfg.speed * (isMusouActiveRef.current ? 1.3 : 1.0);
 
         if (mx !== 0 || my !== 0) {
           const len = Math.hypot(mx, my);
-          player.position.x = Math.max(100, Math.min(Constants.WORLD_SIZE - 100, player.position.x + (mx / len) * speed));
-          player.position.y = Math.max(100, Math.min(Constants.WORLD_SIZE - 100, player.position.y + (my / len) * speed));
+          player.velocity.x += (mx / len) * 0.9;
+          player.velocity.y += (my / len) * 0.9;
           player.facing = Math.atan2(my, mx);
           player.walkFrame += 0.2;
         }
+
+        // Apply friction & speed clamp
+        player.velocity.x *= 0.82;
+        player.velocity.y *= 0.82;
+        const currentSpeed = Math.hypot(player.velocity.x, player.velocity.y);
+        if (currentSpeed > maxSpeed) {
+          player.velocity.x = (player.velocity.x / currentSpeed) * maxSpeed;
+          player.velocity.y = (player.velocity.y / currentSpeed) * maxSpeed;
+        }
+
+        player.position.x = Math.max(100, Math.min(Constants.WORLD_SIZE - 100, player.position.x + player.velocity.x));
+        player.position.y = Math.max(100, Math.min(Constants.WORLD_SIZE - 100, player.position.y + player.velocity.y));
 
         if (player.attackCooldown > 0) player.attackCooldown--;
         if (player.attackProgress > 0) player.attackProgress = Math.max(0, player.attackProgress - 0.1);
@@ -275,6 +302,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (comboTimerRef.current <= 0) comboCountRef.current = 0;
       }
 
+      // Base Captures Check
       for (const base of basesRef.current) {
         if (base.affiliation === BaseAffiliation.ENEMY && player) {
           if (Math.hypot(player.position.x - base.x, player.position.y - base.y) < base.radius) {
@@ -289,12 +317,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       }
 
+      // Boss Spawn Check
       if (!bossSpawnedRef.current && (koCountRef.current >= 25 || objectivesRef.current[0]?.completed)) {
         bossSpawnedRef.current = true;
         const citadel = basesRef.current.find((b) => b.id === 'base_citadel') || { x: 2800, y: 2800 };
         entitiesRef.current.push(spawnBossEntity('boss', scenario.bossName, citadel, selectedDifficulty));
       }
 
+      // Wave Spawns
       waveTimerRef.current++;
       if (waveTimerRef.current > Constants.WAVE_INTERVAL && entitiesRef.current.length < Constants.MAX_ENEMIES) {
         waveTimerRef.current = 0;
@@ -312,8 +342,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       }
 
+      // Apply Enemy Flock Separation Physics
+      applyHordeSeparationPhysics(entitiesRef.current);
+
+      // Enemy & Ally Movement & Knockback Deceleration
       for (const e of entitiesRef.current) {
         if (e.isDead || e.type === EntityType.PLAYER) continue;
+
+        // Apply knockback velocity & friction
+        e.position.x += e.velocity.x;
+        e.position.y += e.velocity.y;
+        e.velocity.x *= 0.82;
+        e.velocity.y *= 0.82;
+
+        if (e.hitFlashTimer && e.hitFlashTimer > 0) e.hitFlashTimer--;
+        if (e.hitStunTimer && e.hitStunTimer > 0) {
+          e.hitStunTimer--;
+          continue; // Stunned enemies cannot move or attack!
+        }
+
         const target = player;
         if (target && !e.isAllied) {
           const dx = target.position.x - e.position.x;
@@ -339,27 +386,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (e.attackProgress > 0) e.attackProgress -= 0.1;
       }
 
-      for (const sw of shockwavesRef.current) {
-        sw.life++;
-        sw.radius += (sw.maxRadius - sw.radius) * 0.15;
-      }
-      shockwavesRef.current = shockwavesRef.current.filter((sw) => sw.life < sw.maxLife);
+      // Update Particles, Blade Slashes, Shockwaves & Items
+      const effects = updateCombatEffects(particlesRef.current, slashesRef.current, shockwavesRef.current);
+      particlesRef.current = effects.activeParticles;
+      slashesRef.current = effects.activeSlashes;
+      shockwavesRef.current = effects.activeShockwaves;
 
       if (player && !player.isDead) {
-        itemsRef.current = itemsRef.current.filter((item) => {
-          if (Math.hypot(item.x - player.position.x, item.y - player.position.y) < 35) {
-            if (item.type === ItemType.HEALTH_BUN) {
-              player.health = Math.min(player.maxHealth, player.health + Constants.ITEM_HEAL_AMOUNT);
-            } else if (item.type === ItemType.WINE_MUSOU) {
-              musouGaugeRef.current = Constants.MUSOU_GAUGE_MAX;
-            }
-            return false;
-          }
-          item.bouncePhase += 0.08;
-          return true;
+        itemsRef.current = handleItemPickups(player, itemsRef.current, () => {
+          musouGaugeRef.current = Constants.MUSOU_GAUGE_MAX;
         });
       }
 
+      // Morale, Objectives, and Weapon Stats
       const morale = calculateArmyMorale(basesRef.current, koCountRef.current);
       let rank: ComboRank = 'D';
       for (const r of Constants.COMBO_RANKS) {
@@ -388,46 +427,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         activeWeapon
       );
 
+      // --- RENDERING PASS ---
       ctx.fillStyle = Constants.MAP_THEMES[scenario.mapTheme].groundBase;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const camX = cameraRef.current.x;
-      const camY = cameraRef.current.y;
-      const halfW = canvas.width / 2;
-      const halfH = canvas.height / 2;
-
-      for (const base of basesRef.current) {
-        drawTacticalBase(ctx, base, camX, camY);
+      let shakeX = 0;
+      let shakeY = 0;
+      if (screenShakeRef.current.duration > 0) {
+        shakeX = (Math.random() - 0.5) * screenShakeRef.current.intensity;
+        shakeY = (Math.random() - 0.5) * screenShakeRef.current.intensity;
       }
 
-      const theme = Constants.MAP_THEMES[scenario.mapTheme];
-      for (const prop of propsRef.current) {
-        const sx = (prop.x - camX) * ZOOM_LEVEL + halfW;
-        const sy = (prop.y - camY) * ZOOM_LEVEL + halfH;
-        if (sx < -100 || sx > canvas.width + 100 || sy < -100 || sy > canvas.height + 100) continue;
-        drawProp(ctx, prop, { x: sx, y: sy }, theme, timeRef.current);
-      }
+      const camX = cameraRef.current.x + shakeX;
+      const camY = cameraRef.current.y + shakeY;
 
-      for (const item of itemsRef.current) {
-        const sx = (item.x - camX) * ZOOM_LEVEL + halfW;
-        const sy = (item.y - camY) * ZOOM_LEVEL + halfH;
-        drawItem(ctx, item, { x: sx, y: sy });
-      }
-
-      const sorted = [...entitiesRef.current].sort((a, b) => a.position.y - b.position.y);
-      for (const e of sorted) {
-        const sx = (e.position.x - camX) * ZOOM_LEVEL + halfW;
-        const sy = (e.position.y - camY) * ZOOM_LEVEL + halfH;
-        if (sx < -100 || sx > canvas.width + 100 || sy < -100 || sy > canvas.height + 100) continue;
-        drawEntity(ctx, e, { x: sx, y: sy }, timeRef.current, isMusouActiveRef.current);
-      }
-
-      for (const sw of shockwavesRef.current) {
-        drawShockwave(ctx, sw, camX, camY);
-      }
-
-      ctx.fillStyle = theme.fogColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      renderBattlefieldScene(
+        ctx,
+        camX,
+        camY,
+        basesRef.current,
+        propsRef.current,
+        itemsRef.current,
+        entitiesRef.current,
+        slashesRef.current,
+        particlesRef.current,
+        shockwavesRef.current,
+        scenario.mapTheme,
+        timeRef.current,
+        isMusouActiveRef.current
+      );
 
       animId = requestAnimationFrame(loop);
     };

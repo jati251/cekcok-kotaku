@@ -11,6 +11,8 @@ import {
   TacticalBase,
   BaseAffiliation,
   Shockwave,
+  SlashArc,
+  Particle,
 } from '../types';
 import * as Constants from '../constants';
 import {
@@ -32,6 +34,43 @@ export const LABEL_COLORS: Record<string, string> = {
   boss: '#fbbf24',
 };
 
+export const drawSlashArc = (
+  ctx: CanvasRenderingContext2D,
+  slash: SlashArc,
+  camX: number,
+  camY: number
+) => {
+  const sx = (slash.x - camX) * ZOOM_LEVEL + ctx.canvas.width / 2;
+  const sy = (slash.y - camY) * ZOOM_LEVEL + ctx.canvas.height / 2;
+  const alpha = Math.max(0, 1 - slash.life / slash.maxLife);
+  const r = slash.radius * ZOOM_LEVEL;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.rotate(slash.angle);
+  ctx.globalAlpha = alpha;
+
+  const startAngle = -slash.arcLength / 2;
+  const endAngle = slash.arcLength / 2;
+
+  // Luminous blade crescent trail
+  ctx.strokeStyle = slash.color;
+  ctx.lineWidth = 14 * (1 - slash.life / slash.maxLife);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, 0, r, startAngle, endAngle);
+  ctx.stroke();
+
+  // Inner white hot cut line
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4 * (1 - slash.life / slash.maxLife);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, startAngle, endAngle);
+  ctx.stroke();
+
+  ctx.restore();
+};
+
 export const drawShockwave = (ctx: CanvasRenderingContext2D, sw: Shockwave, camX: number, camY: number) => {
   const sx = (sw.x - camX) * ZOOM_LEVEL + ctx.canvas.width / 2;
   const sy = (sw.y - camY) * ZOOM_LEVEL + ctx.canvas.height / 2;
@@ -41,10 +80,29 @@ export const drawShockwave = (ctx: CanvasRenderingContext2D, sw: Shockwave, camX
   ctx.save();
   ctx.strokeStyle = sw.color;
   ctx.globalAlpha = alpha;
-  ctx.lineWidth = 4 * (1 - sw.life / sw.maxLife);
+  ctx.lineWidth = 5 * (1 - sw.life / sw.maxLife);
   ctx.beginPath();
   ctx.arc(sx, sy, r, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
+};
+
+export const drawParticle = (
+  ctx: CanvasRenderingContext2D,
+  p: Particle,
+  camX: number,
+  camY: number
+) => {
+  const sx = (p.x - camX) * ZOOM_LEVEL + ctx.canvas.width / 2;
+  const sy = (p.y - camY) * ZOOM_LEVEL + ctx.canvas.height / 2;
+  const alpha = Math.max(0, p.life / p.maxLife);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = p.color;
+  ctx.beginPath();
+  ctx.arc(sx, sy, p.size * ZOOM_LEVEL, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 };
 
@@ -62,7 +120,6 @@ export const drawTacticalBase = (
   const ringColor = isAllied ? '#38bdf8' : '#ef4444';
   const fillColor = isAllied ? 'rgba(56, 189, 248, 0.08)' : 'rgba(239, 68, 68, 0.08)';
 
-  // Territory Zone
   ctx.save();
   ctx.fillStyle = fillColor;
   ctx.beginPath();
@@ -77,7 +134,6 @@ export const drawTacticalBase = (
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Base Center Fort
   ctx.fillStyle = '#1e293b';
   ctx.beginPath();
   ctx.arc(sx, sy, 30 * ZOOM_LEVEL, 0, Math.PI * 2);
@@ -86,11 +142,9 @@ export const drawTacticalBase = (
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Flag Pole
   ctx.fillStyle = '#94a3b8';
   ctx.fillRect(sx - 2, sy - 40 * ZOOM_LEVEL, 4, 40 * ZOOM_LEVEL);
 
-  // Banner
   ctx.fillStyle = ringColor;
   ctx.beginPath();
   ctx.moveTo(sx + 2, sy - 40 * ZOOM_LEVEL);
@@ -99,7 +153,6 @@ export const drawTacticalBase = (
   ctx.closePath();
   ctx.fill();
 
-  // Base Name & HP Bar
   ctx.fillStyle = '#f8fafc';
   ctx.font = 'bold 11px system-ui, sans-serif';
   ctx.textAlign = 'center';
@@ -321,6 +374,13 @@ export const drawEntity = (
   ctx.save();
   ctx.translate(pos.x, pos.y);
 
+  // Hit Flinch & Flash Effect
+  const isHitFlashing = entity.hitFlashTimer && entity.hitFlashTimer > 0;
+  if (isHitFlashing) {
+    ctx.filter = 'brightness(2.4) contrast(1.4)';
+    ctx.rotate(Math.sin(time * 40) * 0.15); // Hit shudder vibration
+  }
+
   // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.35)';
   ctx.beginPath();
@@ -329,7 +389,7 @@ export const drawEntity = (
 
   if (entity.isDead) {
     ctx.globalAlpha = Math.max(0, entity.deathTimer / 4);
-    ctx.rotate(Math.PI / 2);
+    ctx.rotate(Math.PI / 2 + (entity.velocity.x || 0) * 0.05);
     ctx.translate(15 * scale, 0);
   }
 

@@ -14,6 +14,8 @@ import {
   DifficultyLevel,
   DamageText,
   Shockwave,
+  Particle,
+  SlashArc,
 } from '../types';
 import * as Constants from '../constants';
 
@@ -289,6 +291,8 @@ export function executePlayerAttack(
   isMusou: boolean,
   objectives: MissionObjective[],
   damageTexts: DamageText[],
+  particles: Particle[],
+  slashes: SlashArc[],
   items: Item[],
   bossName: string
 ): { hitCount: number; newKoCount: number; won: boolean } {
@@ -298,23 +302,62 @@ export function executePlayerAttack(
     if (koCount >= t.kills) activeTier = t;
   }
 
+  const heroStats = Constants.HERO_STATS[player.heroType || HeroType.GUAN_YU];
   const reach = activeTier.range;
   const dmg = activeTier.damage * (isMusou ? 2.2 : 1.0);
   let hitCount = 0;
   let currentKo = koCount;
   let won = false;
 
+  // Spawn visual blade slash arc trail
+  slashes.push({
+    x: player.position.x,
+    y: player.position.y,
+    angle: player.facing,
+    radius: reach * 0.8,
+    arcLength: Math.PI * 0.9,
+    color: heroStats.accentColor,
+    life: 0,
+    maxLife: 10,
+  });
+
   for (const e of entities) {
     if (e.isAllied || e.isDead) continue;
-    const dist = Math.hypot(e.position.x - player.position.x, e.position.y - player.position.y);
+    const dx = e.position.x - player.position.x;
+    const dy = e.position.y - player.position.y;
+    const dist = Math.hypot(dx, dy);
 
     if (dist < reach + e.radius) {
       e.health -= dmg;
       hitCount++;
 
+      // Hit reaction: Flinch, Flash, Knockback Physics
+      const impactAngle = Math.atan2(dy, dx);
+      const knockback = (isMusou ? 14 : 7) / (e.type === EntityType.BOSS ? 3 : 1);
+      e.velocity.x += Math.cos(impactAngle) * knockback;
+      e.velocity.y += Math.sin(impactAngle) * knockback;
+      e.hitFlashTimer = 6;
+      e.hitStunTimer = 12;
+
+      // Spawn Sparks & Blood Particles
+      for (let i = 0; i < 4; i++) {
+        const pAngle = impactAngle + (Math.random() - 0.5) * 1.5;
+        const pSpeed = 3 + Math.random() * 5;
+        particles.push({
+          x: e.position.x,
+          y: e.position.y,
+          vx: Math.cos(pAngle) * pSpeed,
+          vy: Math.sin(pAngle) * pSpeed,
+          color: Math.random() < 0.6 ? '#fbbf24' : '#ef4444',
+          size: 2 + Math.random() * 3,
+          life: 14 + Math.random() * 10,
+          maxLife: 24,
+        });
+      }
+
       damageTexts.push({
         x: e.position.x,
-        y: e.position.y - 15,
+        y: e.position.y - 18,
         text: Math.round(dmg).toString(),
         life: 30,
         color: isMusou ? Constants.COLORS.TEXT_CRIT : Constants.COLORS.TEXT_DAMAGE,
@@ -323,6 +366,8 @@ export function executePlayerAttack(
       if (e.health <= 0) {
         e.isDead = true;
         e.deathTimer = 1.0;
+        e.velocity.x += Math.cos(impactAngle) * 12;
+        e.velocity.y += Math.sin(impactAngle) * 12;
         currentKo++;
 
         const isObjectiveWon = updateObjectiveProgress(objectives, 'kill_count', 1);
@@ -351,23 +396,47 @@ export function executePlayerAttack(
 export function executeMusouBlast(
   player: Entity,
   entities: Entity[],
-  shockwaves: Shockwave[]
+  shockwaves: Shockwave[],
+  particles: Particle[]
 ): number {
   shockwaves.push({
     x: player.position.x,
     y: player.position.y,
     radius: 20,
-    maxRadius: 280,
+    maxRadius: 300,
     color: '#fbbf24',
     life: 0,
     maxLife: 40,
   });
 
+  // Massive radial sparks
+  for (let i = 0; i < 24; i++) {
+    const angle = (i / 24) * Math.PI * 2;
+    const speed = 5 + Math.random() * 6;
+    particles.push({
+      x: player.position.x,
+      y: player.position.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: '#fef08a',
+      size: 3 + Math.random() * 3,
+      life: 25,
+      maxLife: 25,
+    });
+  }
+
   let kills = 0;
   for (const e of entities) {
     if (e.isAllied || e.isDead) continue;
-    if (Math.hypot(e.position.x - player.position.x, e.position.y - player.position.y) < 280) {
-      e.health -= 120;
+    const dist = Math.hypot(e.position.x - player.position.x, e.position.y - player.position.y);
+    if (dist < 300) {
+      e.health -= 140;
+      const angle = Math.atan2(e.position.y - player.position.y, e.position.x - player.position.x);
+      e.velocity.x += Math.cos(angle) * 16;
+      e.velocity.y += Math.sin(angle) * 16;
+      e.hitFlashTimer = 10;
+      e.hitStunTimer = 20;
+
       if (e.health <= 0) {
         e.isDead = true;
         kills++;
@@ -375,4 +444,33 @@ export function executeMusouBlast(
     }
   }
   return kills;
+}
+
+export function applyHordeSeparationPhysics(entities: Entity[]) {
+  const len = entities.length;
+  for (let i = 0; i < len; i++) {
+    const e1 = entities[i];
+    if (e1.isDead) continue;
+
+    for (let j = i + 1; j < len; j++) {
+      const e2 = entities[j];
+      if (e2.isDead) continue;
+
+      const dx = e2.position.x - e1.position.x;
+      const dy = e2.position.y - e1.position.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = e1.radius + e2.radius;
+
+      if (dist < minDist && dist > 0.001) {
+        const overlap = (minDist - dist) * 0.25;
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        e1.position.x -= nx * overlap;
+        e1.position.y -= ny * overlap;
+        e2.position.x += nx * overlap;
+        e2.position.y += ny * overlap;
+      }
+    }
+  }
 }
