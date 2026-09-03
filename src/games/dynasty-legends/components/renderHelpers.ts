@@ -21,6 +21,7 @@ import {
   drawHeroLuBu,
   drawHeroLuXun,
 } from './heroRenderers';
+import { drawEnemyUnit } from './enemyRenderers';
 
 export const ZOOM_LEVEL = 2.0;
 
@@ -368,7 +369,6 @@ export const drawEntity = (
   const isPlayer = entity.type === EntityType.PLAYER;
   const isAllied = entity.isAllied || entity.type === EntityType.ALLIED_SOLDIER;
   const isBoss = entity.type === EntityType.BOSS;
-  const isArcher = entity.type === EntityType.ENEMY_ARCHER;
   const scale = ZOOM_LEVEL;
 
   ctx.save();
@@ -388,9 +388,11 @@ export const drawEntity = (
   ctx.fill();
 
   if (entity.isDead) {
-    ctx.globalAlpha = Math.max(0, entity.deathTimer / 4);
-    ctx.rotate(Math.PI / 2 + (entity.velocity.x || 0) * 0.05);
-    ctx.translate(15 * scale, 0);
+    const progress = Math.max(0, entity.deathTimer / 45);
+    ctx.globalAlpha = progress;
+    // Dramatic airborne tumble and spin as entity flies back
+    ctx.rotate((1 - progress) * Math.PI * 1.5);
+    ctx.scale(Math.max(0.2, progress), Math.max(0.2, progress));
   }
 
   const facingX = Math.cos(entity.facing);
@@ -426,30 +428,44 @@ export const drawEntity = (
     }
   } else if (isBoss) {
     drawHeroLuBu(ctx, scale, bodyTop, isAttacking, entity.attackProgress);
-  } else {
-    const armorColor = isAllied ? '#0284c7' : isArcher ? '#ea580c' : '#dc2626';
-    ctx.fillStyle = armorColor;
+  } else if (isAllied) {
+    ctx.fillStyle = '#0284c7';
     ctx.fillRect(-7 * scale, bodyTop, 14 * scale, 20 * scale);
-
     ctx.fillStyle = '#ffedd5';
     ctx.beginPath();
     ctx.arc(0, bodyTop - 10 * scale, 6.5 * scale, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = isAllied ? '#0369a1' : '#991b1b';
+    ctx.fillStyle = '#0369a1';
     ctx.fillRect(-6 * scale, bodyTop - 16 * scale, 12 * scale, 6 * scale);
-
     ctx.fillStyle = '#cbd5e1';
     ctx.fillRect(7 * scale, bodyTop + 2 * scale, 2 * scale, 22 * scale);
+  } else {
+    drawEnemyUnit(ctx, entity, scale, bodyTop, time);
   }
 
-  // Health Bar for Officers / Boss
-  if (isBoss || isPlayer) {
-    const barW = isBoss ? 50 * scale : 40 * scale;
-    const hpPct = Math.max(0, entity.health / entity.maxHealth);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-barW / 2, bodyTop - 28 * scale, barW, 5);
-    ctx.fillStyle = isPlayer ? '#38bdf8' : '#ef4444';
-    ctx.fillRect(-barW / 2, bodyTop - 28 * scale, barW * hpPct, 5);
+  // Health Bars for all active combatants
+  if (!entity.isDead) {
+    const isOfficerOrBoss = isBoss || entity.type === EntityType.ENEMY_CAPTAIN;
+    const barW = (isBoss ? 48 : isOfficerOrBoss ? 34 : 22) * scale;
+    const barH = isOfficerOrBoss ? 4.5 : 3;
+    const hpPct = Math.max(0, Math.min(1, entity.health / entity.maxHealth));
+    const barY = bodyTop - (isOfficerOrBoss ? 26 : 14) * scale;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillRect(-barW / 2 - 1, barY - 1, barW + 2, barH + 2);
+
+    const hpColor = isPlayer
+      ? '#38bdf8'
+      : isAllied
+      ? '#0ea5e9'
+      : hpPct > 0.5
+      ? '#22c55e'
+      : hpPct > 0.25
+      ? '#eab308'
+      : '#ef4444';
+
+    ctx.fillStyle = hpColor;
+    ctx.fillRect(-barW / 2, barY, barW * hpPct, barH);
   }
 
   ctx.restore();

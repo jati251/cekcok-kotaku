@@ -1,6 +1,6 @@
 import React from 'react';
-import { Shield, Swords, Zap, Skull, Flag, Flame } from 'lucide-react';
-import { DifficultyLevel, MissionObjective, TacticalBase, ComboRank } from '../types';
+import { Shield, Swords, Zap, Skull, Flag, Flame, Pause, Trophy } from 'lucide-react';
+import { DifficultyLevel, MissionObjective, TacticalBase, ComboRank, BattleAnnouncement } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface GameHUDProps {
@@ -25,6 +25,8 @@ interface GameHUDProps {
   comboRankColor?: string;
   weaponName?: string;
   minimapData?: MinimapData;
+  announcement?: BattleAnnouncement | null;
+  onPause?: () => void;
 }
 
 export interface MinimapData {
@@ -76,6 +78,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   comboRankColor = '#94a3b8',
   weaponName,
   minimapData,
+  announcement,
+  onPause,
 }) => {
   const healthPct = Math.max(0, (health / maxHealth) * 100);
   const musouPct = Math.max(0, (musou / musouMax) * 100);
@@ -221,29 +225,72 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           )}
         </div>
 
-        {/* Right Column: Minimap & KO Count */}
+        {/* Right Column: Minimap, KO Count & Pause Button */}
         <div className="flex items-start gap-3">
           <div className="hidden sm:block">{renderMinimap()}</div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-950/85 backdrop-blur-md px-4 sm:px-6 py-2 rounded-xl border-b-2 border-rose-600 shadow-xl border border-slate-800/80"
-          >
-            <div className="text-right">
-              <div className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">
-                K.O. Count
+          <div className="flex flex-col gap-2 items-end">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-slate-950/85 backdrop-blur-md px-4 sm:px-6 py-2 rounded-xl border-b-2 border-rose-600 shadow-xl border border-slate-800/80"
+            >
+              <div className="text-right">
+                <div className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">
+                  K.O. Count
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2 justify-end">
+                  {koCount} <Skull className="text-rose-500 w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                {weaponName && (
+                  <div className="text-[10px] text-amber-300/80 font-mono mt-0.5">{weaponName}</div>
+                )}
               </div>
-              <div className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2 justify-end">
-                {koCount} <Skull className="text-rose-500 w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              {weaponName && (
-                <div className="text-[10px] text-amber-300/80 font-mono mt-0.5">{weaponName}</div>
-              )}
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {onPause && (
+              <button
+                onClick={onPause}
+                className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-medium cursor-pointer shadow-lg transition"
+              >
+                <Pause className="w-3.5 h-3.5" />
+                <span>Pause [ESC]</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Dynasty Warriors Iconic Announcement Fanfare Banner */}
+      <AnimatePresence>
+        {announcement && (
+          <motion.div
+            key={announcement.id}
+            initial={{ opacity: 0, y: -40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 450, damping: 22 }}
+            className="absolute top-16 left-1/2 -translate-x-1/2 pointer-events-none z-30"
+          >
+            <div
+              className="px-6 py-2.5 rounded-xl border-2 shadow-2xl backdrop-blur-md bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 text-center flex items-center gap-3"
+              style={{ borderColor: announcement.color }}
+            >
+              <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-black tracking-wide text-white uppercase">
+                  {announcement.title}
+                </div>
+                <div className="text-xs font-bold text-amber-300 font-mono">
+                  {announcement.subtitle}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Center Combo Meter with Framer Motion Punch Animation */}
       <AnimatePresence>

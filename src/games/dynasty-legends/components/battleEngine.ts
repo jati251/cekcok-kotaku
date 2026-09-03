@@ -1,7 +1,6 @@
 import {
   Entity,
   EntityType,
-  Vector2,
   MapProp,
   PropType,
   Item,
@@ -11,160 +10,13 @@ import {
   BaseAffiliation,
   BattleScenario,
   MissionObjective,
-  DifficultyLevel,
   DamageText,
   Shockwave,
   Particle,
   SlashArc,
 } from '../types';
 import * as Constants from '../constants';
-
-export function createPlayerEntity(heroType: HeroType, startPos: Vector2): Entity {
-  const stats = Constants.HERO_STATS[heroType];
-  return {
-    id: 'player',
-    type: EntityType.PLAYER,
-    heroType,
-    position: { ...startPos },
-    velocity: { x: 0, y: 0 },
-    health: stats.hp,
-    maxHealth: stats.hp,
-    radius: 18,
-    color: stats.color,
-    label: stats.name,
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: 0,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 0,
-    isAllied: true,
-  };
-}
-
-export function spawnAlliedSoldier(id: string, pos: Vector2): Entity {
-  return {
-    id,
-    type: EntityType.ALLIED_SOLDIER,
-    position: { x: pos.x + (Math.random() - 0.5) * 60, y: pos.y + (Math.random() - 0.5) * 60 },
-    velocity: { x: 0, y: 0 },
-    health: 90,
-    maxHealth: 90,
-    radius: 14,
-    color: Constants.COLORS.ALLIED,
-    label: 'Allied Spearman',
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: Math.random() * 20,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 0,
-    isAllied: true,
-  };
-}
-
-export function spawnEnemyGrunt(id: string, pos: Vector2, diff: DifficultyLevel): Entity {
-  const cfg = Constants.DIFFICULTY_CONFIGS[diff];
-  const hp = 55 * cfg.enemyHpMult;
-  return {
-    id,
-    type: EntityType.ENEMY_GRUNT,
-    position: { ...pos },
-    velocity: { x: 0, y: 0 },
-    health: hp,
-    maxHealth: hp,
-    radius: 14,
-    color: Constants.COLORS.ENEMY,
-    label: 'Rebel Grunt',
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: Math.random() * 25,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 0,
-    isAllied: false,
-  };
-}
-
-export function spawnEnemyArcher(id: string, pos: Vector2, diff: DifficultyLevel): Entity {
-  const cfg = Constants.DIFFICULTY_CONFIGS[diff];
-  const hp = 40 * cfg.enemyHpMult;
-  return {
-    id,
-    type: EntityType.ENEMY_ARCHER,
-    position: { ...pos },
-    velocity: { x: 0, y: 0 },
-    health: hp,
-    maxHealth: hp,
-    radius: 14,
-    color: Constants.COLORS.ENEMY_ARCHER,
-    label: 'Rebel Archer',
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: 30 + Math.random() * 40,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 0,
-    isAllied: false,
-  };
-}
-
-export function spawnEnemyCaptain(id: string, pos: Vector2, diff: DifficultyLevel): Entity {
-  const cfg = Constants.DIFFICULTY_CONFIGS[diff];
-  const hp = 180 * cfg.enemyHpMult;
-  return {
-    id,
-    type: EntityType.ENEMY_CAPTAIN,
-    position: { ...pos },
-    velocity: { x: 0, y: 0 },
-    health: hp,
-    maxHealth: hp,
-    radius: 18,
-    color: Constants.COLORS.ENEMY_CAPTAIN,
-    label: 'Gate Captain',
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: 20,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 1,
-    isAllied: false,
-  };
-}
-
-export function spawnBossEntity(
-  id: string,
-  bossName: string,
-  pos: Vector2,
-  diff: DifficultyLevel
-): Entity {
-  const cfg = Constants.DIFFICULTY_CONFIGS[diff];
-  const hp = 850 * cfg.bossHpMult;
-  return {
-    id,
-    type: EntityType.BOSS,
-    position: { ...pos },
-    velocity: { x: 0, y: 0 },
-    health: hp,
-    maxHealth: hp,
-    radius: 24,
-    color: Constants.COLORS.BOSS_GOLD,
-    label: bossName,
-    isDead: false,
-    deathTimer: 0,
-    attackCooldown: 15,
-    facing: 0,
-    walkFrame: 0,
-    attackProgress: 0,
-    weaponLevel: 3,
-    isAllied: false,
-  };
-}
+export * from './enemySpawners';
 
 export function generateBattlefieldProps(scenario: BattleScenario): MapProp[] {
   const props: MapProp[] = [];
@@ -295,7 +147,7 @@ export function executePlayerAttack(
   slashes: SlashArc[],
   items: Item[],
   bossName: string
-): { hitCount: number; newKoCount: number; won: boolean } {
+): { hitCount: number; newKoCount: number; won: boolean; defeatedOfficer?: string } {
   const tiers = Constants.WEAPON_TIERS[player.heroType || HeroType.GUAN_YU];
   let activeTier = tiers[0];
   for (const t of tiers) {
@@ -308,8 +160,8 @@ export function executePlayerAttack(
   let hitCount = 0;
   let currentKo = koCount;
   let won = false;
+  let defeatedOfficer: string | undefined;
 
-  // Spawn visual blade slash arc trail
   slashes.push({
     x: player.position.x,
     y: player.position.y,
@@ -328,18 +180,22 @@ export function executePlayerAttack(
     const dist = Math.hypot(dx, dy);
 
     if (dist < reach + e.radius) {
-      e.health -= dmg;
+      // Shield guards block 60% of damage from the front unless hit by Musou
+      let actualDmg = dmg;
+      if (e.type === EntityType.ENEMY_SHIELD && !isMusou) {
+        actualDmg *= 0.4;
+      }
+
+      e.health -= actualDmg;
       hitCount++;
 
-      // Hit reaction: Flinch, Flash, Knockback Physics
       const impactAngle = Math.atan2(dy, dx);
-      const knockback = (isMusou ? 14 : 7) / (e.type === EntityType.BOSS ? 3 : 1);
+      const knockback = (isMusou ? 15 : 8) / (e.type === EntityType.BOSS ? 3 : 1);
       e.velocity.x += Math.cos(impactAngle) * knockback;
       e.velocity.y += Math.sin(impactAngle) * knockback;
       e.hitFlashTimer = 6;
       e.hitStunTimer = 12;
 
-      // Spawn Sparks & Blood Particles
       for (let i = 0; i < 4; i++) {
         const pAngle = impactAngle + (Math.random() - 0.5) * 1.5;
         const pSpeed = 3 + Math.random() * 5;
@@ -358,17 +214,21 @@ export function executePlayerAttack(
       damageTexts.push({
         x: e.position.x,
         y: e.position.y - 18,
-        text: Math.round(dmg).toString(),
+        text: Math.round(actualDmg).toString(),
         life: 30,
         color: isMusou ? Constants.COLORS.TEXT_CRIT : Constants.COLORS.TEXT_DAMAGE,
       });
 
       if (e.health <= 0) {
         e.isDead = true;
-        e.deathTimer = 1.0;
+        e.deathTimer = 45; // 45 frames airborne tumble & fade
         e.velocity.x += Math.cos(impactAngle) * 12;
         e.velocity.y += Math.sin(impactAngle) * 12;
         currentKo++;
+
+        if (e.type === EntityType.BOSS || e.type === EntityType.ENEMY_CAPTAIN) {
+          defeatedOfficer = e.label;
+        }
 
         const isObjectiveWon = updateObjectiveProgress(objectives, 'kill_count', 1);
         if (e.type === EntityType.BOSS) {
@@ -377,10 +237,10 @@ export function executePlayerAttack(
         }
         if (isObjectiveWon) won = true;
 
-        if (Math.random() < Constants.DROP_CHANCE_HEALTH) {
+        if (Math.random() < Constants.DROP_CHANCE_HEALTH || e.type === EntityType.BOSS) {
           items.push({
             id: `item_${Date.now()}_${Math.random()}`,
-            type: Math.random() < 0.3 ? ItemType.WINE_MUSOU : ItemType.HEALTH_BUN,
+            type: Math.random() < 0.35 ? ItemType.WINE_MUSOU : ItemType.HEALTH_BUN,
             x: e.position.x,
             y: e.position.y,
             bouncePhase: 0,
@@ -390,7 +250,7 @@ export function executePlayerAttack(
     }
   }
 
-  return { hitCount, newKoCount: currentKo, won };
+  return { hitCount, newKoCount: currentKo, won, defeatedOfficer };
 }
 
 export function executeMusouBlast(
@@ -403,13 +263,12 @@ export function executeMusouBlast(
     x: player.position.x,
     y: player.position.y,
     radius: 20,
-    maxRadius: 300,
+    maxRadius: 320,
     color: '#fbbf24',
     life: 0,
     maxLife: 40,
   });
 
-  // Massive radial sparks
   for (let i = 0; i < 24; i++) {
     const angle = (i / 24) * Math.PI * 2;
     const speed = 5 + Math.random() * 6;
@@ -429,8 +288,8 @@ export function executeMusouBlast(
   for (const e of entities) {
     if (e.isAllied || e.isDead) continue;
     const dist = Math.hypot(e.position.x - player.position.x, e.position.y - player.position.y);
-    if (dist < 300) {
-      e.health -= 140;
+    if (dist < 320) {
+      e.health -= 150;
       const angle = Math.atan2(e.position.y - player.position.y, e.position.x - player.position.x);
       e.velocity.x += Math.cos(angle) * 16;
       e.velocity.y += Math.sin(angle) * 16;
@@ -439,11 +298,97 @@ export function executeMusouBlast(
 
       if (e.health <= 0) {
         e.isDead = true;
+        e.deathTimer = 45;
         kills++;
       }
     }
   }
   return kills;
+}
+
+export function executeEnemyCombat(
+  entities: Entity[],
+  player: Entity,
+  damageTexts: DamageText[],
+  onGameOver: (won: boolean) => void,
+  onScreenShake: (intensity: number, duration: number) => void
+) {
+  for (const e of entities) {
+    if (e.isDead || e.type === EntityType.PLAYER) continue;
+
+    // Knockback deceleration
+    e.position.x += e.velocity.x;
+    e.position.y += e.velocity.y;
+    e.velocity.x *= 0.82;
+    e.velocity.y *= 0.82;
+
+    if (e.hitFlashTimer && e.hitFlashTimer > 0) e.hitFlashTimer--;
+    if (e.hitStunTimer && e.hitStunTimer > 0) {
+      e.hitStunTimer--;
+      continue;
+    }
+
+    if (e.attackCooldown > 0) e.attackCooldown--;
+    if (e.attackProgress > 0) e.attackProgress = Math.max(0, e.attackProgress - 0.1);
+
+    if (e.isAllied) continue;
+
+    const dx = player.position.x - e.position.x;
+    const dy = player.position.y - e.position.y;
+    const dist = Math.hypot(dx, dy);
+
+    const isRanged = e.type === EntityType.ENEMY_ARCHER || e.type === EntityType.ENEMY_SORCERER;
+    const isBomber = e.type === EntityType.ENEMY_BOMBER;
+    const attackReach = isRanged ? 220 : isBomber ? 140 : e.type === EntityType.BOSS ? 52 : 38;
+    const minDistance = e.radius + player.radius + attackReach;
+
+    if (dist > minDistance) {
+      const speed = e.type === EntityType.ENEMY_CAVALRY ? Constants.ENEMY_SPEED * 1.5 : Constants.ENEMY_SPEED;
+      e.position.x += (dx / dist) * speed;
+      e.position.y += (dy / dist) * speed;
+      e.facing = Math.atan2(dy, dx);
+      e.walkFrame += 0.18;
+    } else {
+      e.facing = Math.atan2(dy, dx);
+      if (e.attackCooldown <= 0 && !player.isDead) {
+        e.attackCooldown = isRanged ? 60 : 40;
+        e.attackProgress = 1.0;
+
+        const baseDmg = e.type === EntityType.BOSS ? 22 : e.type === EntityType.ENEMY_CAPTAIN ? 14 : 7;
+        player.health = Math.max(0, player.health - baseDmg);
+        player.hitFlashTimer = 6;
+        onScreenShake(6, 6);
+
+        damageTexts.push({
+          x: player.position.x + (Math.random() - 0.5) * 20,
+          y: player.position.y - 20,
+          text: `-${baseDmg}`,
+          life: 30,
+          color: '#ef4444',
+        });
+
+        if (player.health <= 0) {
+          player.isDead = true;
+          player.deathTimer = 45;
+          onGameOver(false);
+          return;
+        }
+      }
+    }
+  }
+}
+
+export function updateDeadEntities(entities: Entity[]): Entity[] {
+  for (const e of entities) {
+    if (e.isDead && e.deathTimer > 0) {
+      e.deathTimer--;
+      e.position.x += e.velocity.x;
+      e.position.y += e.velocity.y;
+      e.velocity.x *= 0.85;
+      e.velocity.y *= 0.85;
+    }
+  }
+  return entities.filter((e) => !e.isDead || e.deathTimer > 0);
 }
 
 export function applyHordeSeparationPhysics(entities: Entity[]) {
@@ -462,7 +407,7 @@ export function applyHordeSeparationPhysics(entities: Entity[]) {
       const minDist = e1.radius + e2.radius;
 
       if (dist < minDist && dist > 0.001) {
-        const overlap = (minDist - dist) * 0.25;
+        const overlap = (minDist - dist) * 0.28;
         const nx = dx / dist;
         const ny = dy / dist;
 

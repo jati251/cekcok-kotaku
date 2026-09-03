@@ -3,6 +3,7 @@ export enum GameStatus {
   LOADING = 'LOADING',
   STORY_INTRO = 'STORY_INTRO',
   PLAYING = 'PLAYING',
+  PAUSED = 'PAUSED',
   VICTORY = 'VICTORY',
   DEFEAT = 'DEFEAT',
 }
@@ -28,9 +29,20 @@ export enum EntityType {
   ALLIED_OFFICER = 'ALLIED_OFFICER',
   ENEMY_GRUNT = 'ENEMY_GRUNT',
   ENEMY_ARCHER = 'ENEMY_ARCHER',
+  ENEMY_SHIELD = 'ENEMY_SHIELD',
+  ENEMY_BOMBER = 'ENEMY_BOMBER',
+  ENEMY_SORCERER = 'ENEMY_SORCERER',
   ENEMY_CAPTAIN = 'ENEMY_CAPTAIN',
   ENEMY_CAVALRY = 'ENEMY_CAVALRY',
   BOSS = 'BOSS',
+}
+
+export interface BattleAnnouncement {
+  id: string;
+  title: string;
+  subtitle: string;
+  type: 'officer_slain' | 'milestone' | 'morale';
+  color: string;
 }
 
 export enum DifficultyLevel {

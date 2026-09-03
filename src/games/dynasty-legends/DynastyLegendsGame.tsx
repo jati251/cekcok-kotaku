@@ -4,6 +4,7 @@ import { GameHUD, MinimapData } from './components/GameHUD';
 import { MenuOverlay } from './components/MenuOverlay';
 import { MobileControls } from './components/MobileControls';
 import { StoryDialogOverlay } from './components/StoryDialogOverlay';
+import { PauseMenuOverlay } from './components/PauseMenuOverlay';
 import {
   GameStatus,
   HeroType,
@@ -11,6 +12,7 @@ import {
   MobileInputState,
   ComboRank,
   MissionObjective,
+  BattleAnnouncement,
 } from './types';
 import * as Constants from './constants';
 import { useLauncherStore } from '@/stores/launcherStore';
@@ -22,6 +24,7 @@ export const DynastyLegendsGame: React.FC = () => {
   const [selectedHero, setSelectedHero] = useState<HeroType>(HeroType.GUAN_YU);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(DifficultyLevel.NORMAL);
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number>(0);
+  const [announcement, setAnnouncement] = useState<BattleAnnouncement | null>(null);
 
   const currentScenario = Constants.SCENARIOS[selectedScenarioIndex] || Constants.SCENARIOS[0];
 
@@ -52,6 +55,16 @@ export const DynastyLegendsGame: React.FC = () => {
     active: false,
   });
 
+  const announcementTimerRef = useRef<number | null>(null);
+
+  const handleAnnouncement = useCallback((newAnnouncement: BattleAnnouncement) => {
+    setAnnouncement(newAnnouncement);
+    if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
+    announcementTimerRef.current = window.setTimeout(() => {
+      setAnnouncement(null);
+    }, 3800);
+  }, []);
+
   const handleSelectScenario = (index: number) => {
     setSelectedScenarioIndex(index);
   };
@@ -78,7 +91,6 @@ export const DynastyLegendsGame: React.FC = () => {
       mobileInputRef.current.isMusou = false;
     }
 
-    // Launch into Story Introduction Cutscene
     setStatus(GameStatus.STORY_INTRO);
   };
 
@@ -88,6 +100,14 @@ export const DynastyLegendsGame: React.FC = () => {
 
   const handleGameOver = useCallback((victory: boolean) => {
     setStatus(victory ? GameStatus.VICTORY : GameStatus.DEFEAT);
+  }, []);
+
+  const handleTogglePause = useCallback(() => {
+    setStatus((prev) => {
+      if (prev === GameStatus.PLAYING) return GameStatus.PAUSED;
+      if (prev === GameStatus.PAUSED) return GameStatus.PLAYING;
+      return prev;
+    });
   }, []);
 
   const handleUpdateStats = useCallback(
@@ -118,6 +138,10 @@ export const DynastyLegendsGame: React.FC = () => {
   );
 
   const handleRestart = () => {
+    handleStartGame(selectedHero, selectedDifficulty);
+  };
+
+  const handleQuitToMenu = () => {
     setStatus(GameStatus.MENU);
   };
 
@@ -154,6 +178,8 @@ export const DynastyLegendsGame: React.FC = () => {
         scenario={currentScenario}
         onUpdateStats={handleUpdateStats}
         onGameOver={handleGameOver}
+        onTogglePause={handleTogglePause}
+        onAnnouncement={handleAnnouncement}
         mobileInputRef={mobileInputRef}
       />
 
@@ -164,7 +190,7 @@ export const DynastyLegendsGame: React.FC = () => {
         />
       )}
 
-      {status === GameStatus.PLAYING && (
+      {(status === GameStatus.PLAYING || status === GameStatus.PAUSED) && (
         <>
           <GameHUD
             health={stats.hp}
@@ -182,6 +208,8 @@ export const DynastyLegendsGame: React.FC = () => {
             comboRank={stats.comboRank}
             weaponName={stats.weaponName}
             minimapData={minimapData}
+            announcement={announcement}
+            onPause={handleTogglePause}
           />
 
           <MobileControls
@@ -191,11 +219,19 @@ export const DynastyLegendsGame: React.FC = () => {
         </>
       )}
 
+      <PauseMenuOverlay
+        isOpen={status === GameStatus.PAUSED}
+        scenario={currentScenario}
+        onResume={handleTogglePause}
+        onRestart={handleRestart}
+        onQuit={handleQuitToMenu}
+      />
+
       <MenuOverlay
         status={status}
         scenario={currentScenario}
         onStart={handleStartGame}
-        onRestart={handleRestart}
+        onRestart={handleQuitToMenu}
         koCount={stats.ko}
         onSelectScenario={handleSelectScenario}
         selectedScenarioIndex={selectedScenarioIndex}
