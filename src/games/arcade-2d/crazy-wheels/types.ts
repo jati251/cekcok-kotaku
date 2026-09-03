@@ -17,6 +17,7 @@ export interface PlayerState {
   alive: boolean;
   riderLean: number;
   invincibleTimer: number;
+  respawnTimer: number;
 }
 
 export interface Platform {
@@ -75,6 +76,8 @@ export interface GameState {
   bloodSplats: BloodSplat[];
   cameraX: number;
   cameraY: number;
+  viewportWidth: number;
+  viewportHeight: number;
   distance: number;
   score: number;
   deaths: number;
@@ -85,13 +88,13 @@ export interface GameState {
   highScore: number;
 }
 
-export const CANVAS_W = 800;
-export const CANVAS_H = 500;
-export const GRAVITY = 0.55;
-export const GROUND_FRICTION = 0.92;
-export const AIR_FRICTION = 0.995;
-export const MOVE_SPEED = 0.35;
-export const JUMP_FORCE = -9;
-export const MAX_SPEED = 8;
+export const CANVAS_W = 1000;
+export const CANVAS_H = 600;
+export const GRAVITY = 0.52;
+export const GROUND_FRICTION = 0.94;
+export const AIR_FRICTION = 0.985;
+export const MOVE_SPEED = 0.38;
+export const JUMP_FORCE = -10.5;
+export const MAX_SPEED = 9.5;
 export const LEVEL_WIDTH = 6000;
 export const LEVEL_HEIGHT = 600;

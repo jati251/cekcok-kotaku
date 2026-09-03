@@ -1,28 +1,28 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState } from './types';
-import { createInitialState, gameTick } from './physics';
-import { gameRender } from './renderer';
-import { crazyAudio } from './audio';
+import { BumperGameState } from './types';
+import { createInitialBumperState, updateBumperPhysics } from './physics';
+import { renderBumperBrawl } from './renderer';
+import { bumperAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Heart, Flag } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Skull } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function CrazyWheels() {
+export function BumperBrawl() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef<GameState>(createInitialState());
+  const stateRef = useRef<BumperGameState>(createInitialBumperState(1000, 650));
   const keysRef = useRef<Set<string>>(new Set());
   const animRef = useRef<number>(0);
 
   const [uiScore, setUiScore] = useState(0);
-  const [uiDeaths, setUiDeaths] = useState(0);
+  const [uiElims, setUiElims] = useState(0);
+  const [uiTimeLeft, setUiTimeLeft] = useState(60);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
-  const [uiFinishReached, setUiFinishReached] = useState(false);
-  const [isMuted, setIsMuted] = useState(crazyAudio.getMuted());
+  const [isMuted, setIsMuted] = useState(bumperAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
-      return parseInt(localStorage.getItem('crazyWheelsHighScore') || '0', 10);
+      return parseInt(localStorage.getItem('bumperBrawlHighScore') || '0', 10);
     } catch {
       return 0;
     }
@@ -37,15 +37,18 @@ export function CrazyWheels() {
     canvasRef.current.width = w;
     canvasRef.current.height = h;
 
-    stateRef.current.viewportWidth = w;
-    stateRef.current.viewportHeight = h;
+    const state = stateRef.current;
+    state.arenaX = w / 2;
+    state.arenaY = h / 2;
+    state.maxArenaRadius = Math.min(w, h) * 0.44;
+    state.arenaRadius = Math.min(state.arenaRadius, state.maxArenaRadius);
   }, []);
 
   const saveHighScore = (score: number) => {
     if (score > uiHighScore) {
       setUiHighScore(score);
       try {
-        localStorage.setItem('crazyWheelsHighScore', score.toString());
+        localStorage.setItem('bumperBrawlHighScore', String(score));
       } catch {}
     }
   };
@@ -56,28 +59,30 @@ export function CrazyWheels() {
     return () => window.removeEventListener('resize', handleResize);
   }, [handleResize]);
 
-  // Keyboard listeners
+  // Keyboard controls
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleDown = (e: KeyboardEvent) => {
       keysRef.current.add(e.key);
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
         e.preventDefault();
       }
     };
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleUp = (e: KeyboardEvent) => {
       keysRef.current.delete(e.key);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('keydown', handleDown);
+    window.addEventListener('keyup', handleUp);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleDown);
+      window.removeEventListener('keyup', handleUp);
     };
   }, []);
 
-  // Main 60 FPS loop
+  // Main 60 FPS Game Loop
   useEffect(() => {
+    let lastSecond = Date.now();
+
     const run = () => {
       const state = stateRef.current;
       const canvas = canvasRef.current;
@@ -91,20 +96,25 @@ export function CrazyWheels() {
         return;
       }
 
-      gameTick(state, keysRef.current);
+      updateBumperPhysics(state, keysRef.current);
 
       if (state.started) {
-        setUiScore(Math.max(0, state.score));
-        setUiDeaths(state.deaths);
+        setUiScore(state.playerScore);
+        setUiElims(state.eliminations);
+
+        const now = Date.now();
+        if (now - lastSecond >= 250) {
+          lastSecond = now;
+          setUiTimeLeft(Math.max(0, Math.ceil(state.timeLeft / 60)));
+        }
 
         if (state.gameOver && !uiGameOver) {
           setUiGameOver(true);
-          setUiFinishReached(state.finishReached);
-          saveHighScore(state.score);
+          saveHighScore(state.playerScore);
         }
       }
 
-      gameRender(ctx, state);
+      renderBumperBrawl(ctx, state);
       animRef.current = requestAnimationFrame(run);
     };
 
@@ -112,31 +122,27 @@ export function CrazyWheels() {
     return () => cancelAnimationFrame(animRef.current);
   }, [uiGameOver, uiHighScore]);
 
-  const resetGame = () => {
+  const startGame = () => {
     if (!canvasRef.current) return;
     const w = canvasRef.current.width;
     const h = canvasRef.current.height;
-    const newState = createInitialState();
-    newState.viewportWidth = w;
-    newState.viewportHeight = h;
+    const newState = createInitialBumperState(w, h);
     newState.started = true;
     newState.highScore = uiHighScore;
     stateRef.current = newState;
 
     setUiScore(0);
-    setUiDeaths(0);
+    setUiElims(0);
+    setUiTimeLeft(60);
     setUiGameOver(false);
-    setUiFinishReached(false);
     setUiStarted(true);
   };
 
-  const remainingLives = Math.max(0, 10 - uiDeaths);
-
   return (
     <div className="flex flex-col w-full h-full bg-slate-950 overflow-hidden select-none font-sans relative">
-      <ArcadeHeader title="Crazy Wheels" category="Physics Obstacle Trial" score={uiScore} lives={remainingLives} />
+      <ArcadeHeader title="Bumper Brawl" category="Arena Demolition" score={uiScore} />
 
-      {/* Floating HUD */}
+      {/* Top Floating HUD Status Bar */}
       <div className="absolute top-16 left-6 right-6 flex items-center justify-between z-20 pointer-events-none">
         <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 shadow-xl pointer-events-auto">
           <div className="flex items-center gap-1.5 text-amber-400">
@@ -144,16 +150,22 @@ export function CrazyWheels() {
             <span className="text-xs font-mono font-bold">BEST: {uiHighScore}</span>
           </div>
           <div className="h-4 w-px bg-slate-700" />
-          <div className="flex items-center gap-1.5 text-rose-500">
-            <Heart className="w-4 h-4 fill-rose-500" />
-            <span className="text-xs font-mono font-bold">LIVES: {remainingLives}/10</span>
+          <div className="flex items-center gap-1.5 text-rose-400">
+            <Skull className="w-4 h-4" />
+            <span className="text-xs font-mono font-bold">ELIMS: {uiElims}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 shadow-xl pointer-events-auto">
+        <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 shadow-xl pointer-events-auto">
+          <div className="flex items-center gap-1 text-slate-300">
+            <span className="text-xs font-mono text-slate-400">TIME:</span>
+            <span className={`text-base font-black font-mono ${uiTimeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-cyan-400'}`}>
+              {uiTimeLeft}s
+            </span>
+          </div>
           <button
-            onClick={() => setIsMuted(crazyAudio.toggleMute())}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+            onClick={() => setIsMuted(bumperAudio.toggleMute())}
+            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
@@ -173,39 +185,40 @@ export function CrazyWheels() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6 z-30"
             >
-              <div className="max-w-md w-full bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+              <div className="max-w-md w-full bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
                 <div className="space-y-1">
-                  <span className="text-3xl">🚴‍♂️💥</span>
-                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-amber-400">
-                    CRAZY WHEELS
+                  <span className="text-3xl">🏎️💥</span>
+                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
+                    BUMPER BRAWL
                   </h2>
-                  <p className="text-xs text-slate-400">High-Velocity Obstacle Course Trial</p>
+                  <p className="text-xs text-slate-400">Elastic Demolition Arena · Shrinking Ring</p>
                 </div>
 
                 <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-300">
-                  <p className="text-slate-200 font-bold text-sm">Controls & Objective</p>
-                  <p>Survive buzzsaws, pit gaps, and lethal spikes to reach the finish flag!</p>
-                  <div className="pt-2 border-t border-slate-800 space-y-1 font-mono text-[11px] text-left">
-                    <div><span className="text-amber-400">← / → or A / D</span>: Drive & Mid-Air Lean</div>
-                    <div><span className="text-cyan-400">↑ / W / Space</span>: Bunny Hop Jump</div>
-                    <div><span className="text-emerald-400">Checkpoints</span>: Save progress on contact</div>
+                  <p className="text-slate-200 font-bold text-sm">How to Play</p>
+                  <p>Ram opponents out of the glowing arena ring! The ring shrinks over time.</p>
+                  <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-left font-mono text-[11px]">
+                    <div><span className="text-amber-400">WASD / Arrows</span>: Drive & Steer</div>
+                    <div><span className="text-emerald-400">Green</span>: Turbo Boost</div>
+                    <div><span className="text-sky-400">Blue</span>: Energy Shield</div>
+                    <div><span className="text-orange-400">Orange</span>: Super Bumper</div>
                   </div>
                 </div>
 
                 <motion.button
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-rose-600/20 cursor-pointer"
+                  onClick={startGame}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
                 >
-                  START TRIAL
+                  START BRAWL
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Game Over / Victory Modal */}
+        {/* Game Over Modal */}
         <AnimatePresence>
           {uiGameOver && (
             <motion.div
@@ -214,29 +227,10 @@ export function CrazyWheels() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
             >
-              <div
-                className={`max-w-md w-full bg-slate-900/95 border-2 ${
-                  uiFinishReached ? 'border-emerald-500/80' : 'border-rose-500/80'
-                } rounded-2xl p-8 text-center space-y-6 shadow-2xl`}
-              >
+              <div className="max-w-md w-full bg-slate-900/95 border-2 border-orange-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
                 <div className="space-y-1">
-                  <div className="inline-flex p-3 rounded-2xl bg-slate-800/80 mb-2">
-                    {uiFinishReached ? (
-                      <Flag className="w-8 h-8 text-emerald-400" />
-                    ) : (
-                      <span className="text-3xl">💀</span>
-                    )}
-                  </div>
-                  <h2
-                    className={`text-3xl font-black ${
-                      uiFinishReached ? 'text-emerald-400' : 'text-rose-500'
-                    }`}
-                  >
-                    {uiFinishReached ? 'COURSE CONQUERED!' : 'TRIAL FAILED'}
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    {uiFinishReached ? 'You mastered the lethal track!' : 'Exhausted all 10 lives'}
-                  </p>
+                  <h2 className="text-3xl font-black text-amber-400">TIME EXPIRED!</h2>
+                  <p className="text-xs text-slate-400">Arena Demolition Concluded</p>
                 </div>
 
                 <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
@@ -245,8 +239,8 @@ export function CrazyWheels() {
                     <span className="font-mono text-emerald-400 font-bold text-base">{uiScore}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Total Crashes:</span>
-                    <span className="font-mono text-rose-400 font-bold text-base">{uiDeaths}</span>
+                    <span>Cars Knocked Out:</span>
+                    <span className="font-mono text-rose-400 font-bold text-base">{uiElims}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
                     <span>High Score:</span>
@@ -257,15 +251,11 @@ export function CrazyWheels() {
                 <motion.button
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r ${
-                    uiFinishReached
-                      ? 'from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400'
-                      : 'from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400'
-                  } text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer`}
+                  onClick={startGame}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>TRY AGAIN</span>
+                  <span>PLAY AGAIN</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -276,4 +266,4 @@ export function CrazyWheels() {
   );
 }
 
-export default CrazyWheels;
+export default BumperBrawl;

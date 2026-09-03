@@ -1,6 +1,4 @@
 import {
-  CANVAS_W,
-  CANVAS_H,
   Platform,
   Obstacle,
   Checkpoint,
@@ -11,31 +9,36 @@ import {
 } from './types';
 
 export function drawBackground(ctx: CanvasRenderingContext2D, camX: number) {
-  const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-  grad.addColorStop(0, '#87CEEB');
-  grad.addColorStop(0.6, '#B0E0E6');
-  grad.addColorStop(1, '#98FB98');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
 
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  const cloudOffset = camX * 0.3;
-  for (let i = 0; i < 12; i++) {
-    const cx = i * 500 - (cloudOffset % 500);
-    const cy = 40 + ((i * 137) % 90);
-    drawCloud(ctx, cx, cy, 30 + (i % 3) * 20);
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, '#38bdf8');
+  grad.addColorStop(0.55, '#bae6fd');
+  grad.addColorStop(1, '#86efac');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Clouds
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  const cloudOffset = camX * 0.25;
+  for (let i = 0; i < 16; i++) {
+    const cx = i * 450 - (cloudOffset % 450);
+    const cy = 35 + ((i * 127) % 80);
+    drawCloud(ctx, cx, cy, 32 + (i % 3) * 16);
   }
 
-  ctx.fillStyle = '#7ec87e';
-  const hillOffset = camX * 0.6;
+  // Rolling Green Hills
+  ctx.fillStyle = '#4ade80';
+  const hillOffset = camX * 0.55;
   ctx.beginPath();
-  ctx.moveTo(0, CANVAS_H);
-  for (let i = 0; i < 20; i++) {
-    const hx = i * 400 - (hillOffset % 400);
-    const hy = 380 + Math.sin(i * 1.5) * 60;
+  ctx.moveTo(0, h);
+  for (let i = 0; i < 28; i++) {
+    const hx = i * 320 - (hillOffset % 320);
+    const hy = h - 160 + Math.sin(i * 1.6) * 45;
     ctx.lineTo(hx, hy);
   }
-  ctx.lineTo(CANVAS_W, CANVAS_H);
+  ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fill();
 }
@@ -51,7 +54,8 @@ export function drawCloud(ctx: CanvasRenderingContext2D, x: number, y: number, s
 export function drawGround(ctx: CanvasRenderingContext2D, p: Platform, camX: number, camY: number) {
   const sx = p.x - camX;
   const sy = p.y - camY;
-  if (sx + p.width < 0 || sx > CANVAS_W) return;
+  const w = ctx.canvas.width;
+  if (sx + p.width < -50 || sx > w + 50) return;
 
   if (p.type === 'ramp') {
     ctx.fillStyle = '#8B4513';
@@ -72,24 +76,19 @@ export function drawGround(ctx: CanvasRenderingContext2D, p: Platform, camX: num
     ctx.strokeStyle = `rgba(100, 80, 60, ${alpha})`;
     ctx.lineWidth = 2;
     ctx.strokeRect(sx, sy, p.width, p.height);
-    ctx.strokeStyle = `rgba(60, 40, 20, ${alpha * 0.6})`;
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.moveTo(sx + p.width * 0.2 + i * p.width * 0.25, sy);
-      ctx.lineTo(sx + p.width * 0.3 + i * p.width * 0.25, sy + p.height);
-      ctx.stroke();
-    }
   } else {
+    // Solid Ground
     const grad = ctx.createLinearGradient(sx, sy, sx, sy + p.height);
     grad.addColorStop(0, '#8B4513');
-    grad.addColorStop(0.1, '#9B5523');
-    grad.addColorStop(1, '#5c2e0a');
+    grad.addColorStop(0.12, '#9B5523');
+    grad.addColorStop(1, '#451a03');
     ctx.fillStyle = grad;
     ctx.fillRect(sx, sy, p.width, p.height);
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(sx, sy, p.width, 5);
-    ctx.fillStyle = '#388E3C';
+
+    // Lush grass top
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(sx, sy, p.width, 6);
+    ctx.fillStyle = '#16a34a';
     for (let gx = sx; gx < sx + p.width; gx += 8) {
       ctx.fillRect(gx, sy - 3, 4, 5);
     }
@@ -99,210 +98,210 @@ export function drawGround(ctx: CanvasRenderingContext2D, p: Platform, camX: num
 export function drawSpikes(ctx: CanvasRenderingContext2D, obs: Obstacle, camX: number, camY: number) {
   const sx = obs.x - camX;
   const sy = obs.y - camY;
-  if (sx + obs.width < 0 || sx > CANVAS_W) return;
+  const w = ctx.canvas.width;
+  if (sx + obs.width < -50 || sx > w + 50) return;
 
-  ctx.fillStyle = '#C0C0C0';
-  const spikeW = 8;
-  const spikeH = obs.height;
-  const count = Math.floor(obs.width / spikeW);
+  const count = Math.floor(obs.width / 14);
+  ctx.fillStyle = '#94a3b8';
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
 
   for (let i = 0; i < count; i++) {
-    const spikeX = sx + i * spikeW;
+    const bx = sx + i * 14;
     ctx.beginPath();
-    ctx.moveTo(spikeX, sy);
-    ctx.lineTo(spikeX + spikeW / 2, sy + spikeH);
-    ctx.lineTo(spikeX + spikeW, sy);
+    ctx.moveTo(bx, sy + obs.height);
+    ctx.lineTo(bx + 7, sy);
+    ctx.lineTo(bx + 14, sy + obs.height);
     ctx.closePath();
     ctx.fill();
-  }
-  ctx.strokeStyle = '#808080';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < count; i++) {
-    const spikeX = sx + i * spikeW;
-    ctx.beginPath();
-    ctx.moveTo(spikeX, sy);
-    ctx.lineTo(spikeX + spikeW / 2, sy + spikeH);
-    ctx.lineTo(spikeX + spikeW, sy);
-    ctx.closePath();
     ctx.stroke();
+
+    // Red tip
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.moveTo(bx + 4, sy + 6);
+    ctx.lineTo(bx + 7, sy);
+    ctx.lineTo(bx + 10, sy + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
   }
 }
 
 export function drawSaw(ctx: CanvasRenderingContext2D, obs: Obstacle, camX: number, camY: number) {
-  const sx = obs.x - camX;
-  const sy = obs.y - camY;
-  if (sx + obs.width < 0 || sx > CANVAS_W) return;
-
-  const cx = sx + obs.width / 2;
-  const cy = sy + obs.height / 2;
-  const r = obs.width / 2;
+  const radius = obs.width / 2;
+  const cx = obs.x + radius - camX;
+  const cy = obs.y + radius - camY;
+  const w = ctx.canvas.width;
+  if (cx + radius < -50 || cx - radius > w + 50) return;
 
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(obs.angle || 0);
 
-  ctx.fillStyle = '#808080';
+  obs.angle = (obs.angle || 0) + 0.18;
+  ctx.rotate(obs.angle);
+
+  ctx.fillStyle = '#cbd5e1';
   ctx.beginPath();
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    const toothR = i % 2 === 0 ? r : r * 0.75;
-    ctx.lineTo(Math.cos(a) * toothR, Math.sin(a) * toothR);
+  ctx.arc(0, 0, radius - 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Teeth
+  ctx.fillStyle = '#94a3b8';
+  const teeth = 12;
+  for (let i = 0; i < teeth; i++) {
+    const a = (i / teeth) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * (radius - 4), Math.sin(a) * (radius - 4));
+    ctx.lineTo(Math.cos(a + 0.15) * radius, Math.sin(a + 0.15) * radius);
+    ctx.lineTo(Math.cos(a + 0.3) * (radius - 4), Math.sin(a + 0.3) * (radius - 4));
+    ctx.closePath();
+    ctx.fill();
   }
-  ctx.closePath();
+
+  // Center bolt
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(0, 0, 5, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#A0A0A0';
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#606060';
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
 
 export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, camX: number, camY: number) {
-  if (!p.alive) return;
-
-  const sx = p.x - camX;
-  const sy = p.y - camY;
+  const px = p.x - camX;
+  const py = p.y - camY;
 
   ctx.save();
-  ctx.translate(sx, sy);
+  ctx.translate(px, py);
   ctx.rotate(p.angle);
 
-  const frameLen = 45;
-
-  // Back wheel
-  ctx.fillStyle = '#2c3e50';
-  ctx.beginPath();
-  ctx.arc(-frameLen / 2, 16, 13, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#1a1a2e';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Spokes
-  ctx.strokeStyle = '#7f8c8d';
-  ctx.lineWidth = 1;
-  const wAngle = p.wheelAngle;
-  for (let i = 0; i < 4; i++) {
-    const a = wAngle + (i * Math.PI) / 2;
-    ctx.beginPath();
-    ctx.moveTo(-frameLen / 2, 16);
-    ctx.lineTo(-frameLen / 2 + Math.cos(a) * 11, 16 + Math.sin(a) * 11);
-    ctx.stroke();
+  // Invincibility flashing
+  if (p.invincibleTimer > 0 && Math.floor(p.invincibleTimer / 6) % 2 === 0) {
+    ctx.globalAlpha = 0.45;
   }
 
-  // Front wheel
-  ctx.fillStyle = '#2c3e50';
+  // 1. Bicycle Frame
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(frameLen / 2, 16, 13, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#1a1a2e';
-  ctx.lineWidth = 2;
+  ctx.moveTo(-22, 12); // rear wheel hub
+  ctx.lineTo(0, 4);    // bottom bracket
+  ctx.lineTo(16, -10); // head tube
+  ctx.lineTo(22, 12);  // front fork
   ctx.stroke();
-  for (let i = 0; i < 4; i++) {
-    const a = wAngle + (i * Math.PI) / 2 + 0.3;
-    ctx.beginPath();
-    ctx.moveTo(frameLen / 2, 16);
-    ctx.lineTo(frameLen / 2 + Math.cos(a) * 11, 16 + Math.sin(a) * 11);
-    ctx.stroke();
-  }
 
-  // Frame
-  ctx.strokeStyle = '#e74c3c';
-  ctx.lineWidth = 3;
+  // Top tube & seat stay
   ctx.beginPath();
-  ctx.moveTo(-frameLen / 2, 16);
-  ctx.lineTo(0, -2);
-  ctx.lineTo(frameLen / 2, 16);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(-frameLen / 2 + 5, 10);
-  ctx.lineTo(frameLen / 2 - 5, 10);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(-frameLen / 2 + 8, 10);
-  ctx.lineTo(-4, -12);
+  ctx.moveTo(-22, 12);
+  ctx.lineTo(-8, -12); // seat post
+  ctx.lineTo(16, -10);
   ctx.stroke();
 
   // Seat
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(-10, -16, 18, 6);
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.roundRect(-14, -15, 14, 5, 2);
+  ctx.fill();
 
   // Handlebars
-  ctx.strokeStyle = '#bdc3c7';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(frameLen / 2 - 8, 10);
-  ctx.lineTo(frameLen / 2 + 5, -2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(frameLen / 2 - 2, -4);
-  ctx.lineTo(frameLen / 2 + 12, -4);
-  ctx.stroke();
-
-  // Pedals
-  ctx.fillStyle = '#7f8c8d';
-  ctx.fillRect(-3, 2, 8, 3);
-
-  // Rider
-  const lean = p.riderLean * 15;
-  ctx.strokeStyle = '#2c3e50';
+  ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(-4 + lean, -14);
-  ctx.lineTo(-6, 2);
+  ctx.moveTo(16, -10);
+  ctx.lineTo(14, -18);
+  ctx.lineTo(20, -18);
   ctx.stroke();
 
-  // Arms
+  // 2. Wheels
+  drawWheel(ctx, -22, 12, 11, p.wheelAngle);
+  drawWheel(ctx, 22, 12, 11, p.wheelAngle);
+
+  // 3. Stickman Rider
+  const lean = p.riderLean * 5;
+  // Torso
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(-6, -6);
-  ctx.lineTo(frameLen / 2 + 5 + lean * 2, -5);
+  ctx.moveTo(-6, -12);
+  ctx.lineTo(4 + lean, -30);
   ctx.stroke();
 
-  // Legs
+  // Head & Helmet
+  ctx.fillStyle = '#facc15';
   ctx.beginPath();
-  ctx.moveTo(-6, 2);
-  ctx.lineTo(-14 - lean, 14);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(-6, 2);
-  ctx.lineTo(6 - lean, 14);
-  ctx.stroke();
-
-  // Head & helmet
-  ctx.fillStyle = '#f1c40f';
-  ctx.beginPath();
-  ctx.arc(-3 + lean, -20, 8, 0, Math.PI * 2);
+  ctx.arc(6 + lean, -37, 7, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = '#2c3e50';
-  ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(3 + lean, -42, 8, 4);
+
+  // Arms to handlebars
+  ctx.strokeStyle = '#f87171';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(4 + lean, -26);
+  ctx.lineTo(18, -18);
   ctx.stroke();
 
-  ctx.fillStyle = '#e74c3c';
+  // Legs to pedals
+  ctx.strokeStyle = '#1e3a8a';
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
-  ctx.arc(-3 + lean, -22, 9, Math.PI, 2 * Math.PI);
+  ctx.moveTo(-6, -12);
+  ctx.lineTo(-1, -2);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawWheel(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, angle: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  // Rubber tire
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Metal rim
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath();
+  ctx.arc(0, 0, r - 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spokes
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(-Math.cos(a) * (r - 3), -Math.sin(a) * (r - 3));
+    ctx.lineTo(Math.cos(a) * (r - 3), Math.sin(a) * (r - 3));
+    ctx.stroke();
+  }
+
+  // Hub
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
-
-  if (p.invincibleTimer > 0 && Math.floor(p.invincibleTimer / 5) % 2 === 0) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillRect(sx - 30, sy - 30, 60, 60);
-  }
 }
 
 export function drawCheckpoint(ctx: CanvasRenderingContext2D, cp: Checkpoint, camX: number, camY: number) {
   const sx = cp.x - camX;
   const sy = cp.y - camY;
-  if (sx < -20 || sx > CANVAS_W + 20) return;
+  const w = ctx.canvas.width;
+  if (sx < -30 || sx > w + 30) return;
 
-  const color = cp.reached ? '#2ecc71' : '#f1c40f';
-  ctx.fillStyle = '#7f8c8d';
+  const color = cp.reached ? '#22c55e' : '#f59e0b';
+  ctx.fillStyle = '#64748b';
   ctx.fillRect(sx - 2, sy - 50, 4, 50);
 
   ctx.fillStyle = color;
@@ -314,8 +313,8 @@ export function drawCheckpoint(ctx: CanvasRenderingContext2D, cp: Checkpoint, ca
   ctx.fill();
 
   if (cp.reached) {
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('✓', sx + 12, sy - 35);
   }
@@ -341,7 +340,7 @@ export function drawBloodSplats(ctx: CanvasRenderingContext2D, splats: BloodSpla
   for (const s of splats) {
     const sx = s.x - camX;
     const sy = s.y - camY;
-    ctx.fillStyle = `rgba(200, 30, 30, ${s.alpha})`;
+    ctx.fillStyle = `rgba(185, 28, 28, ${s.alpha})`;
     ctx.beginPath();
     ctx.arc(sx, sy, s.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -349,7 +348,9 @@ export function drawBloodSplats(ctx: CanvasRenderingContext2D, splats: BloodSpla
 }
 
 export function gameRender(ctx: CanvasRenderingContext2D, state: GameState) {
-  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  ctx.clearRect(0, 0, w, h);
 
   const camX = state.cameraX;
   const camY = state.cameraY;
@@ -365,30 +366,32 @@ export function gameRender(ctx: CanvasRenderingContext2D, state: GameState) {
   }
 
   drawParticles(ctx, state.particles, camX, camY);
-  if (state.player.alive) drawPlayer(ctx, state.player, camX, camY);
+  if (state.player.alive) {
+    drawPlayer(ctx, state.player, camX, camY);
+  } else {
+    // Respawning Prompt
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#ef4444';
+    ctx.fillText('CRASHED! RESPAWNING...', w / 2, h / 2 - 20);
+    ctx.restore();
+  }
 
-  // HUD
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(0, 0, CANVAS_W, 36);
-  ctx.fillStyle = '#ecf0f1';
-  ctx.font = 'bold 13px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(`SCORE: ${Math.max(0, state.score)}`, 16, 24);
-  ctx.fillText(`DEATHS: ${state.deaths}`, 180, 24);
-
+  // Top Minimal In-Game Track Progress HUD
   const progress = Math.min(1, state.player.x / 5700);
-  ctx.fillStyle = '#34495e';
-  ctx.fillRect(CANVAS_W / 2 - 80, 10, 160, 14);
-  ctx.fillStyle = progress > 0.9 ? '#2ecc71' : '#f39c12';
-  ctx.fillRect(CANVAS_W / 2 - 80, 10, 160 * progress, 14);
-  ctx.strokeStyle = '#ecf0f1';
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+  ctx.fillRect(w / 2 - 100, 10, 200, 16);
+  ctx.fillStyle = progress > 0.9 ? '#22c55e' : '#38bdf8';
+  ctx.fillRect(w / 2 - 100, 10, 200 * progress, 16);
+  ctx.strokeStyle = '#334155';
   ctx.lineWidth = 1;
-  ctx.strokeRect(CANVAS_W / 2 - 80, 10, 160, 14);
+  ctx.strokeRect(w / 2 - 100, 10, 200, 16);
 
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 10px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(`${Math.floor(progress * 100)}%`, CANVAS_W / 2, 22);
-
-  const reachedCount = state.checkpoints.filter((c) => c.reached).length;
-  ctx.textAlign = 'right';
-  ctx.fillText(`CP: ${reachedCount}/${state.checkpoints.length}`, CANVAS_W - 16, 24);
+  ctx.fillText(`${Math.floor(progress * 100)}% COURSE`, w / 2, 22);
 }
