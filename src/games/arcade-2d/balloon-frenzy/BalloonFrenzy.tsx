@@ -4,10 +4,12 @@ import { createInitialBalloonState, throwDart, updateBalloonGame } from './physi
 import { renderBalloonGame } from './renderer';
 import { balloonAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Sparkles, Zap, Flame, Clock } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Sparkles, Zap, Flame, Clock, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function BalloonFrenzy() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<BalloonGameState>(createInitialBalloonState(900, 600));
@@ -19,6 +21,8 @@ export function BalloonFrenzy() {
   const [uiTimeLeft, setUiTimeLeft] = useState(45);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [uiAccuracy, setUiAccuracy] = useState(100);
   const [isMuted, setIsMuted] = useState(balloonAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
@@ -74,29 +78,31 @@ export function BalloonFrenzy() {
         return;
       }
 
-      updateBalloonGame(state);
+      if (!isPausedRef.current) {
+        updateBalloonGame(state);
 
-      if (state.started && !state.gameOver) {
-        const now = Date.now();
-        if (now - lastTime >= 1000) {
-          lastTime = now;
-          state.timeLeft = Math.max(0, state.timeLeft - 1);
-          setUiTimeLeft(state.timeLeft);
+        if (state.started && !state.gameOver) {
+          const now = Date.now();
+          if (now - lastTime >= 1000) {
+            lastTime = now;
+            state.timeLeft = Math.max(0, state.timeLeft - 1);
+            setUiTimeLeft(state.timeLeft);
 
-          if (state.timeLeft <= 0) {
-            state.gameOver = true;
-            setUiGameOver(true);
-            balloonAudio.playGameOver();
-            saveHighScore(state.score);
+            if (state.timeLeft <= 0) {
+              state.gameOver = true;
+              setUiGameOver(true);
+              balloonAudio.playGameOver();
+              saveHighScore(state.score);
+            }
           }
-        }
 
-        setUiScore(state.score);
-        setUiCombo(state.combo);
-        setUiMultiplier(state.comboMultiplier);
+          setUiScore(state.score);
+          setUiCombo(state.combo);
+          setUiMultiplier(state.comboMultiplier);
 
-        if (state.totalShots > 0) {
-          setUiAccuracy(Math.round((state.totalHits / state.totalShots) * 100));
+          if (state.totalShots > 0) {
+            setUiAccuracy(Math.round((state.totalHits / state.totalShots) * 100));
+          }
         }
       }
 
@@ -105,18 +111,37 @@ export function BalloonFrenzy() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      balloonAudio.stopAll();
+    };
   }, [uiHighScore]);
 
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || isPausedRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     stateRef.current.crosshair.x = e.clientX - rect.left;
     stateRef.current.crosshair.y = e.clientY - rect.top;
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!canvasRef.current || !uiStarted || uiGameOver) return;
+    if (!canvasRef.current || !uiStarted || uiGameOver || isPausedRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -136,12 +161,22 @@ export function BalloonFrenzy() {
     setUiTimeLeft(45);
     setUiAccuracy(100);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Balloon Frenzy" category="Carnival Shooter" score={uiScore} level={`x${uiMultiplier}`} />
+      <ArcadeHeader
+        title="Balloon Frenzy"
+        category="Carnival Shooter"
+        score={uiScore}
+        level={`x${uiMultiplier}`}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Bespoke Carnival Neon HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-purple-950/80 via-slate-900/90 to-amber-950/80 backdrop-blur-md border-b border-purple-500/20 text-xs text-slate-300 shrink-0">
@@ -228,14 +263,66 @@ export function BalloonFrenzy() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 cursor-pointer"
-                >
-                  STEP RIGHT UP!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-purple-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 cursor-pointer"
+                  >
+                    STEP RIGHT UP!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-purple-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-purple-950/50">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🎯</span>
+                  <h2 className="text-2xl font-black text-amber-400">GAME PAUSED</h2>
+                  <p className="text-xs text-slate-400">Carnival gallery currently on hold</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Game
+                  </button>
+                  <button
+                    onClick={startGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Restart</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -272,15 +359,24 @@ export function BalloonFrenzy() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>PLAY AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>PLAY AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

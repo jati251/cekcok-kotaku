@@ -143,6 +143,12 @@ class MotoRushAudioEngine {
     osc.start(now);
     osc.stop(now + 0.48);
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const motoAudio = new MotoRushAudioEngine();

@@ -115,3 +115,66 @@ export const GUPPY_CONFIGS: Record<GuppySize, { radius: number; speed: number; c
   large: { radius: 28, speed: 95, coinType: 'gold', coinValue: 40 },
   king: { radius: 36, speed: 80, coinType: 'diamond', coinValue: 120 },
 };
+
+export const createInitialGuppies = (): Guppy[] => [
+  {
+    id: 'g1',
+    x: 250,
+    y: 200,
+    vx: 40,
+    vy: 10,
+    size: 'small',
+    growth: 0,
+    hunger: 100,
+    dropTimer: 10,
+    facingRight: true,
+    tailPhase: 0,
+    finPhase: 0,
+    mouthTimer: 0,
+  },
+  {
+    id: 'g2',
+    x: 450,
+    y: 250,
+    vx: -40,
+    vy: -15,
+    size: 'small',
+    growth: 0,
+    hunger: 100,
+    dropTimer: 10,
+    facingRight: false,
+    tailPhase: 1,
+    finPhase: 1,
+    mouthTimer: 0,
+  },
+];
+
+export const HOW_TO_PLAY_STEPS = [
+  {
+    title: 'Nourish Your Guppies',
+    desc: 'Click into the water to drop food pellets. Hungry guppies turn green — feed them to help them grow and drop silver & gold coins!',
+    badge: 'Feeding',
+  },
+  {
+    title: 'Collect Coins & Diamonds',
+    desc: 'Click coins and treasures before they vanish. Stinky the Snail crawls along the bottom to automatically scoop up fallen coins.',
+    badge: 'Economy',
+  },
+  {
+    title: 'Repel Alien Invasions',
+    desc: 'When the siren blares, alien predators emerge! Click directly on them to fire laser bolts before they swallow your fish.',
+    badge: 'Defense',
+  },
+  {
+    title: 'Hatch All 3 Egg Pieces',
+    desc: 'Purchase new fish, food upgrades, and laser power in the top bar. Buy all 3 egg fragments to hatch ocean pets and win!',
+    badge: 'Goal',
+  },
+];
+
+export const CONTROLS = [
+  { key: 'Left Click Tank', action: 'Drop Food Pellet / Grab Coin' },
+  { key: 'Click Alien', action: 'Fire Defense Laser' },
+  { key: 'Top Bar', action: 'Buy Fish & Tech Upgrades' },
+  { key: 'P / Header', action: 'Pause Menu' },
+];

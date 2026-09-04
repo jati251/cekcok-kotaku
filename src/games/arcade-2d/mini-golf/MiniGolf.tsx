@@ -5,10 +5,12 @@ import { createInitialGolfState, executePutt, loadHole, updateGolfPhysics } from
 import { renderGolfGame } from './renderer';
 import { miniGolfAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Flag, ChevronRight } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Flag, ChevronRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function MiniGolf() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GolfGameState>(createInitialGolfState(900, 600));
@@ -21,6 +23,8 @@ export function MiniGolf() {
   const [uiHoleComplete, setUiHoleComplete] = useState(false);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(miniGolfAudio.getMuted());
   const [uiBestRound, setUiBestRound] = useState(() => {
     try {
@@ -29,6 +33,15 @@ export function MiniGolf() {
       return 99;
     }
   });
+
+  const saveBestRound = (strokes: number) => {
+    if (strokes < uiBestRound) {
+      setUiBestRound(strokes);
+      try {
+        localStorage.setItem('miniGolfBestRound', strokes.toString());
+      } catch {}
+    }
+  };
 
   const handleResize = useCallback(() => {
     if (!containerRef.current || !canvasRef.current) return;
@@ -64,7 +77,7 @@ export function MiniGolf() {
         return;
       }
 
-      if (state.started && !state.gameOver) {
+      if (state.started && !state.gameOver && !isPausedRef.current) {
         updateGolfPhysics(state);
         setUiStrokes(state.strokes);
         setUiHole(state.currentHoleIndex + 1);
@@ -82,8 +95,27 @@ export function MiniGolf() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      miniGolfAudio.stopAll();
+    };
   }, [uiHoleComplete]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   // Mouse drag handling to putt
   const screenToCourse = (clientX: number, clientY: number) => {
@@ -100,7 +132,7 @@ export function MiniGolf() {
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const state = stateRef.current;
-    if (!uiStarted || uiHoleComplete || uiGameOver) return;
+    if (!uiStarted || uiHoleComplete || uiGameOver || isPausedRef.current) return;
     if (Math.hypot(state.ball.vx, state.ball.vy) > 0.05) return; // Wait until ball stops
 
     const { x, y } = screenToCourse(e.clientX, e.clientY);
@@ -113,7 +145,7 @@ export function MiniGolf() {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const state = stateRef.current;
-    if (!state.aiming) return;
+    if (!state.aiming || isPausedRef.current) return;
 
     const { x, y } = screenToCourse(e.clientX, e.clientY);
     state.dragCurrentX = x;
@@ -147,12 +179,7 @@ export function MiniGolf() {
       state.gameOver = true;
       setUiGameOver(true);
       const total = state.scorecard.reduce((a, b) => a + b, 0);
-      if (total < uiBestRound) {
-        setUiBestRound(total);
-        try {
-          localStorage.setItem('miniGolfBestRound', total.toString());
-        } catch {}
-      }
+      saveBestRound(total);
     }
   };
 
@@ -168,6 +195,7 @@ export function MiniGolf() {
     setUiTotalStrokes(0);
     setUiHoleComplete(false);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
@@ -183,7 +211,16 @@ export function MiniGolf() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Mini Golf" category="Championship Tour" score={`${uiTotalStrokes} Strokes`} level={`Hole ${uiHole}/9`} />
+      <ArcadeHeader
+        title="Mini Golf"
+        category="Championship Tour"
+        score={`${uiTotalStrokes} Strokes`}
+        level={`Hole ${uiHole}/9`}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Country Club Forest Green HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-green-950/90 backdrop-blur-md border-b border-emerald-500/20 text-xs text-slate-300 shrink-0">
@@ -257,14 +294,64 @@ export function MiniGolf() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startTournament}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-600/30 cursor-pointer"
-                >
-                  TEE OFF!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border border-slate-700"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>LAUNCHER</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={startTournament}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-600/30 cursor-pointer"
+                  >
+                    TEE OFF!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && uiStarted && !uiGameOver && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-xs w-full bg-slate-900/95 border-2 border-emerald-500/80 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+                <h2 className="text-2xl font-black text-emerald-400 tracking-wider">GAME PAUSED</h2>
+                <p className="text-xs text-slate-400 font-mono">Hole {uiHole} of 9 • {uiTotalStrokes} Strokes</p>
+                <div className="space-y-2 pt-2">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-600/30"
+                  >
+                    RESUME
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsPaused(false);
+                      startTournament();
+                    }}
+                    className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition cursor-pointer border border-slate-700"
+                  >
+                    RESTART TOURNAMENT
+                  </button>
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="w-full py-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>EXIT TO LAUNCHER</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -331,15 +418,24 @@ export function MiniGolf() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startTournament}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>PLAY AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border border-slate-700"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>LAUNCHER</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={startTournament}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>PLAY AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

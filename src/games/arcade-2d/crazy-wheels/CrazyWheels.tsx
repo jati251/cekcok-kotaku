@@ -4,10 +4,12 @@ import { createInitialState, gameTick } from './physics';
 import { gameRender } from './renderer';
 import { crazyAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Heart, Flag } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Heart, Flag, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function CrazyWheels() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(createInitialState());
@@ -18,6 +20,8 @@ export function CrazyWheels() {
   const [uiDeaths, setUiDeaths] = useState(0);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [uiFinishReached, setUiFinishReached] = useState(false);
   const [isMuted, setIsMuted] = useState(crazyAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
@@ -91,16 +95,18 @@ export function CrazyWheels() {
         return;
       }
 
-      gameTick(state, keysRef.current);
+      if (!isPausedRef.current) {
+        gameTick(state, keysRef.current);
 
-      if (state.started) {
-        setUiScore(Math.max(0, state.score));
-        setUiDeaths(state.deaths);
+        if (state.started) {
+          setUiScore(Math.max(0, state.score));
+          setUiDeaths(state.deaths);
 
-        if (state.gameOver && !uiGameOver) {
-          setUiGameOver(true);
-          setUiFinishReached(state.finishReached);
-          saveHighScore(state.score);
+          if (state.gameOver && !uiGameOver) {
+            setUiGameOver(true);
+            setUiFinishReached(state.finishReached);
+            saveHighScore(state.score);
+          }
         }
       }
 
@@ -109,8 +115,27 @@ export function CrazyWheels() {
     };
 
     animRef.current = requestAnimationFrame(run);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      crazyAudio.stopAll();
+    };
   }, [uiGameOver, uiHighScore]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   const resetGame = () => {
     if (!canvasRef.current) return;
@@ -127,6 +152,7 @@ export function CrazyWheels() {
     setUiDeaths(0);
     setUiGameOver(false);
     setUiFinishReached(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
@@ -134,7 +160,16 @@ export function CrazyWheels() {
 
   return (
     <div className="flex flex-col w-full h-full bg-slate-950 overflow-hidden select-none font-sans relative">
-      <ArcadeHeader title="Crazy Wheels" category="Physics Obstacle Trial" score={uiScore} lives={remainingLives} />
+      <ArcadeHeader
+        title="Crazy Wheels"
+        category="Physics Obstacle Trial"
+        score={uiScore}
+        lives={remainingLives}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Floating HUD */}
       <div className="absolute top-16 left-6 right-6 flex items-center justify-between z-20 pointer-events-none">
@@ -192,14 +227,66 @@ export function CrazyWheels() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-rose-600/20 cursor-pointer"
-                >
-                  START TRIAL
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-rose-600/20 cursor-pointer"
+                  >
+                    START TRIAL
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-rose-950/50">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🚲</span>
+                  <h2 className="text-2xl font-black text-amber-400">TRIAL PAUSED</h2>
+                  <p className="text-xs text-slate-400">Obstacle challenge on standby</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Run
+                  </button>
+                  <button
+                    onClick={resetGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Restart Trial</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -254,19 +341,28 @@ export function CrazyWheels() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r ${
-                    uiFinishReached
-                      ? 'from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400'
-                      : 'from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400'
-                  } text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer`}
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>TRY AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className={`flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r ${
+                      uiFinishReached
+                        ? 'from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400'
+                        : 'from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400'
+                    } text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer`}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>TRY AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

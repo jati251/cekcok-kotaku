@@ -168,6 +168,12 @@ class PizzaFrenzyAudio {
       osc.stop(t + 0.55);
     });
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const pizzaAudio = new PizzaFrenzyAudio();

@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
+import { GameMenuOverlay, HowToPlayStep } from '../arcade-2d/GameMenuOverlay';
 import { Fish, BonusItem, HazardJellyfish, Particle, FrenzyGameState, TIER_CONFIGS } from './types';
 import { FrenzyPhysics } from './physics';
 import { FrenzyRenderer } from './renderer';
 import { frenzyAudio } from './audio';
-import { Zap, Flame, Trophy, RotateCcw, Play } from 'lucide-react';
+import { Zap, Flame, Trophy, RotateCcw, Play, Fish as FishIcon } from 'lucide-react';
 
 const INITIAL_STATE: FrenzyGameState = {
   score: 0,
@@ -24,13 +25,39 @@ const INITIAL_STATE: FrenzyGameState = {
   isPaused: false,
 };
 
+const HOW_TO_PLAY_STEPS: HowToPlayStep[] = [
+  {
+    title: 'Eat Smaller Fish',
+    desc: 'Steer your fish with the mouse cursor. Swim into prey smaller than yourself to chomp them and gain growth points.',
+    badge: 'Core Mechanic',
+  },
+  {
+    title: 'Dodge Apex Predators',
+    desc: 'Fish larger than you will swallow you whole! Red edge arrows warn when a deadly Great White Shark enters the reef.',
+    badge: 'Survival',
+  },
+  {
+    title: 'Evolve & Frenzy Multipliers',
+    desc: 'Fill your stomach meter to evolve (Andy -> Leo -> Boris -> Goliath Shark). Rapidly eat fish to trigger FRENZY (2x) and DOUBLE FRENZY (3x)!',
+    badge: 'Growth',
+  },
+];
+
+const CONTROLS = [
+  { key: 'Mouse Move', action: 'Steer Fish' },
+  { key: 'Spacebar / Hold', action: 'Dash Speed Boost' },
+  { key: 'P Key / Header', action: 'Pause Menu' },
+];
+
 export const FeedingFrenzy: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hudState, setHudState] = useState<FrenzyGameState>(INITIAL_STATE);
+  const [isStarted, setIsStarted] = useState(false);
 
   // Mutable game simulation refs
+  const isStartedRef = useRef(false);
   const stateRef = useRef<FrenzyGameState>({ ...INITIAL_STATE });
   const playerRef = useRef<Fish>({
     id: 'player',
@@ -69,7 +96,6 @@ export const FeedingFrenzy: React.FC = () => {
       const rect = containerRef.current.getBoundingClientRect();
       const w = Math.max(400, Math.floor(rect.width));
       const h = Math.max(300, Math.floor(rect.height));
-
       canvasRef.current.width = w;
       canvasRef.current.height = h;
     };
@@ -83,8 +109,10 @@ export const FeedingFrenzy: React.FC = () => {
       if (e.code === 'Space') {
         stateRef.current.isBoosting = true;
       } else if (e.code === 'KeyP') {
-        stateRef.current.isPaused = !stateRef.current.isPaused;
-        setHudState({ ...stateRef.current });
+        if (isStartedRef.current) {
+          stateRef.current.isPaused = !stateRef.current.isPaused;
+          setHudState({ ...stateRef.current });
+        }
       }
     };
 
@@ -107,10 +135,10 @@ export const FeedingFrenzy: React.FC = () => {
       const width = canvasRef.current?.width || 800;
       const height = canvasRef.current?.height || 600;
 
-      if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
+      // Only update gameplay if started and not paused
+      if (isStartedRef.current && !stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
         gameTimeRef.current += dt;
 
-        // 1. Update Player
         FrenzyPhysics.updatePlayer(
           playerRef.current,
           targetPointerRef.current.x,
@@ -121,7 +149,6 @@ export const FeedingFrenzy: React.FC = () => {
           dt
         );
 
-        // 2. Spawn NPC Fish
         spawnTimerRef.current += dt;
         if (spawnTimerRef.current > 0.8 && npcListRef.current.length < 18) {
           spawnTimerRef.current = 0;
@@ -130,7 +157,6 @@ export const FeedingFrenzy: React.FC = () => {
           );
         }
 
-        // 3. Spawn Bonuses & Jellyfish
         bonusTimerRef.current += dt;
         if (bonusTimerRef.current > 4.5 && bonusesRef.current.length < 4) {
           bonusTimerRef.current = 0;
@@ -158,7 +184,6 @@ export const FeedingFrenzy: React.FC = () => {
           });
         }
 
-        // 4. Update NPCs
         for (let i = npcListRef.current.length - 1; i >= 0; i--) {
           const npc = npcListRef.current[i];
           FrenzyPhysics.updateNPCFish(npc, playerRef.current, dt);
@@ -167,21 +192,18 @@ export const FeedingFrenzy: React.FC = () => {
           }
         }
 
-        // 5. Update Bonuses
         for (let b = bonusesRef.current.length - 1; b >= 0; b--) {
           const bonus = bonusesRef.current[b];
           bonus.y += bonus.vy * dt;
           if (bonus.y < -40) bonusesRef.current.splice(b, 1);
         }
 
-        // 6. Update Jellyfish
         for (let j = jellyfishRef.current.length - 1; j >= 0; j--) {
           const jelly = jellyfishRef.current[j];
           jelly.y += jelly.vy * dt;
           if (jelly.y < -50) jellyfishRef.current.splice(j, 1);
         }
 
-        // 7. Update Particles
         for (let p = particlesRef.current.length - 1; p >= 0; p--) {
           const particle = particlesRef.current[p];
           particle.life -= dt;
@@ -190,7 +212,6 @@ export const FeedingFrenzy: React.FC = () => {
           if (particle.life <= 0) particlesRef.current.splice(p, 1);
         }
 
-        // 8. Collisions & Frenzy Meter
         FrenzyPhysics.checkCollisions(
           playerRef.current,
           npcListRef.current,
@@ -203,10 +224,22 @@ export const FeedingFrenzy: React.FC = () => {
         );
         FrenzyPhysics.updateFrenzyMeter(stateRef.current, dt);
 
-        // Throttled UI sync
         if (now - lastUiSync > 100) {
           lastUiSync = now;
           setHudState({ ...stateRef.current });
+        }
+      } else if (!isStartedRef.current) {
+        // Idle ambient swim before game starts
+        gameTimeRef.current += dt;
+        for (let i = npcListRef.current.length - 1; i >= 0; i--) {
+          const npc = npcListRef.current[i];
+          npc.x += npc.vx * dt * 0.5;
+          if (npc.x < -100 || npc.x > width + 100) {
+            npcListRef.current.splice(i, 1);
+          }
+        }
+        if (npcListRef.current.length < 8 && Math.random() < 0.03) {
+          npcListRef.current.push(FrenzyPhysics.spawnNPCFish(width, height, 1));
         }
       }
 
@@ -233,26 +266,20 @@ export const FeedingFrenzy: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       cancelAnimationFrame(animFrameRef.current);
+      frenzyAudio.stopAll();
     };
   }, []);
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    targetPointerRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+  const handleStartGame = () => {
+    isStartedRef.current = true;
+    setIsStarted(true);
+    stateRef.current.isPaused = false;
+    frenzyAudio.playBubblePop(700);
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button === 0) {
-      stateRef.current.isBoosting = true;
-    }
-  };
-
-  const handlePointerUp = () => {
-    stateRef.current.isBoosting = false;
+  const handleResumeGame = () => {
+    stateRef.current.isPaused = false;
+    setHudState({ ...stateRef.current });
   };
 
   const restartGame = () => {
@@ -275,6 +302,8 @@ export const FeedingFrenzy: React.FC = () => {
     bonusesRef.current = [];
     jellyfishRef.current = [];
     particlesRef.current = [];
+    isStartedRef.current = true;
+    setIsStarted(true);
     setHudState({ ...stateRef.current });
     frenzyAudio.playBubblePop(700);
   };
@@ -290,85 +319,109 @@ export const FeedingFrenzy: React.FC = () => {
         score={hudState.score}
         level={`Tier ${hudState.tier}`}
         lives={hudState.lives}
+        isPaused={hudState.isPaused}
+        onTogglePause={() => {
+          if (isStartedRef.current) {
+            stateRef.current.isPaused = !stateRef.current.isPaused;
+            setHudState({ ...stateRef.current });
+          }
+        }}
       />
 
       {/* Main Canvas Stage */}
       <div
         ref={containerRef}
-        onPointerMove={handlePointerMove}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
+        onPointerMove={(e) => {
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          targetPointerRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }}
+        onPointerDown={(e) => {
+          if (e.button === 0) stateRef.current.isBoosting = true;
+        }}
+        onPointerUp={() => {
+          stateRef.current.isBoosting = false;
+        }}
         className="relative flex-1 w-full h-full overflow-hidden cursor-crosshair touch-none"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* HUD Overlay */}
-        <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
-          {/* Growth Evolution Bar */}
-          <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-2xl border border-sky-500/30 shadow-lg">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-mono text-sky-400 uppercase tracking-widest font-bold">
-                {currentTierConfig.name}
-              </span>
-              <div className="w-44 h-3 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60 p-0.5 mt-1">
-                <div
-                  className="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-200"
-                  style={{ width: `${growthPercent}%` }}
-                />
-              </div>
-            </div>
-            <span className="text-xs font-mono font-bold text-sky-300 min-w-[38px] text-right">
-              {growthPercent}%
-            </span>
-          </div>
-
-          {/* Frenzy Status Gauge */}
-          <div className="flex items-center gap-3">
-            <div
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border backdrop-blur-md transition-all duration-300 shadow-lg ${
-                hudState.frenzyLevel > 0
-                  ? 'bg-amber-500/20 border-amber-400 shadow-amber-500/30 animate-pulse'
-                  : 'bg-slate-900/80 border-slate-800'
-              }`}
-            >
-              <Flame
-                className={`w-4 h-4 ${
-                  hudState.frenzyLevel === 2
-                    ? 'text-red-400 fill-red-400'
-                    : hudState.frenzyLevel === 1
-                    ? 'text-amber-400 fill-amber-400'
-                    : 'text-slate-500'
-                }`}
-              />
-              <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-                {hudState.frenzyLevel === 2
-                  ? 'DOUBLE FRENZY (3x)'
-                  : hudState.frenzyLevel === 1
-                  ? 'FRENZY (2x)'
-                  : 'Frenzy Meter'}
-              </span>
-              {hudState.frenzyLevel === 0 && (
-                <div className="w-20 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+        {/* In-Game HUD Overlay */}
+        {isStarted && (
+          <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
+            {/* Growth Evolution Bar */}
+            <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-2xl border border-sky-500/30 shadow-lg">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-mono text-sky-400 uppercase tracking-widest font-bold">
+                  {currentTierConfig.name}
+                </span>
+                <div className="w-44 h-3 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60 p-0.5 mt-1">
                   <div
-                    className="h-full bg-amber-400 transition-all"
-                    style={{ width: `${hudState.frenzyMeter}%` }}
+                    className="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-200"
+                    style={{ width: `${growthPercent}%` }}
                   />
                 </div>
-              )}
+              </div>
+              <span className="text-xs font-mono font-bold text-sky-300 min-w-[38px] text-right">
+                {growthPercent}%
+              </span>
             </div>
 
-            {/* Boost Stamina */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs font-mono">
-              <Zap className="w-3.5 h-3.5 text-cyan-400" />
-              <div className="w-14 h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-cyan-400 transition-all"
-                  style={{ width: `${hudState.boostEnergy}%` }}
+            {/* Frenzy Status Gauge & Boost */}
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-2 px-4 py-2 rounded-2xl border backdrop-blur-md transition-all duration-300 shadow-lg ${
+                  hudState.frenzyLevel > 0
+                    ? 'bg-amber-500/20 border-amber-400 shadow-amber-500/30 animate-pulse'
+                    : 'bg-slate-900/80 border-slate-800'
+                }`}
+              >
+                <Flame
+                  className={`w-4 h-4 ${
+                    hudState.frenzyLevel === 2
+                      ? 'text-red-400 fill-red-400'
+                      : hudState.frenzyLevel === 1
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-slate-500'
+                  }`}
                 />
+                <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                  {hudState.frenzyLevel === 2
+                    ? 'DOUBLE FRENZY (3x)'
+                    : hudState.frenzyLevel === 1
+                    ? 'FRENZY (2x)'
+                    : 'Frenzy Meter'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs font-mono">
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="w-14 h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-cyan-400 transition-all"
+                    style={{ width: `${hudState.boostEnergy}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Main Menu & Pause Overlay */}
+        <GameMenuOverlay
+          title="Feeding Frenzy"
+          subtitle="Climb the marine food chain from Andy the Angelfish to the colossal Goliath Great White Shark!"
+          accentColor="#06b6d4"
+          icon={<FishIcon className="w-10 h-10 text-cyan-400" />}
+          highScore={hudState.highScore}
+          howToPlay={HOW_TO_PLAY_STEPS}
+          controlsList={CONTROLS}
+          isStarted={isStarted}
+          isPaused={hudState.isPaused}
+          onStart={handleStartGame}
+          onResume={handleResumeGame}
+          onRestart={restartGame}
+        />
 
         {/* Game Over / Victory Modal */}
         {(hudState.isGameOver || hudState.isVictory) && (
@@ -383,7 +436,7 @@ export const FeedingFrenzy: React.FC = () => {
                     Apex Predator!
                   </h2>
                   <p className="text-xs text-slate-400 mb-5">
-                    You evolved into the legendary Goliath Great White Shark and conquered the reef!
+                    You conquered the reef and became the ruler of the ocean!
                   </p>
                 </>
               ) : (

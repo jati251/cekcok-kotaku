@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
+import { GameMenuOverlay, HowToPlayStep } from '../arcade-2d/GameMenuOverlay';
 import {
   Pizzeria,
   CustomerOrder,
@@ -12,7 +13,7 @@ import { CityMapGenerator } from './cityMap';
 import { PizzaPhysics } from './physics';
 import { PizzaRenderer } from './renderer';
 import { pizzaAudio } from './audio';
-import { Flame, DollarSign, Trophy, RotateCcw, ArrowRight } from 'lucide-react';
+import { Flame, DollarSign, Trophy, RotateCcw, ArrowRight, Pizza } from 'lucide-react';
 
 const INITIAL_STATE: PizzaGameState = {
   score: 0,
@@ -28,14 +29,43 @@ const INITIAL_STATE: PizzaGameState = {
   isPaused: false,
 };
 
+const HOW_TO_PLAY_STEPS: HowToPlayStep[] = [
+  {
+    title: 'Match Customer Cravings',
+    desc: 'Watch buildings for incoming pizza craving bubbles (Pepperoni, Margherita, Supreme, Veggie). The outer colored circle shows remaining patience.',
+    badge: 'Orders',
+  },
+  {
+    title: 'Dispatch Delivery Scooters',
+    desc: 'Select the matching quadrant pizzeria using keyboard keys 1, 2, 3, 4 or click on the pizzeria hub, then click the ordering customer building.',
+    badge: 'Routing',
+  },
+  {
+    title: 'Build Tip Streaks & Avoid Pranksters',
+    desc: 'Rapid successful deliveries earn high tip multiplier streaks. Reject prank callers before they waste your delivery scooters!',
+    badge: 'Tips & Combos',
+  },
+];
+
+const CONTROLS = [
+  { key: 'Key 1', action: 'Pepperoni (NW)' },
+  { key: 'Key 2', action: 'Margherita (NE)' },
+  { key: 'Key 3', action: 'Supreme (SW)' },
+  { key: 'Key 4', action: 'Veggie (SE)' },
+  { key: 'Click Order', action: 'Dispatch Delivery' },
+  { key: 'P / Header', action: 'Pause Menu' },
+];
+
 export const PizzaFrenzy: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hudState, setHudState] = useState<PizzaGameState>(INITIAL_STATE);
   const [selectedPizzeriaId, setSelectedPizzeriaId] = useState<string>('pizzeria-nw');
+  const [isStarted, setIsStarted] = useState(false);
 
   // Simulation Refs
+  const isStartedRef = useRef(false);
   const stateRef = useRef<PizzaGameState>({ ...INITIAL_STATE });
   const selectedPizzeriaRef = useRef<string>('pizzeria-nw');
   const hoveredPizzeriaRef = useRef<string | null>(null);
@@ -80,22 +110,22 @@ export const PizzaFrenzy: React.FC = () => {
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
 
-    // Keyboard shortcuts (1: NW Pepperoni, 2: NE Margherita, 3: SW Supreme, 4: SE Veggie)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === '1') selectPizzeria('pizzeria-nw');
       if (e.key === '2') selectPizzeria('pizzeria-ne');
       if (e.key === '3') selectPizzeria('pizzeria-sw');
       if (e.key === '4') selectPizzeria('pizzeria-se');
       if (e.code === 'KeyP') {
-        stateRef.current.isPaused = !stateRef.current.isPaused;
-        setHudState({ ...stateRef.current });
+        if (isStartedRef.current) {
+          stateRef.current.isPaused = !stateRef.current.isPaused;
+          setHudState({ ...stateRef.current });
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
 
     let lastUiSync = 0;
 
-    // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
@@ -103,10 +133,9 @@ export const PizzaFrenzy: React.FC = () => {
       const w = canvasRef.current?.width || 800;
       const h = canvasRef.current?.height || 600;
 
-      if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isDayComplete) {
+      if (isStartedRef.current && !stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isDayComplete) {
         gameTimeRef.current += dt;
 
-        // Spawn Orders
         orderSpawnTimerRef.current += dt;
         const spawnInterval = Math.max(1.2, 3.2 - stateRef.current.day * 0.3);
         if (orderSpawnTimerRef.current > spawnInterval && ordersRef.current.length < 6) {
@@ -119,7 +148,6 @@ export const PizzaFrenzy: React.FC = () => {
           if (newOrder) ordersRef.current.push(newOrder);
         }
 
-        // Update kinematic scooters
         PizzaPhysics.updateScooters(
           scootersRef.current,
           ordersRef.current,
@@ -128,7 +156,6 @@ export const PizzaFrenzy: React.FC = () => {
           dt
         );
 
-        // Update customer patience
         PizzaPhysics.updateOrders(
           ordersRef.current,
           particlesRef.current,
@@ -136,7 +163,6 @@ export const PizzaFrenzy: React.FC = () => {
           dt
         );
 
-        // Update particles
         for (let p = particlesRef.current.length - 1; p >= 0; p--) {
           const part = particlesRef.current[p];
           part.life -= dt;
@@ -145,14 +171,14 @@ export const PizzaFrenzy: React.FC = () => {
           if (part.life <= 0) particlesRef.current.splice(p, 1);
         }
 
-        // Throttled UI sync (~10 times per second)
         if (now - lastUiSync > 100) {
           lastUiSync = now;
           setHudState({ ...stateRef.current });
         }
+      } else if (!isStartedRef.current) {
+        gameTimeRef.current += dt;
       }
 
-      // Render
       PizzaRenderer.render(
         ctx,
         w,
@@ -176,16 +202,17 @@ export const PizzaFrenzy: React.FC = () => {
       observer.disconnect();
       window.removeEventListener('keydown', handleKeyDown);
       cancelAnimationFrame(animFrameRef.current);
+      pizzaAudio.stopAll();
     };
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isStartedRef.current || stateRef.current.isPaused) return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    // Check if clicked on a Pizzeria
     for (const piz of pizzeriasRef.current) {
       if (Math.hypot(clickX - piz.x, clickY - piz.y) < 42) {
         selectPizzeria(piz.id);
@@ -193,7 +220,6 @@ export const PizzaFrenzy: React.FC = () => {
       }
     }
 
-    // Check if clicked on a Customer Order
     for (const ord of ordersRef.current) {
       if (Math.hypot(clickX - ord.x, clickY - (ord.y - 32)) < 30) {
         const activePizzeria = pizzeriasRef.current.find(
@@ -213,6 +239,18 @@ export const PizzaFrenzy: React.FC = () => {
         return;
       }
     }
+  };
+
+  const handleStartGame = () => {
+    isStartedRef.current = true;
+    setIsStarted(true);
+    stateRef.current.isPaused = false;
+    pizzaAudio.playOvenBell();
+  };
+
+  const handleResumeGame = () => {
+    stateRef.current.isPaused = false;
+    setHudState({ ...stateRef.current });
   };
 
   const startNextDay = () => {
@@ -235,6 +273,8 @@ export const PizzaFrenzy: React.FC = () => {
     ordersRef.current = [];
     scootersRef.current = [];
     particlesRef.current = [];
+    isStartedRef.current = true;
+    setIsStarted(true);
     setHudState({ ...stateRef.current });
   };
 
@@ -248,6 +288,13 @@ export const PizzaFrenzy: React.FC = () => {
         score={`$${hudState.score}`}
         level={`Day ${hudState.day}`}
         lives={hudState.maxMissedAllowed - hudState.ordersMissed}
+        isPaused={hudState.isPaused}
+        onTogglePause={() => {
+          if (isStartedRef.current) {
+            stateRef.current.isPaused = !stateRef.current.isPaused;
+            setHudState({ ...stateRef.current });
+          }
+        }}
       />
 
       {/* Main Canvas Area */}
@@ -258,62 +305,80 @@ export const PizzaFrenzy: React.FC = () => {
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* Top Floating Telemetry */}
-        <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
-          {/* Cash Target Revenue Bar */}
-          <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/30 shadow-lg">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">
-                Daily Revenue Goal
-              </span>
-              <div className="w-44 h-3 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60 p-0.5 mt-1">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-200"
-                  style={{ width: `${cashPercent}%` }}
-                />
+        {/* Top Floating Telemetry in-game */}
+        {isStarted && (
+          <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
+            {/* Cash Target Revenue Bar */}
+            <div className="flex items-center gap-3 bg-slate-900/85 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/30 shadow-lg">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">
+                  Daily Revenue Goal
+                </span>
+                <div className="w-44 h-3 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60 p-0.5 mt-1">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-200"
+                    style={{ width: `${cashPercent}%` }}
+                  />
+                </div>
               </div>
+              <span className="text-xs font-mono font-bold text-emerald-300 min-w-[50px] text-right">
+                ${hudState.cash} / ${hudState.targetCash}
+              </span>
             </div>
-            <span className="text-xs font-mono font-bold text-emerald-300 min-w-[50px] text-right">
-              ${hudState.cash} / ${hudState.targetCash}
-            </span>
-          </div>
 
-          {/* Quick Pizzeria Select Dock (Keys 1, 2, 3, 4) */}
-          <div className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-800 pointer-events-auto shadow-lg">
-            {[
-              { id: 'pizzeria-nw', key: '1', name: 'Pepperoni', color: '#ef4444' },
-              { id: 'pizzeria-ne', key: '2', name: 'Margherita', color: '#eab308' },
-              { id: 'pizzeria-sw', key: '3', name: 'Supreme', color: '#8b5cf6' },
-              { id: 'pizzeria-se', key: '4', name: 'Veggie', color: '#10b981' },
-            ].map((p) => (
-              <button
-                key={p.id}
-                onClick={() => selectPizzeria(p.id)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold uppercase transition active:scale-95 ${
-                  selectedPizzeriaId === p.id
-                    ? 'bg-white/20 border-2 border-white text-white shadow-md'
-                    : 'bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800'
+            {/* Quick Pizzeria Select Dock */}
+            <div className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-800 pointer-events-auto shadow-lg">
+              {[
+                { id: 'pizzeria-nw', key: '1', name: 'Pepperoni', color: '#ef4444' },
+                { id: 'pizzeria-ne', key: '2', name: 'Margherita', color: '#eab308' },
+                { id: 'pizzeria-sw', key: '3', name: 'Supreme', color: '#8b5cf6' },
+                { id: 'pizzeria-se', key: '4', name: 'Veggie', color: '#10b981' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => selectPizzeria(p.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold uppercase transition active:scale-95 ${
+                    selectedPizzeriaId === p.id
+                      ? 'bg-white/20 border-2 border-white text-white shadow-md'
+                      : 'bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="text-[10px] px-1 rounded bg-black/40 text-amber-300">{p.key}</span>
+                  <span style={{ color: p.color }}>{p.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tip Streak Counter */}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-slate-800 shadow-lg">
+              <Flame
+                className={`w-4 h-4 ${
+                  hudState.comboStreak > 1 ? 'text-amber-400 fill-amber-400 animate-bounce' : 'text-slate-500'
                 }`}
-              >
-                <span className="text-[10px] px-1 rounded bg-black/40 text-amber-300">{p.key}</span>
-                <span style={{ color: p.color }}>{p.name}</span>
-              </button>
-            ))}
+              />
+              <span className="text-xs font-mono font-bold text-amber-300">
+                {hudState.comboStreak > 0 ? `${hudState.comboStreak}x Tip Streak` : 'No Streak'}
+              </span>
+            </div>
           </div>
+        )}
 
-          {/* Tip Streak Counter */}
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-slate-800 shadow-lg">
-            <Flame
-              className={`w-4 h-4 ${
-                hudState.comboStreak > 1 ? 'text-amber-400 fill-amber-400 animate-bounce' : 'text-slate-500'
-              }`}
-            />
-            <span className="text-xs font-mono font-bold text-amber-300">
-              {hudState.comboStreak > 0 ? `${hudState.comboStreak}x Tip Streak` : 'No Streak'}
-            </span>
-          </div>
-        </div>
+        {/* Main Menu & Pause Overlay */}
+        <GameMenuOverlay
+          title="Pizza Frenzy"
+          subtitle="Manage the Stromboli family pizzeria fleet! Route pizza delivery scooters across busy metropolitan avenues."
+          accentColor="#f97316"
+          icon={<Pizza className="w-10 h-10 text-orange-400" />}
+          highScore={`$${hudState.score}`}
+          howToPlay={HOW_TO_PLAY_STEPS}
+          controlsList={CONTROLS}
+          isStarted={isStarted}
+          isPaused={hudState.isPaused}
+          onStart={handleStartGame}
+          onResume={handleResumeGame}
+          onRestart={restartGame}
+        />
 
         {/* Day Complete Modal */}
         {hudState.isDayComplete && (

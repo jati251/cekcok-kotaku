@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
+import { GameMenuOverlay } from '../arcade-2d/GameMenuOverlay';
 import {
-  Guppy,
   Carnivore,
   FoodPellet,
   DroppedCoin,
@@ -10,13 +10,16 @@ import {
   LaserBeam,
   Particle,
   AquariumState,
+  createInitialGuppies,
+  HOW_TO_PLAY_STEPS,
+  CONTROLS,
 } from './types';
 import { AquariumPhysics } from './physics';
 import { AquariumRenderer } from './renderer';
 import { AquariumShop } from './AquariumShop';
 import { AquariumModals } from './AquariumModals';
 import { aquariumAudio } from './audio';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Fish as FishIcon } from 'lucide-react';
 
 const INITIAL_STATE: AquariumState = {
   money: 200,
@@ -38,42 +41,12 @@ export const Insaniquarium: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hudState, setHudState] = useState<AquariumState>(INITIAL_STATE);
+  const [isStarted, setIsStarted] = useState(false);
 
   // Simulation Refs
+  const isStartedRef = useRef(false);
   const stateRef = useRef<AquariumState>({ ...INITIAL_STATE });
-  const guppiesRef = useRef<Guppy[]>([
-    {
-      id: 'g1',
-      x: 250,
-      y: 200,
-      vx: 40,
-      vy: 10,
-      size: 'small',
-      growth: 0,
-      hunger: 100,
-      dropTimer: 10,
-      facingRight: true,
-      tailPhase: 0,
-      finPhase: 0,
-      mouthTimer: 0,
-    },
-    {
-      id: 'g2',
-      x: 450,
-      y: 250,
-      vx: -40,
-      vy: -15,
-      size: 'small',
-      growth: 0,
-      hunger: 100,
-      dropTimer: 10,
-      facingRight: false,
-      tailPhase: 1,
-      finPhase: 1,
-      mouthTimer: 0,
-    },
-  ]);
-
+  const guppiesRef = useRef(createInitialGuppies());
   const carnivoresRef = useRef<Carnivore[]>([]);
   const pelletsRef = useRef<FoodPellet[]>([]);
   const coinsRef = useRef<DroppedCoin[]>([]);
@@ -116,7 +89,6 @@ export const Insaniquarium: React.FC = () => {
 
     let lastUiSync = 0;
 
-    // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
@@ -124,7 +96,7 @@ export const Insaniquarium: React.FC = () => {
       const width = canvasRef.current?.width || 800;
       const height = canvasRef.current?.height || 600;
 
-      if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
+      if (isStartedRef.current && !stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
         gameTimeRef.current += dt;
 
         // Alien Spawn Timer
@@ -224,6 +196,18 @@ export const Insaniquarium: React.FC = () => {
           lastUiSync = now;
           setHudState({ ...stateRef.current });
         }
+      } else if (!isStartedRef.current) {
+        // Ambient background animation on Main Menu
+        for (const g of guppiesRef.current) {
+          g.x += g.vx * dt * 0.4;
+          g.y += g.vy * dt * 0.4;
+          if (g.x < 35) { g.x = 35; g.vx = Math.abs(g.vx); g.facingRight = true; }
+          if (g.x > width - 35) { g.x = width - 35; g.vx = -Math.abs(g.vx); g.facingRight = false; }
+          if (g.y < 80) { g.y = 80; g.vy = Math.abs(g.vy); }
+          if (g.y > height - 60) { g.y = height - 60; g.vy = -Math.abs(g.vy); }
+          g.tailPhase = (g.tailPhase + dt * 4) % (Math.PI * 2);
+          g.finPhase = (g.finPhase + dt * 5) % (Math.PI * 2);
+        }
       }
 
       // Render
@@ -250,10 +234,22 @@ export const Insaniquarium: React.FC = () => {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(animFrameRef.current);
+      aquariumAudio.stopAll();
     };
   }, []);
 
+  const handleStartGame = () => {
+    setIsStarted(true);
+    isStartedRef.current = true;
+  };
+
+  const handleResumeGame = () => {
+    stateRef.current.isPaused = false;
+    setHudState((prev) => ({ ...prev, isPaused: false }));
+  };
+
   const handleCanvasClick = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isStartedRef.current || stateRef.current.isPaused || stateRef.current.isGameOver || stateRef.current.isVictory) return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -400,38 +396,7 @@ export const Insaniquarium: React.FC = () => {
 
   const restartGame = () => {
     stateRef.current = { ...INITIAL_STATE };
-    guppiesRef.current = [
-      {
-        id: 'g1',
-        x: 250,
-        y: 200,
-        vx: 40,
-        vy: 10,
-        size: 'small',
-        growth: 0,
-        hunger: 100,
-        dropTimer: 10,
-        facingRight: true,
-        tailPhase: 0,
-        finPhase: 0,
-        mouthTimer: 0,
-      },
-      {
-        id: 'g2',
-        x: 450,
-        y: 250,
-        vx: -40,
-        vy: -15,
-        size: 'small',
-        growth: 0,
-        hunger: 100,
-        dropTimer: 10,
-        facingRight: false,
-        tailPhase: 1,
-        finPhase: 1,
-        mouthTimer: 0,
-      },
-    ];
+    guppiesRef.current = createInitialGuppies();
     carnivoresRef.current = [];
     pelletsRef.current = [];
     coinsRef.current = [];
@@ -446,6 +411,13 @@ export const Insaniquarium: React.FC = () => {
         category="PopCap Virtual Aquarium"
         score={`$${hudState.money}`}
         level={`Egg ${hudState.eggPieces}/3`}
+        isPaused={hudState.isPaused}
+        onTogglePause={() => {
+          if (!isStarted) return;
+          const next = !hudState.isPaused;
+          stateRef.current.isPaused = next;
+          setHudState((prev) => ({ ...prev, isPaused: next }));
+        }}
       />
 
       <AquariumShop
@@ -478,6 +450,22 @@ export const Insaniquarium: React.FC = () => {
             <span>ALIEN INVASION! CLICK TO SHOOT DEFENSIVE LASER!</span>
           </div>
         )}
+
+        {/* Main Menu & Pause Overlay */}
+        <GameMenuOverlay
+          title="Insaniquarium"
+          subtitle="PopCap's aquatic pet adventure — feed guppies, gather gleaming coins, and defend the tank from alien invaders!"
+          accentColor="#0284c7"
+          icon={<FishIcon className="w-10 h-10 text-sky-400" />}
+          highScore={`Egg ${hudState.eggPieces}/3`}
+          howToPlay={HOW_TO_PLAY_STEPS}
+          controlsList={CONTROLS}
+          isStarted={isStarted}
+          isPaused={hudState.isPaused}
+          onStart={handleStartGame}
+          onResume={handleResumeGame}
+          onRestart={restartGame}
+        />
 
         <AquariumModals
           isVictory={hudState.isVictory}

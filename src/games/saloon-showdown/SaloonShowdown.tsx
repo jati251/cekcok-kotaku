@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
+import { GameMenuOverlay, HowToPlayStep } from '../arcade-2d/GameMenuOverlay';
 import { SaloonTarget, BulletHole, Particle, SaloonGameState } from './types';
 import { SaloonEngine, SaloonSlot } from './engine';
 import { SaloonRenderer } from './renderer';
 import { saloonAudio } from './audio';
-import { Eye, RotateCcw, Crosshair, Play } from 'lucide-react';
+import { Eye, RotateCcw, Crosshair, Play, Target } from 'lucide-react';
 
 const INITIAL_STATE: SaloonGameState = {
   score: 0,
@@ -26,13 +27,40 @@ const INITIAL_STATE: SaloonGameState = {
   isPaused: false,
 };
 
+const HOW_TO_PLAY_STEPS: HowToPlayStep[] = [
+  {
+    title: 'Eliminate Outlaw Bandits',
+    desc: 'Aim with your crosshair and left click to shoot bandits popping up from saloon windows and swinging doors before their threat timer fires.',
+    badge: 'Quick-Draw',
+  },
+  {
+    title: 'Spare Innocent Civilians',
+    desc: 'Barkeeps and saloon dancers will pop up shouting "DON’T SHOOT!". Hitting an innocent deducts 1 Life and penalizes your score.',
+    badge: 'Civilians',
+  },
+  {
+    title: 'Reload & Dead-Eye Mode',
+    desc: 'Your six-shooter holds 6 bullets. Press R or Right-Click to reload. Press Spacebar to activate Dead-Eye bullet-time for 75% time dilation!',
+    badge: 'Dead-Eye',
+  },
+];
+
+const CONTROLS = [
+  { key: 'Left Click', action: 'Fire Revolver' },
+  { key: 'Right Click / R', action: 'Reload Cylinder' },
+  { key: 'Spacebar', action: 'Dead-Eye Bullet Time' },
+  { key: 'P / Header', action: 'Pause Menu' },
+];
+
 export const SaloonShowdown: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hudState, setHudState] = useState<SaloonGameState>(INITIAL_STATE);
+  const [isStarted, setIsStarted] = useState(false);
 
   // Mutable Simulation Refs
+  const isStartedRef = useRef(false);
   const stateRef = useRef<SaloonGameState>({ ...INITIAL_STATE });
   const slotsRef = useRef<SaloonSlot[]>([]);
   const targetsRef = useRef<SaloonTarget[]>([]);
@@ -46,6 +74,7 @@ export const SaloonShowdown: React.FC = () => {
   const gameTimeRef = useRef<number>(0);
 
   const toggleDeadEye = () => {
+    if (!isStartedRef.current || stateRef.current.isPaused) return;
     if (stateRef.current.deadEyeMeter > 20) {
       stateRef.current.isDeadEyeActive = !stateRef.current.isDeadEyeActive;
       if (stateRef.current.isDeadEyeActive) {
@@ -80,20 +109,23 @@ export const SaloonShowdown: React.FC = () => {
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'KeyR') {
-        SaloonEngine.reload(stateRef.current);
-        setHudState({ ...stateRef.current });
+        if (isStartedRef.current && !stateRef.current.isPaused) {
+          SaloonEngine.reload(stateRef.current);
+          setHudState({ ...stateRef.current });
+        }
       } else if (e.code === 'Space') {
         toggleDeadEye();
       } else if (e.code === 'KeyP') {
-        stateRef.current.isPaused = !stateRef.current.isPaused;
-        setHudState({ ...stateRef.current });
+        if (isStartedRef.current) {
+          stateRef.current.isPaused = !stateRef.current.isPaused;
+          setHudState({ ...stateRef.current });
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
 
     let lastUiSync = 0;
 
-    // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
@@ -101,13 +133,11 @@ export const SaloonShowdown: React.FC = () => {
       const width = canvasRef.current?.width || 800;
       const height = canvasRef.current?.height || 600;
 
-      if (!stateRef.current.isPaused && !stateRef.current.isGameOver) {
-        // Dead-Eye slows time by 75%
+      if (isStartedRef.current && !stateRef.current.isPaused && !stateRef.current.isGameOver) {
         const timeScale = stateRef.current.isDeadEyeActive ? 0.25 : 1.0;
         const effectiveDt = dt * timeScale;
         gameTimeRef.current += dt;
 
-        // Drain Dead-Eye meter when active
         if (stateRef.current.isDeadEyeActive) {
           stateRef.current.deadEyeMeter = Math.max(0, stateRef.current.deadEyeMeter - dt * 25);
           if (stateRef.current.deadEyeMeter <= 0) {
@@ -115,7 +145,6 @@ export const SaloonShowdown: React.FC = () => {
           }
         }
 
-        // Spawn targets
         spawnTimerRef.current += effectiveDt;
         const spawnDelay = Math.max(0.8, 2.2 - stateRef.current.wave * 0.15);
         if (spawnTimerRef.current > spawnDelay && targetsRef.current.length < 5) {
@@ -128,7 +157,6 @@ export const SaloonShowdown: React.FC = () => {
           if (newTarget) targetsRef.current.push(newTarget);
         }
 
-        // Update targets & reload
         SaloonEngine.updateTargets(
           targetsRef.current,
           particlesRef.current,
@@ -136,7 +164,6 @@ export const SaloonShowdown: React.FC = () => {
           effectiveDt
         );
 
-        // Update particles
         for (let p = particlesRef.current.length - 1; p >= 0; p--) {
           const part = particlesRef.current[p];
           part.life -= dt;
@@ -145,19 +172,18 @@ export const SaloonShowdown: React.FC = () => {
           if (part.life <= 0) particlesRef.current.splice(p, 1);
         }
 
-        // Prune old bullet holes
         if (bulletHolesRef.current.length > 25) {
           bulletHolesRef.current.splice(0, bulletHolesRef.current.length - 25);
         }
 
-        // Throttled UI sync
         if (now - lastUiSync > 100) {
           lastUiSync = now;
           setHudState({ ...stateRef.current });
         }
+      } else if (!isStartedRef.current) {
+        gameTimeRef.current += dt;
       }
 
-      // Render
       SaloonRenderer.render(
         ctx,
         width,
@@ -180,6 +206,7 @@ export const SaloonShowdown: React.FC = () => {
       observer.disconnect();
       window.removeEventListener('keydown', handleKeyDown);
       cancelAnimationFrame(animFrameRef.current);
+      saloonAudio.stopAll();
     };
   }, []);
 
@@ -193,8 +220,9 @@ export const SaloonShowdown: React.FC = () => {
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isStartedRef.current || stateRef.current.isPaused) return;
+
     if (e.button === 2) {
-      // Right click to reload
       SaloonEngine.reload(stateRef.current);
       setHudState({ ...stateRef.current });
       return;
@@ -216,11 +244,25 @@ export const SaloonShowdown: React.FC = () => {
     setHudState({ ...stateRef.current });
   };
 
+  const handleStartGame = () => {
+    isStartedRef.current = true;
+    setIsStarted(true);
+    stateRef.current.isPaused = false;
+    saloonAudio.playReloadClick();
+  };
+
+  const handleResumeGame = () => {
+    stateRef.current.isPaused = false;
+    setHudState({ ...stateRef.current });
+  };
+
   const restartGame = () => {
     stateRef.current = { ...INITIAL_STATE };
     targetsRef.current = [];
     bulletHolesRef.current = [];
     particlesRef.current = [];
+    isStartedRef.current = true;
+    setIsStarted(true);
     setHudState({ ...stateRef.current });
     saloonAudio.playReloadClick();
   };
@@ -233,6 +275,13 @@ export const SaloonShowdown: React.FC = () => {
         score={hudState.score}
         level={`Wave ${hudState.wave}`}
         lives={hudState.lives}
+        isPaused={hudState.isPaused}
+        onTogglePause={() => {
+          if (isStartedRef.current) {
+            stateRef.current.isPaused = !stateRef.current.isPaused;
+            setHudState({ ...stateRef.current });
+          }
+        }}
       />
 
       {/* Main Canvas Area */}
@@ -245,75 +294,93 @@ export const SaloonShowdown: React.FC = () => {
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* Top Floating HUD */}
-        <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
-          {/* Six-Shooter Cylinder HUD */}
-          <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-600/40 shadow-lg pointer-events-auto">
-            <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">
-              Cylinder
-            </span>
-            <div className="flex items-center gap-1.5">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-3.5 h-6 rounded-sm border transition-all ${
-                    i < hudState.ammo
-                      ? 'bg-gradient-to-t from-amber-600 to-yellow-400 border-amber-300 shadow-sm shadow-amber-500/50'
-                      : 'bg-stone-800 border-stone-700 opacity-40'
-                  }`}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={() => {
-                SaloonEngine.reload(stateRef.current);
-                setHudState({ ...stateRef.current });
-              }}
-              className="ml-2 px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-700/50 text-[10px] font-mono text-amber-300 font-bold uppercase transition active:scale-95 cursor-pointer"
-            >
-              {hudState.isReloading ? 'Spinning...' : 'Reload (R)'}
-            </button>
-          </div>
-
-          {/* Dead-Eye Bullet Time Meter */}
-          <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-red-600/40 shadow-lg pointer-events-auto">
-            <Eye
-              className={`w-4 h-4 ${
-                hudState.isDeadEyeActive ? 'text-red-500 animate-pulse' : 'text-stone-400'
-              }`}
-            />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold">
-                Dead-Eye Bullet Time
+        {/* In-Game Top Floating HUD */}
+        {isStarted && (
+          <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
+            {/* Six-Shooter Cylinder HUD */}
+            <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-600/40 shadow-lg pointer-events-auto">
+              <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest font-bold">
+                Cylinder
               </span>
-              <div className="w-36 h-2.5 bg-stone-800 rounded-full overflow-hidden border border-stone-700 p-0.5 mt-0.5">
-                <div
-                  className="h-full bg-gradient-to-r from-red-600 to-amber-500 rounded-full transition-all"
-                  style={{ width: `${hudState.deadEyeMeter}%` }}
-                />
+              <div className="flex items-center gap-1.5">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-3.5 h-6 rounded-sm border transition-all ${
+                      i < hudState.ammo
+                        ? 'bg-gradient-to-t from-amber-600 to-yellow-400 border-amber-300 shadow-sm shadow-amber-500/50'
+                        : 'bg-stone-800 border-stone-700 opacity-40'
+                    }`}
+                  />
+                ))}
               </div>
-            </div>
-            <button
-              onClick={toggleDeadEye}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition active:scale-95 cursor-pointer border ${
-                hudState.isDeadEyeActive
-                  ? 'bg-red-600 text-white border-red-400'
-                  : 'bg-stone-800 text-stone-300 border-stone-700 hover:bg-stone-700'
-              }`}
-            >
-              {hudState.isDeadEyeActive ? 'Active' : 'Space'}
-            </button>
-          </div>
 
-          {/* Accuracy & Eliminations */}
-          <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-stone-900/90 backdrop-blur-md border border-stone-800 shadow-lg font-mono text-xs">
-            <Crosshair className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-amber-300 font-bold">{hudState.accuracy}% Acc</span>
-            <div className="w-[1px] h-3 bg-stone-700" />
-            <span className="text-stone-300">{hudState.banditsEliminated} Outlaws</span>
+              <button
+                onClick={() => {
+                  SaloonEngine.reload(stateRef.current);
+                  setHudState({ ...stateRef.current });
+                }}
+                className="ml-2 px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-700/50 text-[10px] font-mono text-amber-300 font-bold uppercase transition active:scale-95 cursor-pointer"
+              >
+                {hudState.isReloading ? 'Spinning...' : 'Reload (R)'}
+              </button>
+            </div>
+
+            {/* Dead-Eye Bullet Time Meter */}
+            <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-red-600/40 shadow-lg pointer-events-auto">
+              <Eye
+                className={`w-4 h-4 ${
+                  hudState.isDeadEyeActive ? 'text-red-500 animate-pulse' : 'text-stone-400'
+                }`}
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold">
+                  Dead-Eye Bullet Time
+                </span>
+                <div className="w-36 h-2.5 bg-stone-800 rounded-full overflow-hidden border border-stone-700 p-0.5 mt-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-red-600 to-amber-500 rounded-full transition-all"
+                    style={{ width: `${hudState.deadEyeMeter}%` }}
+                  />
+                </div>
+              </div>
+              <button
+                onClick={toggleDeadEye}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition active:scale-95 cursor-pointer border ${
+                  hudState.isDeadEyeActive
+                    ? 'bg-red-600 text-white border-red-400'
+                    : 'bg-stone-800 text-stone-300 border-stone-700 hover:bg-stone-700'
+                }`}
+              >
+                {hudState.isDeadEyeActive ? 'Active' : 'Space'}
+              </button>
+            </div>
+
+            {/* Accuracy & Eliminations */}
+            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-stone-900/90 backdrop-blur-md border border-stone-800 shadow-lg font-mono text-xs">
+              <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-amber-300 font-bold">{hudState.accuracy}% Acc</span>
+              <div className="w-[1px] h-3 bg-stone-700" />
+              <span className="text-stone-300">{hudState.banditsEliminated} Outlaws</span>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Main Menu & Pause Overlay */}
+        <GameMenuOverlay
+          title="Saloon Showdown"
+          subtitle="Step up to the frontier carnival shooting gallery! Takedown outlaw bandits, protect innocent civilians, and unleash Dead-Eye bullet time."
+          accentColor="#eab308"
+          icon={<Target className="w-10 h-10 text-yellow-400" />}
+          highScore={hudState.score}
+          howToPlay={HOW_TO_PLAY_STEPS}
+          controlsList={CONTROLS}
+          isStarted={isStarted}
+          isPaused={hudState.isPaused}
+          onStart={handleStartGame}
+          onResume={handleResumeGame}
+          onRestart={restartGame}
+        />
 
         {/* Game Over Modal */}
         {hudState.isGameOver && (

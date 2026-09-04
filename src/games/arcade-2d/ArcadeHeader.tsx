@@ -9,6 +9,8 @@ interface ArcadeHeaderProps {
   score?: number | string;
   level?: number | string;
   lives?: number;
+  onTogglePause?: () => void;
+  isPaused?: boolean;
 }
 
 export const ArcadeHeader: React.FC<ArcadeHeaderProps> = ({
@@ -17,6 +19,8 @@ export const ArcadeHeader: React.FC<ArcadeHeaderProps> = ({
   score,
   level,
   lives,
+  onTogglePause,
+  isPaused,
 }) => {
   const { exitToLauncher } = useLauncherStore();
 
@@ -36,6 +40,18 @@ export const ArcadeHeader: React.FC<ArcadeHeaderProps> = ({
           <ArrowLeft className="w-3.5 h-3.5 text-indigo-400" />
           <span>DECK</span>
         </button>
+
+        {onTogglePause && (
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              onTogglePause();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-950/50 border border-slate-800 hover:border-indigo-500/50 text-xs font-bold uppercase text-slate-300 hover:text-white transition cursor-pointer shadow-sm active:scale-95"
+          >
+            <span>{isPaused ? 'Resume' : 'Menu'}</span>
+          </button>
+        )}
 
         <div className="h-4 w-[1px] bg-slate-800/80" />
 

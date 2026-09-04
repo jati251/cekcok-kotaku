@@ -4,10 +4,12 @@ import { createInitialSnowState, updateSnowPhysics } from './physics';
 import { renderSnowGame } from './renderer';
 import { snowboardAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Zap, Compass, Wind } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Zap, Compass, Wind, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function SnowboardRush() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<SnowGameState>(createInitialSnowState(900, 600));
@@ -21,6 +23,8 @@ export function SnowboardRush() {
   const [uiBoosted, setUiBoosted] = useState(false);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(snowboardAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
@@ -53,6 +57,13 @@ export function SnowboardRush() {
   };
 
   useEffect(() => {
+    isPausedRef.current = isPaused;
+    if (isPaused) {
+      snowboardAudio.stopAll();
+    }
+  }, [isPaused]);
+
+  useEffect(() => {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -61,6 +72,11 @@ export function SnowboardRush() {
   // Keyboard controls
   useEffect(() => {
     const handleDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && stateRef.current.started && !stateRef.current.gameOver) {
+        setIsPaused((prev) => !prev);
+        return;
+      }
+
       keysRef.current.add(e.key);
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
         e.preventDefault();
@@ -93,18 +109,20 @@ export function SnowboardRush() {
         return;
       }
 
-      updateSnowPhysics(state, keysRef.current);
+      if (!isPausedRef.current) {
+        updateSnowPhysics(state, keysRef.current);
 
-      if (state.started) {
-        setUiScore(state.score);
-        setUiDistance(state.distance);
-        setUiSpeedKmh(Math.round(state.speed * 4.2));
-        setUiMultiplier(state.trickMultiplier);
-        setUiBoosted(state.boostTimer > 0);
+        if (state.started) {
+          setUiScore(state.score);
+          setUiDistance(state.distance);
+          setUiSpeedKmh(Math.round(state.speed * 4.2));
+          setUiMultiplier(state.trickMultiplier);
+          setUiBoosted(state.boostTimer > 0);
 
-        if (state.gameOver && !uiGameOver) {
-          setUiGameOver(true);
-          saveHighScore(state.score);
+          if (state.gameOver && !uiGameOver) {
+            setUiGameOver(true);
+            saveHighScore(state.score);
+          }
         }
       }
 
@@ -113,7 +131,10 @@ export function SnowboardRush() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      snowboardAudio.stopAll();
+    };
   }, [uiGameOver, uiHighScore]);
 
   const resetGame = () => {
@@ -123,6 +144,8 @@ export function SnowboardRush() {
     nextState.started = true;
     stateRef.current = nextState;
 
+    setIsPaused(false);
+    isPausedRef.current = false;
     setUiScore(0);
     setUiDistance(0);
     setUiSpeedKmh(30);
@@ -134,7 +157,16 @@ export function SnowboardRush() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Snowboard Rush" category="Alpine Extreme" score={uiScore} level={`${uiDistance}m`} />
+      <ArcadeHeader
+        title="Snowboard Rush"
+        category="Alpine Extreme"
+        score={uiScore}
+        level={`${uiDistance}m`}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Frosted Alpine Extreme HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-sky-950/90 via-slate-900/90 to-cyan-950/90 backdrop-blur-md border-b border-sky-500/20 text-xs text-slate-300 shrink-0">
@@ -208,14 +240,61 @@ export function SnowboardRush() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-sky-600/30 cursor-pointer"
-                >
-                  DROP IN!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border border-slate-700"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>LAUNCHER</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={resetGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-sky-600/30 cursor-pointer"
+                  >
+                    DROP IN!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && uiStarted && !uiGameOver && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-xs w-full bg-slate-900/95 border-2 border-sky-500/80 rounded-2xl p-6 text-center space-y-4 shadow-2xl shadow-sky-950/60">
+                <h2 className="text-2xl font-black text-sky-400 tracking-wider">GAME PAUSED</h2>
+                <p className="text-xs text-slate-400 font-mono">Distance: {uiDistance}m • Score: {uiScore}</p>
+                <div className="space-y-2 pt-2">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-sky-600/30"
+                  >
+                    RESUME
+                  </button>
+                  <button
+                    onClick={resetGame}
+                    className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition cursor-pointer border border-slate-700"
+                  >
+                    RESTART RUN
+                  </button>
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="w-full py-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>EXIT TO LAUNCHER</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -252,15 +331,24 @@ export function SnowboardRush() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>TRY AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => exitToLauncher()}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-sm uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border border-slate-700"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>LAUNCHER</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={resetGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>TRY AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

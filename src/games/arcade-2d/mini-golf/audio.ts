@@ -184,6 +184,12 @@ class MiniGolfAudioEngine {
       osc.stop(now + delay + 0.4);
     });
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const miniGolfAudio = new MiniGolfAudioEngine();

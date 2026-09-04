@@ -116,6 +116,12 @@ class CrazyWheelsAudioEngine {
       osc.stop(noteStart + 0.4);
     });
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const crazyAudio = new CrazyWheelsAudioEngine();

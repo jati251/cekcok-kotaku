@@ -1,55 +1,25 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   GameState,
-  Obstacle,
-  Coin,
-  PLAYER_W,
   PLAYER_H,
   INITIAL_SPEED,
   MAX_SPEED,
   SPEED_INCREMENT,
   GRAVITY,
   getRoadMetrics,
+  spawnObstacleOrCoin,
+  spawnSparks,
+  createInitialMotoState,
 } from './types';
 import { renderMotoGame } from './renderer';
 import { motoAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Heart, Gauge, Compass } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Heart, Gauge, Compass, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-function createInitialMotoState(w = 900, h = 600): GameState {
-  const { lanes } = getRoadMetrics(h);
-  return {
-    player: {
-      x: 120,
-      y: lanes[1] - PLAYER_H / 2,
-      targetY: lanes[1] - PLAYER_H / 2,
-      width: PLAYER_W,
-      height: PLAYER_H,
-      currentLane: 1,
-      vy: 0,
-      isJumping: false,
-      jumpVelocity: -12,
-      groundY: lanes[1] - PLAYER_H / 2,
-    },
-    obstacles: [],
-    coins: [],
-    particles: [],
-    score: 0,
-    lives: 3,
-    speed: INITIAL_SPEED,
-    maxSpeed: MAX_SPEED,
-    distance: 0,
-    gameOver: false,
-    started: false,
-    paused: false,
-    highScore: 0,
-    viewportWidth: w,
-    viewportHeight: h,
-  };
-}
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function MotoRush() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(createInitialMotoState(900, 600));
@@ -63,6 +33,8 @@ export function MotoRush() {
   const [uiSpeedKmh, setUiSpeedKmh] = useState(60);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(motoAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
@@ -260,8 +232,28 @@ export function MotoRush() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      motoAudio.stopAll();
+    };
   }, [uiHighScore]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    stateRef.current.paused = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   const startGame = () => {
     const w = canvasRef.current?.width || 900;
@@ -275,12 +267,23 @@ export function MotoRush() {
     setUiDistance(0);
     setUiSpeedKmh(60);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Moto Rush" category="Cyber Highway" score={uiScore} level={`${uiDistance}m`} lives={uiLives} />
+      <ArcadeHeader
+        title="Moto Rush"
+        category="Cyber Highway"
+        score={uiScore}
+        level={`${uiDistance}m`}
+        lives={uiLives}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Cyberpunk Highway HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-red-950/90 via-slate-900/90 to-amber-950/90 backdrop-blur-md border-b border-rose-500/20 text-xs text-slate-300 shrink-0">
@@ -353,14 +356,66 @@ export function MotoRush() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-rose-600/30 cursor-pointer"
-                >
-                  START ENGINE!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-rose-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-rose-600/30 cursor-pointer"
+                  >
+                    START ENGINE!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-rose-950/60">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🏍️</span>
+                  <h2 className="text-2xl font-black text-rose-400">ENGINE IDLE</h2>
+                  <p className="text-xs text-slate-400">Highway dash currently on hold</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Ride
+                  </button>
+                  <button
+                    onClick={startGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Restart Run</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -397,15 +452,24 @@ export function MotoRush() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>RIDE AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-rose-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>RIDE AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -413,55 +477,6 @@ export function MotoRush() {
       </div>
     </div>
   );
-}
-
-function spawnObstacleOrCoin(state: GameState) {
-  const { lanes } = getRoadMetrics(state.viewportHeight);
-  const laneIndex = Math.floor(Math.random() * 3);
-  const y = lanes[laneIndex];
-  const spawnX = state.viewportWidth + 80;
-
-  if (Math.random() < 0.65) {
-    const isCar = Math.random() < 0.6;
-    const obs: Obstacle = {
-      x: spawnX,
-      y: y - (isCar ? 14 : 10),
-      width: isCar ? 55 : 30,
-      height: isCar ? 28 : 22,
-      type: isCar ? 'car' : Math.random() < 0.5 ? 'barrier' : 'rock',
-      color: ['#3b82f6', '#10b981', '#a855f7', '#f59e0b'][Math.floor(Math.random() * 4)],
-      lane: laneIndex,
-      passed: false,
-    };
-    state.obstacles.push(obs);
-  } else {
-    const coin: Coin = {
-      x: spawnX,
-      y: y - 10,
-      width: 20,
-      height: 20,
-      collected: false,
-      bobOffset: 0,
-    };
-    state.coins.push(coin);
-  }
-}
-
-function spawnSparks(state: GameState, x: number, y: number) {
-  for (let i = 0; i < 24; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 2 + Math.random() * 5;
-    state.particles.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0,
-      maxLife: 20 + Math.random() * 15,
-      color: '#f97316',
-      size: 2 + Math.random() * 3,
-    });
-  }
 }
 
 export default MotoRush;

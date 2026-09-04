@@ -180,6 +180,12 @@ class SnowboardAudioEngine {
     osc.start(now);
     osc.stop(now + 0.42);
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const snowboardAudio = new SnowboardAudioEngine();

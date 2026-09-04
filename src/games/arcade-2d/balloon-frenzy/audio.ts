@@ -217,6 +217,12 @@ class BalloonAudioEngine {
       osc.stop(now + delay + 0.3);
     });
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const balloonAudio = new BalloonAudioEngine();

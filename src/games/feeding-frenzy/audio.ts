@@ -174,6 +174,12 @@ class FeedingFrenzyAudio {
     osc.start(t);
     osc.stop(t + 0.35);
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const frenzyAudio = new FeedingFrenzyAudio();

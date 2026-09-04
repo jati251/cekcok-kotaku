@@ -158,6 +158,12 @@ class SkyRaidAudioEngine {
     osc.start(now);
     osc.stop(now + 0.52);
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const skyAudio = new SkyRaidAudioEngine();

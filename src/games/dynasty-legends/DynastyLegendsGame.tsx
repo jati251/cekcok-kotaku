@@ -16,10 +16,18 @@ import {
 } from './types';
 import * as Constants from './constants';
 import { useLauncherStore } from '@/stores/launcherStore';
+import { audioEngine } from './services/audioEngine';
 import { ArrowLeft } from 'lucide-react';
 
 export const DynastyLegendsGame: React.FC = () => {
   const { exitToLauncher } = useLauncherStore();
+
+  React.useEffect(() => {
+    return () => {
+      audioEngine.stopBattleDrums();
+    };
+  }, []);
+
   const [status, setStatus] = useState<GameStatus>(GameStatus.MENU);
   const [selectedHero, setSelectedHero] = useState<HeroType>(HeroType.GUAN_YU);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(DifficultyLevel.NORMAL);

@@ -4,10 +4,12 @@ import { createInitialSpaceState, updateSpacePhysics } from './physics';
 import { renderSpaceGame } from './renderer';
 import { spaceAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Shield, Radio } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Shield, Radio, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function SpaceBlast() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<SpaceGameState>(createInitialSpaceState(900, 600));
@@ -21,6 +23,8 @@ export function SpaceBlast() {
   const [uiRapidActive, setUiRapidActive] = useState(false);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(spaceAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
@@ -93,18 +97,20 @@ export function SpaceBlast() {
         return;
       }
 
-      updateSpacePhysics(state, keysRef.current);
+      if (!isPausedRef.current) {
+        updateSpacePhysics(state, keysRef.current);
 
-      if (state.started) {
-        setUiScore(state.score);
-        setUiShield(Math.max(0, state.ship.shield));
-        setUiWave(state.wave);
-        setUiSpreadActive(state.spreadTimer > 0);
-        setUiRapidActive(state.rapidTimer > 0);
+        if (state.started) {
+          setUiScore(state.score);
+          setUiShield(Math.max(0, state.ship.shield));
+          setUiWave(state.wave);
+          setUiSpreadActive(state.spreadTimer > 0);
+          setUiRapidActive(state.rapidTimer > 0);
 
-        if (state.gameOver && !uiGameOver) {
-          setUiGameOver(true);
-          saveHighScore(state.score);
+          if (state.gameOver && !uiGameOver) {
+            setUiGameOver(true);
+            saveHighScore(state.score);
+          }
         }
       }
 
@@ -113,8 +119,27 @@ export function SpaceBlast() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      spaceAudio.stopAll();
+    };
   }, [uiGameOver, uiHighScore]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   const resetGame = () => {
     const w = canvasRef.current?.width || 900;
@@ -129,12 +154,22 @@ export function SpaceBlast() {
     setUiSpreadActive(false);
     setUiRapidActive(false);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Space Blast" category="Cosmic Defender" score={uiScore} level={`Wave ${uiWave}`} />
+      <ArcadeHeader
+        title="Space Blast"
+        category="Cosmic Defender"
+        score={uiScore}
+        level={`Wave ${uiWave}`}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Retro-Futuristic Cockpit HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-purple-950/90 via-slate-900/90 to-blue-950/90 backdrop-blur-md border-b border-purple-500/20 text-xs text-slate-300 shrink-0">
@@ -218,14 +253,66 @@ export function SpaceBlast() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 cursor-pointer"
-                >
-                  ENGAGE ENGINES!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-cyan-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 cursor-pointer"
+                  >
+                    ENGAGE ENGINES!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-purple-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-purple-950/50">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🛸</span>
+                  <h2 className="text-2xl font-black text-cyan-400">THRUSTERS PAUSED</h2>
+                  <p className="text-xs text-slate-400">Orbital maneuver on hold</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Patrol
+                  </button>
+                  <button
+                    onClick={resetGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Restart Sector</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -262,15 +349,24 @@ export function SpaceBlast() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>RE-DEPLOY</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-cyan-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>RE-DEPLOY</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

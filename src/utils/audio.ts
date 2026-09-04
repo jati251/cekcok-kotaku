@@ -172,6 +172,12 @@ class SoundController {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.2);
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const soundManager = new SoundController();

@@ -185,6 +185,12 @@ class InsaniquariumAudio {
       osc.stop(t + 0.45);
     });
   }
+
+  public stopAll() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.suspend().catch(() => {});
+    }
+  }
 }
 
 export const aquariumAudio = new InsaniquariumAudio();

@@ -4,10 +4,12 @@ import { createInitialSkyState, gameTick } from './engine';
 import { renderSkyGame } from './renderer';
 import { skyAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Plane, Fuel, Crosshair } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Plane, Fuel, Crosshair, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function SkyRaid() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(createInitialSkyState(900, 600));
@@ -20,6 +22,8 @@ export function SkyRaid() {
   const [uiDistanceKm, setUiDistanceKm] = useState(0);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(skyAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
@@ -92,17 +96,19 @@ export function SkyRaid() {
         return;
       }
 
-      gameTick(state, keysRef.current);
+      if (!isPausedRef.current) {
+        gameTick(state, keysRef.current);
 
-      if (state.started) {
-        setUiScore(state.score);
-        setUiLives(state.lives);
-        setUiFuel(Math.round(state.fuel));
-        setUiDistanceKm(Math.round(state.distance * 0.05));
+        if (state.started) {
+          setUiScore(state.score);
+          setUiLives(state.lives);
+          setUiFuel(Math.round(state.fuel));
+          setUiDistanceKm(Math.round(state.distance * 0.05));
 
-        if (state.gameOver && !uiGameOver) {
-          setUiGameOver(true);
-          saveHighScore(state.score);
+          if (state.gameOver && !uiGameOver) {
+            setUiGameOver(true);
+            saveHighScore(state.score);
+          }
         }
       }
 
@@ -111,8 +117,27 @@ export function SkyRaid() {
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      skyAudio.stopAll();
+    };
   }, [uiGameOver, uiHighScore]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   const resetGame = () => {
     const w = canvasRef.current?.width || 900;
@@ -126,12 +151,23 @@ export function SkyRaid() {
     setUiFuel(100);
     setUiDistanceKm(0);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Sky Raid" category="River Aviator" score={uiScore} level={`${uiDistanceKm} km`} lives={uiLives} />
+      <ArcadeHeader
+        title="Sky Raid"
+        category="River Aviator"
+        score={uiScore}
+        level={`${uiDistanceKm} km`}
+        lives={uiLives}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Aviator Cockpit Military HUD */}
       <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-amber-950/90 backdrop-blur-md border-b border-amber-500/20 text-xs text-slate-300 shrink-0">
@@ -213,14 +249,66 @@ export function SkyRaid() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 cursor-pointer"
-                >
-                  SCRAMBLE SQUADRON!
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 cursor-pointer"
+                  >
+                    SCRAMBLE SQUADRON!
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-amber-950/50">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🛩️</span>
+                  <h2 className="text-2xl font-black text-amber-400">MISSION PAUSED</h2>
+                  <p className="text-xs text-slate-400">River reconnaissance on standby</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Flight
+                  </button>
+                  <button
+                    onClick={resetGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Restart Mission</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -257,15 +345,24 @@ export function SkyRaid() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={resetGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>RE-LAUNCH</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={resetGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>RE-LAUNCH</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

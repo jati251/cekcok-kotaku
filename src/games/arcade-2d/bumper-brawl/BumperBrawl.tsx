@@ -4,10 +4,12 @@ import { createInitialBumperState, updateBumperPhysics } from './physics';
 import { renderBumperBrawl } from './renderer';
 import { bumperAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Skull } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Skull, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLauncherStore } from '@/stores/launcherStore';
 
 export function BumperBrawl() {
+  const { exitToLauncher } = useLauncherStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<BumperGameState>(createInitialBumperState(1000, 650));
@@ -19,6 +21,8 @@ export function BumperBrawl() {
   const [uiTimeLeft, setUiTimeLeft] = useState(60);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [isMuted, setIsMuted] = useState(bumperAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
@@ -96,21 +100,23 @@ export function BumperBrawl() {
         return;
       }
 
-      updateBumperPhysics(state, keysRef.current);
+      if (!isPausedRef.current) {
+        updateBumperPhysics(state, keysRef.current);
 
-      if (state.started) {
-        setUiScore(state.playerScore);
-        setUiElims(state.eliminations);
+        if (state.started) {
+          setUiScore(state.playerScore);
+          setUiElims(state.eliminations);
 
-        const now = Date.now();
-        if (now - lastSecond >= 250) {
-          lastSecond = now;
-          setUiTimeLeft(Math.max(0, Math.ceil(state.timeLeft / 60)));
-        }
+          const now = Date.now();
+          if (now - lastSecond >= 250) {
+            lastSecond = now;
+            setUiTimeLeft(Math.max(0, Math.ceil(state.timeLeft / 60)));
+          }
 
-        if (state.gameOver && !uiGameOver) {
-          setUiGameOver(true);
-          saveHighScore(state.playerScore);
+          if (state.gameOver && !uiGameOver) {
+            setUiGameOver(true);
+            saveHighScore(state.playerScore);
+          }
         }
       }
 
@@ -119,8 +125,27 @@ export function BumperBrawl() {
     };
 
     animRef.current = requestAnimationFrame(run);
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      bumperAudio.stopAll();
+    };
   }, [uiGameOver, uiHighScore]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        if (uiStarted && !uiGameOver) {
+          setIsPaused((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiStarted, uiGameOver]);
 
   const startGame = () => {
     if (!canvasRef.current) return;
@@ -135,12 +160,21 @@ export function BumperBrawl() {
     setUiElims(0);
     setUiTimeLeft(60);
     setUiGameOver(false);
+    setIsPaused(false);
     setUiStarted(true);
   };
 
   return (
     <div className="flex flex-col w-full h-full bg-slate-950 overflow-hidden select-none font-sans relative">
-      <ArcadeHeader title="Bumper Brawl" category="Arena Demolition" score={uiScore} />
+      <ArcadeHeader
+        title="Bumper Brawl"
+        category="Arena Demolition"
+        score={uiScore}
+        isPaused={isPaused}
+        onTogglePause={() => {
+          if (uiStarted && !uiGameOver) setIsPaused((prev) => !prev);
+        }}
+      />
 
       {/* Top Floating HUD Status Bar */}
       <div className="absolute top-16 left-6 right-6 flex items-center justify-between z-20 pointer-events-none">
@@ -205,14 +239,66 @@ export function BumperBrawl() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
-                >
-                  START BRAWL
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
+                  >
+                    START BRAWL
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Modal */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
+            >
+              <div className="max-w-sm w-full bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-7 text-center space-y-6 shadow-2xl shadow-orange-950/50">
+                <div className="space-y-1">
+                  <span className="text-4xl">⏸️🏎️</span>
+                  <h2 className="text-2xl font-black text-amber-400">ARENA PAUSED</h2>
+                  <p className="text-xs text-slate-400">Demolition derby currently on hold</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg cursor-pointer active:scale-95 transition"
+                  >
+                    Resume Match
+                  </button>
+                  <button
+                    onClick={startGame}
+                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer active:scale-95 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Restart Match</span>
+                  </button>
+                  <button
+                    onClick={exitToLauncher}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-800 cursor-pointer active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Quit to Launcher</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -248,15 +334,24 @@ export function BumperBrawl() {
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={startGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>PLAY AGAIN</span>
-                </motion.button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={exitToLauncher}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 cursor-pointer shadow-lg active:scale-95 transition"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-amber-400" />
+                    <span>Launcher</span>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startGame}
+                    className="flex-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-orange-500/20 cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>PLAY AGAIN</span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}
