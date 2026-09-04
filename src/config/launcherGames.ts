@@ -244,4 +244,58 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Time attack and target challenge game modes',
     ],
   },
+  {
+    id: 'feeding-frenzy',
+    title: 'Feeding Frenzy',
+    tagline: 'Ocean predator evolution — start as an angel fish and climb to the apex of the marine food chain',
+    genre: 'Aquatic Survival / PopCap Classic',
+    category: 'arcade',
+    status: 'playable',
+    releaseYear: '2004',
+    accentColor: '#06b6d4',
+    description:
+      'Chomp smaller fish, dodge deep-sea behemoths, and trigger frenzy eating sprees! Evolve from Andy the Angel Fish into a colossal Great White Shark across vibrant coral reefs.',
+    features: [
+      'Multi-stage predator evolution (Angel Fish -> Lionfish -> Barracuda -> Great White Shark)',
+      'Dynamic aquatic ecosystem with schooling prey, electric jellyfish, and roaming apex beasts',
+      'Chomp combo chains triggering FRENZY and DOUBLE FRENZY multipliers',
+      'Pearl oyster bonuses, starfish power-ups, and dash thrust mechanics',
+    ],
+  },
+  {
+    id: 'pizza-frenzy',
+    title: 'Pizza Frenzy',
+    tagline: 'High-speed metropolitan pizza dispatch — route orders across busy city quadrants',
+    genre: 'Time Management / PopCap Classic',
+    category: 'arcade',
+    status: 'playable',
+    releaseYear: '2005',
+    accentColor: '#f97316',
+    description:
+      'Manage Stromboli family pizzerias! Connect frantic customer craving icons to the matching neighborhood pizza parlor before patience runs dry, avoiding prank callers and traffic snarls.',
+    features: [
+      'Four distinct metropolitan pizzeria kitchens (Pepperoni, Veggie, Margherita, Supreme)',
+      'Rapid delivery line dispatch kinematics with scooter fleet routing',
+      'Tip streak multipliers, customer patience meters, and VIP celebrity orders',
+      'Anti-prank phone security screening and multi-order frenzy rushes',
+    ],
+  },
+  {
+    id: 'saloon-showdown',
+    title: 'Saloon Showdown',
+    tagline: 'Wild West quick-draw shooting gallery inspired by Thrillville carnival minigames',
+    genre: 'Shooting Gallery / Thrillville Classic',
+    category: 'arcade',
+    status: 'playable',
+    releaseYear: '2006',
+    accentColor: '#eab308',
+    description:
+      'Step up to the frontier carnival shooting gallery! Pop bandits popping out of saloon swinging doors, second-story balconies, and whiskey barrels while protecting innocent barkeeps and saloon gals.',
+    features: [
+      'Authentic six-shooter revolver recoil, cylinder ammo HUD, and tactile manual reload',
+      'Dead-Eye bullet-time mechanic for surgical precision multi-target takedowns',
+      'Interactive saloon environment: shoot dynamite kegs, whiskey bottles, and chandelier ropes',
+      'Bandit types: quick-draw duelists, dynamite tossers, and armored desperados',
+    ],
+  },
 ];

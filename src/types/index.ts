@@ -17,7 +17,10 @@ export type ActiveGameTab =
   | 'mini-golf'
   | 'bumper-brawl'
   | 'snowboard-rush'
-  | 'balloon-frenzy';
+  | 'balloon-frenzy'
+  | 'feeding-frenzy'
+  | 'pizza-frenzy'
+  | 'saloon-showdown';
 
 export interface LauncherGame {
   id: string;

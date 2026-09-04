@@ -20,6 +20,9 @@ import {
   BumperBrawl,
   SnowboardRush,
   BalloonFrenzy,
+  FeedingFrenzy,
+  PizzaFrenzy,
+  SaloonShowdown,
 } from './games';
 
 export const App: React.FC = () => {
@@ -59,6 +62,12 @@ export const App: React.FC = () => {
         return <SnowboardRush />;
       case 'balloon-frenzy':
         return <BalloonFrenzy />;
+      case 'feeding-frenzy':
+        return <FeedingFrenzy />;
+      case 'pizza-frenzy':
+        return <PizzaFrenzy />;
+      case 'saloon-showdown':
+        return <SaloonShowdown />;
       case 'game':
       case 'combat':
       case 'visiting_ally':

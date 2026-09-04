@@ -108,6 +108,9 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'bumper-brawl': 'bumper-brawl',
       'snowboard-rush': 'snowboard-rush',
       'balloon-frenzy': 'balloon-frenzy',
+      'feeding-frenzy': 'feeding-frenzy',
+      'pizza-frenzy': 'pizza-frenzy',
+      'saloon-showdown': 'saloon-showdown',
     };
 
     const titles: Record<string, string> = {
@@ -124,6 +127,9 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'bumper-brawl': 'Bumper Brawl',
       'snowboard-rush': 'Snowboard Rush',
       'balloon-frenzy': 'Balloon Frenzy',
+      'feeding-frenzy': 'Feeding Frenzy',
+      'pizza-frenzy': 'Pizza Frenzy',
+      'saloon-showdown': 'Saloon Showdown',
     };
 
     const title = titles[gameId] || gameId;
