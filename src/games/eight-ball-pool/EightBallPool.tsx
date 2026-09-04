@@ -433,9 +433,9 @@ export const EightBallPool: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col w-full h-full bg-slate-950 text-white overflow-hidden select-none"
+      className="relative flex flex-col w-full h-full bg-[#06140e] text-slate-100 overflow-hidden select-none font-sans"
     >
-      {/* Platform Arcade Header */}
+      {/* Top Header */}
       <ArcadeHeader
         title="8 Ball Pool"
         category="Sports Simulation"
@@ -443,30 +443,39 @@ export const EightBallPool: React.FC = () => {
         onTogglePause={() => setIsPaused(!isPaused)}
       />
 
+      {/* Brass & Mahogany Top Rail Trim */}
+      <div className="w-full h-1 bg-gradient-to-r from-[#78350f] via-[#d97706] to-[#78350f] shadow-md" />
+
       {/* Main Playing Area */}
-      <div className="relative flex-1 flex flex-col items-center justify-center p-3 overflow-hidden">
-        {/* Match HUD Top Bar */}
-        <div className="w-full max-w-5xl flex items-center justify-between px-4 py-2 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-xl mb-3">
-          {/* Player 1 Card */}
+      <div className="relative flex-1 flex flex-col items-center justify-center p-3 overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#0c2419] to-[#040d09]">
+        {/* Match HUD Top Bar: Polished Mahogany & Brass Salon Scoreboard */}
+        <div className="w-full max-w-5xl flex items-center justify-between px-5 py-2.5 bg-gradient-to-b from-[#2e180d] to-[#1c0e07] rounded-lg border-2 border-[#5c3319] shadow-[0_10px_25px_rgba(0,0,0,0.8)] mb-3 relative">
+          {/* Brass screws in corners */}
+          <div className="absolute top-1 left-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/80 border border-amber-300" />
+          <div className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/80 border border-amber-300" />
+          <div className="absolute bottom-1 left-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/80 border border-amber-300" />
+          <div className="absolute bottom-1 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/80 border border-amber-300" />
+
+          {/* Player 1 Card (Brass Plaque) */}
           <div
-            className={`flex items-center gap-3 px-3.5 py-1.5 rounded-xl transition-all ${
+            className={`flex items-center gap-3 px-3.5 py-1.5 rounded border transition-all ${
               hudState.turn === 'player1'
-                ? 'bg-emerald-950/60 border border-emerald-500/50 shadow-md shadow-emerald-950/40'
-                : 'bg-slate-900/50 border border-transparent opacity-75'
+                ? 'bg-[#0f2e1f] border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-[#150a04] border-[#3d2010] opacity-75'
             }`}
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded bg-emerald-950 border border-emerald-500/60 flex items-center justify-center text-emerald-400">
               <User className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black uppercase text-slate-100">Player 1</span>
+                <span className="text-xs font-black uppercase tracking-wider text-amber-200 font-serif">PLAYER 1</span>
                 {hudState.turn === 'player1' && (
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold text-emerald-400">
+                <span className="text-[10px] uppercase font-bold text-amber-400/90 font-mono">
                   {hudState.player1Group || 'Any Ball'}
                 </span>
                 {renderHUDGroupBalls(hudState.player1Group)}
@@ -477,39 +486,39 @@ export const EightBallPool: React.FC = () => {
           {/* Center Match Banner / Foul Alert */}
           <div className="flex flex-col items-center justify-center text-center">
             {hudState.foul ? (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-950/80 border border-rose-500/50 rounded-lg text-rose-300 text-xs font-bold animate-pulse">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-950 border-2 border-rose-500 rounded text-rose-200 text-xs font-bold animate-pulse shadow">
                 <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
                 <span>{hudState.foul}</span>
               </div>
             ) : hudState.phase === 'ball_in_hand' ? (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/80 border border-amber-500/50 rounded-lg text-amber-300 text-xs font-bold">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-950 border-2 border-amber-500 rounded text-amber-200 text-xs font-bold shadow">
                 <Target className="w-3.5 h-3.5 text-amber-400" />
                 <span>Ball in Hand: Click table to place cue ball</span>
               </div>
             ) : hudState.isAIThinking ? (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-950/80 border border-sky-500/50 rounded-lg text-sky-300 text-xs font-bold animate-pulse">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-950 border-2 border-sky-500 rounded text-sky-200 text-xs font-bold animate-pulse shadow">
                 <Bot className="w-3.5 h-3.5 text-sky-400" />
-                <span>AI is calculating angle & cut shot...</span>
+                <span>AI is calculating cut shot angle...</span>
               </div>
             ) : (
-              <div className="text-xs font-semibold text-slate-400">
+              <div className="text-xs font-bold font-serif uppercase tracking-widest text-amber-300">
                 {hudState.mode === 'practice'
-                  ? 'Solo Practice'
+                  ? 'PARLOR PRACTICE'
                   : hudState.turn === 'player1'
-                  ? 'Player 1 Turn'
+                  ? 'PLAYER 1 TO BREAK'
                   : hudState.mode === 'ai'
-                  ? 'AI Turn'
-                  : 'Player 2 Turn'}
+                  ? 'AI TURN'
+                  : 'PLAYER 2 TURN'}
               </div>
             )}
           </div>
 
           {/* Player 2 / AI Card */}
           <div
-            className={`flex items-center gap-3 px-3.5 py-1.5 rounded-xl transition-all ${
+            className={`flex items-center gap-3 px-3.5 py-1.5 rounded border transition-all ${
               hudState.turn === 'player2'
-                ? 'bg-sky-950/60 border border-sky-500/50 shadow-md shadow-sky-950/40'
-                : 'bg-slate-900/50 border border-transparent opacity-75'
+                ? 'bg-[#0a2336] border-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.3)]'
+                : 'bg-[#150a04] border-[#3d2010] opacity-75'
             }`}
           >
             <div className="text-right">
@@ -517,18 +526,18 @@ export const EightBallPool: React.FC = () => {
                 {hudState.turn === 'player2' && (
                   <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
                 )}
-                <span className="text-xs font-black uppercase text-slate-100">
-                  {hudState.mode === 'ai' ? `AI (${hudState.aiDifficulty})` : 'Player 2'}
+                <span className="text-xs font-black uppercase tracking-wider text-amber-200 font-serif">
+                  {hudState.mode === 'ai' ? `AI (${hudState.aiDifficulty})` : 'PLAYER 2'}
                 </span>
               </div>
               <div className="flex items-center justify-end gap-2">
                 {renderHUDGroupBalls(hudState.player2Group)}
-                <span className="text-[10px] uppercase font-bold text-sky-400">
+                <span className="text-[10px] uppercase font-bold text-amber-400/90 font-mono">
                   {hudState.player2Group || 'Any Ball'}
                 </span>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-sky-600/20 border border-sky-500/40 flex items-center justify-center text-sky-400">
+            <div className="w-8 h-8 rounded bg-sky-950 border border-sky-500/60 flex items-center justify-center text-sky-400">
               {hudState.mode === 'ai' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
             </div>
           </div>
@@ -587,21 +596,21 @@ export const EightBallPool: React.FC = () => {
             />
           </div>
 
-          {/* Right Side: Vertical Shot Power Slider */}
-          <div className="flex flex-col items-center bg-slate-900/90 backdrop-blur-md border border-slate-800/80 p-2.5 rounded-2xl shadow-xl z-20 h-[360px] select-none">
-            <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider mb-1">
-              Power
+          {/* Right Side: Vertical Shot Power Gauge */}
+          <div className="flex flex-col items-center bg-gradient-to-b from-[#2e180d] to-[#1a0c06] border-2 border-[#5c3319] p-2.5 rounded-lg shadow-2xl z-20 h-[360px] select-none">
+            <span className="text-[10px] font-black uppercase text-amber-300 font-serif tracking-widest mb-0.5">
+              POWER
             </span>
-            <span className="text-[11px] font-mono font-bold text-white mb-2">
+            <span className="text-[11px] font-mono font-bold text-amber-200 mb-2">
               {Math.round(hudState.cueStick.power * 100)}%
             </span>
 
-            {/* Power Vertical Slider Container */}
-            <div className="relative flex-1 w-7 bg-slate-950 rounded-full border border-slate-800 flex flex-col justify-end p-1 overflow-hidden">
+            {/* Power Vertical Slider Container: Brass Measure */}
+            <div className="relative flex-1 w-6 bg-[#0e0703] rounded border border-amber-800/80 flex flex-col justify-end p-0.5 overflow-hidden shadow-inner">
               {/* Power Fill Bar */}
               <div
                 style={{ height: `${hudState.cueStick.power * 100}%` }}
-                className="w-full rounded-full bg-gradient-to-t from-emerald-500 via-amber-500 to-rose-600 transition-all duration-75 shadow-lg"
+                className="w-full rounded-sm bg-gradient-to-t from-emerald-600 via-amber-500 to-rose-600 transition-all duration-75 shadow-lg"
               />
 
               {/* Invisible native range input rotated */}
@@ -620,82 +629,82 @@ export const EightBallPool: React.FC = () => {
               />
             </div>
 
-            {/* Execute Shot Button */}
+            {/* Execute Shot Button: Brass Trigger */}
             <button
               onClick={executeShot}
               disabled={
                 hudState.phase !== 'aiming' ||
                 (hudState.mode === 'ai' && hudState.turn === 'player2')
               }
-              className="mt-3 px-3 py-2 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-30 disabled:cursor-not-allowed font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+              className="mt-3 px-3 py-2 w-full rounded bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 border border-amber-400 text-amber-950 font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1 font-serif"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>Shoot</span>
+              <span>STRIKE</span>
             </button>
           </div>
         </div>
 
-        {/* Bottom Aim Fine-Tuning & Mode Selector Bar */}
-        <div className="w-full max-w-5xl flex items-center justify-between px-4 py-2 mt-2 bg-slate-900/80 backdrop-blur-md rounded-xl border border-slate-800 text-xs text-slate-300">
+        {/* Bottom Aim Fine-Tuning & Mode Selector Bar: Polished Mahogany Rail */}
+        <div className="w-full max-w-5xl flex items-center justify-between px-4 py-2.5 mt-2 bg-[#180d07]/90 backdrop-blur-md rounded border border-amber-900/60 text-xs text-amber-200/90 shadow-lg">
           {/* Aim Fine-Tuning Buttons */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Fine-Tune Aim:
+            <span className="text-[10px] font-serif font-bold text-amber-500 uppercase tracking-widest">
+              Cue Fine-Tune:
             </span>
             <button
               onClick={() => adjustAngle(-0.04)}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer font-bold"
+              className="px-2.5 py-1 rounded bg-[#2b180d] hover:bg-[#3d2313] border border-amber-800/60 text-amber-300 transition cursor-pointer font-serif font-bold"
             >
               -2°
             </button>
             <button
               onClick={() => adjustAngle(-0.01)}
-              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+              className="px-2 py-1 rounded bg-[#2b180d] hover:bg-[#3d2313] border border-amber-800/60 text-amber-300 transition cursor-pointer font-serif font-bold"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => adjustAngle(0.01)}
-              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+              className="px-2 py-1 rounded bg-[#2b180d] hover:bg-[#3d2313] border border-amber-800/60 text-amber-300 transition cursor-pointer font-serif font-bold"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => adjustAngle(0.04)}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer font-bold"
+              className="px-2.5 py-1 rounded bg-[#2b180d] hover:bg-[#3d2313] border border-amber-800/60 text-amber-300 transition cursor-pointer font-serif font-bold"
             >
               +2°
             </button>
           </div>
 
-          {/* Mode Selector Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          {/* Mode Selector Tabs: Brass Selector */}
+          <div className="flex items-center gap-1.5 bg-[#0e0704] p-1 rounded border border-amber-900/60">
             <button
               onClick={() => handleRestart('ai', 'medium')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1 rounded text-xs font-serif font-bold transition cursor-pointer ${
                 hudState.mode === 'ai'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gradient-to-b from-amber-700 to-amber-900 text-amber-100 border border-amber-500/60 shadow-sm'
+                  : 'text-amber-500/60 hover:text-amber-300'
               }`}
             >
               vs AI
             </button>
             <button
               onClick={() => handleRestart('pvp')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1 rounded text-xs font-serif font-bold transition cursor-pointer ${
                 hudState.mode === 'pvp'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gradient-to-b from-amber-700 to-amber-900 text-amber-100 border border-amber-500/60 shadow-sm'
+                  : 'text-amber-500/60 hover:text-amber-300'
               }`}
             >
               Pass & Play
             </button>
             <button
               onClick={() => handleRestart('practice')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1 rounded text-xs font-serif font-bold transition cursor-pointer ${
                 hudState.mode === 'practice'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gradient-to-b from-amber-700 to-amber-900 text-amber-100 border border-amber-500/60 shadow-sm'
+                  : 'text-amber-500/60 hover:text-amber-300'
               }`}
             >
               Practice
@@ -704,33 +713,33 @@ export const EightBallPool: React.FC = () => {
         </div>
       </div>
 
-      {/* Game Over Modal */}
+      {/* Game Over Modal: Victorian Mahogany Plaque */}
       {hudState.phase === 'game_over' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-center">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 mx-auto mb-4">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in font-serif">
+          <div className="w-full max-w-md bg-[#1a0e07] border-2 border-amber-600/80 rounded p-6 shadow-2xl text-center relative">
+            <div className="w-16 h-16 rounded bg-amber-950/60 border border-amber-500/60 flex items-center justify-center text-amber-400 mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <h2 className="text-2xl font-black uppercase tracking-wider text-white mb-1">
-              Match Complete!
+            <h2 className="text-2xl font-black uppercase tracking-widest text-amber-200 mb-1">
+              Match Concluded
             </h2>
-            <p className="text-sm font-semibold text-emerald-400 mb-4">
+            <p className="text-sm font-bold text-amber-400 mb-4">
               {hudState.winner === 'player1'
-                ? 'Player 1 Wins!'
+                ? 'Player 1 Claims Victory!'
                 : hudState.mode === 'ai'
-                ? 'AI Bot Wins!'
-                : 'Player 2 Wins!'}
+                ? 'AI Bot Claims Victory!'
+                : 'Player 2 Claims Victory!'}
             </p>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 mb-6">
-              <p className="italic text-slate-400">{hudState.winReason}</p>
+            <div className="bg-[#0e0704] p-4 rounded border border-amber-900/60 text-xs text-amber-200/90 mb-6 font-mono">
+              <p className="italic">{hudState.winReason}</p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => handleRestart()}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 font-serif font-black text-xs uppercase tracking-wider text-amber-950 border border-amber-400 shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Rematch</span>

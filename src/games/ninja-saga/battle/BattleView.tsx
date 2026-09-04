@@ -1,14 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
-  Sword,
-  Zap,
-  Sparkles,
   Heart,
-  LogOut,
   Trophy,
   Skull,
-  Feather,
 } from 'lucide-react';
 import { useNinjaSagaStore } from '../store/useNinjaSagaStore';
 import { Jutsu, Item } from '../types';
@@ -474,53 +469,53 @@ export const BattleView: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-slate-950 text-white overflow-hidden select-none">
-      {/* Top Combat Fighter HUD */}
-      <div className="flex items-center justify-between px-6 py-2 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 z-20">
+    <div className="relative flex flex-col w-full h-full bg-[#0d0906] text-[#f5ebd7] overflow-hidden select-none font-serif">
+      {/* Top Combat Fighter HUD: Antique Lacquered Wood & Gold Trim */}
+      <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-b from-[#251a13] to-[#160f0a] border-b-2 border-amber-900/80 shadow-2xl z-20">
         {/* Player Stats */}
         <div className="w-80">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-black uppercase text-amber-400">
+            <span className="text-xs font-black uppercase text-amber-300 font-serif tracking-wider">
               {player.name} (Lv.{player.level})
             </span>
-            <span className="text-[10px] font-mono text-slate-300">
+            <span className="text-[10px] font-mono text-[#dcd1be]">
               {player.hp} / {player.maxHp} HP
             </span>
           </div>
 
-          {/* Health Bar */}
-          <div className="h-3 w-full bg-slate-950 rounded-full border border-slate-700 overflow-hidden mb-1">
+          {/* Health Bar (Verdant Jade Life) */}
+          <div className="h-3 w-full bg-[#120c08] rounded border border-amber-900/80 overflow-hidden mb-1">
             <div
               style={{ width: `${Math.max(0, (player.hp / player.maxHp) * 100)}%` }}
-              className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-200"
+              className="h-full bg-gradient-to-r from-emerald-600 to-green-400 transition-all duration-200"
             />
           </div>
 
-          {/* Chakra Bar */}
+          {/* Chakra Bar (Azure Spirit Energy) */}
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[9px] font-bold text-sky-400 uppercase">Chakra</span>
-            <span className="text-[9px] font-mono text-slate-400">
+            <span className="text-[9px] font-bold text-sky-400 uppercase tracking-wider font-mono">Chakra CP</span>
+            <span className="text-[9px] font-mono text-sky-300">
               {player.cp} / {player.maxCp} CP
             </span>
           </div>
-          <div className="h-2 w-full bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
+          <div className="h-2 w-full bg-[#120c08] rounded border border-amber-900/80 overflow-hidden">
             <div
               style={{ width: `${Math.max(0, (player.cp / player.maxCp) * 100)}%` }}
-              className="h-full bg-gradient-to-r from-sky-600 to-sky-400 transition-all duration-200"
+              className="h-full bg-gradient-to-r from-sky-600 to-cyan-400 transition-all duration-200"
             />
           </div>
 
           {/* Player Active Buffs */}
           <div className="flex items-center gap-1 mt-1">
             {player.shield > 0 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-900/80 border border-sky-400 text-sky-200 font-mono">
-                Shield: {player.shield}
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-950/90 border border-sky-600 text-sky-200 font-mono">
+                Barrier: {player.shield}
               </span>
             )}
             {player.statusEffects.map((se, idx) => (
               <span
                 key={idx}
-                className="text-[9px] px-1.5 py-0.5 rounded bg-amber-900/80 border border-amber-500 text-amber-200 uppercase font-mono"
+                className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-600 text-amber-300 uppercase font-mono"
               >
                 {se.type} ({se.duration})
               </span>
@@ -528,63 +523,57 @@ export const BattleView: React.FC = () => {
           </div>
         </div>
 
-        {/* Turn Indicator */}
+        {/* Turn Indicator: Japanese Battle Seal */}
         <div className="flex flex-col items-center">
           <span
-            className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-lg ${
+            className={`px-4 py-1 rounded text-xs font-black uppercase tracking-widest shadow-xl border ${
               activeBattle.currentTurn === 'player'
-                ? 'bg-emerald-600 text-white animate-pulse'
-                : 'bg-rose-700 text-white'
+                ? 'bg-gradient-to-r from-amber-700 to-amber-600 text-amber-100 border-amber-400 animate-pulse'
+                : 'bg-gradient-to-r from-red-950 to-red-900 text-red-200 border-red-700'
             }`}
           >
-            {activeBattle.currentTurn === 'player' ? 'YOUR TURN' : 'ENEMY TURN'}
+            {activeBattle.currentTurn === 'player' ? '【 貴方の番 • YOUR TURN 】' : '【 敵の番 • ENEMY TURN 】'}
           </span>
         </div>
 
         {/* Enemy Stats */}
         <div className="w-80 text-right">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-mono text-slate-300">
+            <span className="text-[10px] font-mono text-[#dcd1be]">
               {enemy.hp} / {enemy.maxHp} HP
             </span>
-            <span className="text-xs font-black uppercase text-rose-400">
+            <span className="text-xs font-black uppercase text-red-400 font-serif tracking-wider">
               {enemy.name} (Lv.{enemy.level})
             </span>
           </div>
 
           {/* Enemy Health Bar */}
-          <div className="h-3 w-full bg-slate-950 rounded-full border border-slate-700 overflow-hidden mb-1">
+          <div className="h-3 w-full bg-[#120c08] rounded border border-amber-900/80 overflow-hidden mb-1">
             <div
               style={{ width: `${Math.max(0, (enemy.hp / enemy.maxHp) * 100)}%` }}
-              className="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-200 ml-auto"
+              className="h-full bg-gradient-to-r from-red-700 to-rose-500 transition-all duration-200 ml-auto"
             />
           </div>
 
           {/* Enemy Chakra */}
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[9px] font-mono text-slate-400">
-              {enemy.cp} / {enemy.maxCp} CP
-            </span>
-            <span className="text-[9px] font-bold text-sky-400 uppercase">Chakra</span>
-          </div>
-          <div className="h-2 w-full bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
+          <div className="h-2 w-full bg-[#120c08] rounded border border-amber-900/80 overflow-hidden">
             <div
               style={{ width: `${Math.max(0, (enemy.cp / enemy.maxCp) * 100)}%` }}
-              className="h-full bg-gradient-to-r from-sky-600 to-sky-400 transition-all duration-200 ml-auto"
+              className="h-full bg-gradient-to-r from-purple-700 to-indigo-500 transition-all duration-200 ml-auto"
             />
           </div>
 
           {/* Enemy Buffs / Debuffs */}
           <div className="flex items-center justify-end gap-1 mt-1">
             {enemy.shield > 0 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime-900/80 border border-lime-400 text-lime-200 font-mono">
-                Shield: {enemy.shield}
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime-950 border border-lime-600 text-lime-200 font-mono">
+                Barrier: {enemy.shield}
               </span>
             )}
             {enemy.statusEffects.map((se, idx) => (
               <span
                 key={idx}
-                className="text-[9px] px-1.5 py-0.5 rounded bg-rose-900/80 border border-rose-500 text-rose-200 uppercase font-mono"
+                className="text-[9px] px-1.5 py-0.5 rounded bg-red-950 border border-red-700 text-red-300 uppercase font-mono"
               >
                 {se.type} ({se.duration})
               </span>
@@ -594,7 +583,7 @@ export const BattleView: React.FC = () => {
       </div>
 
       {/* Battle Canvas Theater */}
-      <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden">
+      <div className="relative flex-1 bg-[#090604] flex items-center justify-center overflow-hidden">
         <canvas
           ref={canvasRef}
           width={960}
@@ -603,23 +592,23 @@ export const BattleView: React.FC = () => {
         />
       </div>
 
-      {/* Bottom Command Deck & Combat Log */}
-      <div className="h-56 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex p-3 gap-3 z-20">
-        {/* Combat Action Log Feed (Left) */}
-        <div className="w-80 bg-slate-950/80 border border-slate-800 rounded-2xl p-2.5 overflow-y-auto flex flex-col-reverse text-[11px] font-mono select-text">
+      {/* Bottom Command Deck & Combat Log: Japanese Dojo War Console */}
+      <div className="h-56 bg-gradient-to-t from-[#140e0a] to-[#1f150f] border-t-2 border-amber-900/80 flex p-3 gap-3 z-20">
+        {/* Combat Action Log Feed (Parchment scroll aesthetic) */}
+        <div className="w-80 bg-[#120c08] border border-amber-900/60 rounded-lg p-2.5 overflow-y-auto flex flex-col-reverse text-[11px] font-mono select-text shadow-inner">
           {logs.map((log) => (
             <div
               key={log.id}
-              className={`py-0.5 ${
+              className={`py-0.5 border-b border-amber-950/40 ${
                 log.type === 'crit'
-                  ? 'text-amber-400 font-black'
+                  ? 'text-amber-300 font-black'
                   : log.type === 'player'
-                  ? 'text-emerald-300'
+                  ? 'text-emerald-400'
                   : log.type === 'enemy'
                   ? 'text-rose-400'
                   : log.type === 'heal'
-                  ? 'text-teal-300'
-                  : 'text-slate-400'
+                  ? 'text-cyan-300'
+                  : 'text-[#9c8b77]'
               }`}
             >
               {log.text}
@@ -627,33 +616,33 @@ export const BattleView: React.FC = () => {
           ))}
         </div>
 
-        {/* Action Controls Deck (Center & Right) */}
-        <div className="flex-1 bg-slate-950/50 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+        {/* Action Controls Deck */}
+        <div className="flex-1 bg-[#160f0b] border border-amber-900/70 rounded-lg p-3 flex flex-col justify-between shadow-lg">
           {/* Action Tabs */}
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <div className="flex items-center gap-2 border-b border-amber-900/60 pb-2">
             <button
               onClick={() => setActiveTab('main')}
-              className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'main' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded text-xs font-bold font-serif tracking-wider transition cursor-pointer ${
+                activeTab === 'main' ? 'bg-amber-800/80 text-amber-200 border border-amber-600' : 'text-[#a89680] hover:text-white'
               }`}
             >
-              Commands
+              Commands 【指示】
             </button>
             <button
               onClick={() => setActiveTab('jutsu')}
-              className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'jutsu' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded text-xs font-bold font-serif tracking-wider transition cursor-pointer ${
+                activeTab === 'jutsu' ? 'bg-amber-800/80 text-amber-200 border border-amber-600' : 'text-[#a89680] hover:text-white'
               }`}
             >
-              Jutsu Deck ({player.equippedJutsus.length})
+              Jutsu Deck 【忍術】 ({player.equippedJutsus.length})
             </button>
             <button
               onClick={() => setActiveTab('items')}
-              className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'items' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded text-xs font-bold font-serif tracking-wider transition cursor-pointer ${
+                activeTab === 'items' ? 'bg-amber-800/80 text-amber-200 border border-amber-600' : 'text-[#a89680] hover:text-white'
               }`}
             >
-              Consumables
+              Consumables 【道具】
             </button>
           </div>
 
@@ -661,37 +650,37 @@ export const BattleView: React.FC = () => {
           <div className="flex-1 flex items-center justify-center py-2">
             {activeTab === 'main' && (
               <div className="grid grid-cols-5 gap-3 w-full max-w-2xl">
-                {/* 1. Attack */}
+                {/* 1. Attack (斬 - ZAN) */}
                 <button
                   onClick={handleAttack}
                   disabled={activeBattle.currentTurn !== 'player' || isProcessingTurn || isOver}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 border border-slate-700 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg"
+                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gradient-to-b from-[#2a1a12] to-[#19100a] hover:from-[#352117] hover:to-[#22160e] border-2 border-amber-900/80 hover:border-amber-500 text-[#f5ebd7] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg group"
                 >
-                  <Sword className="w-5 h-5 text-amber-400" />
-                  <span className="text-xs font-black uppercase">Attack</span>
+                  <span className="text-xl font-bold text-amber-400 group-hover:scale-110 transition font-sans">斬</span>
+                  <span className="text-xs font-serif font-black tracking-wider">Attack</span>
                 </button>
 
-                {/* 2. Open Jutsu Grid */}
+                {/* 2. Jutsu (術 - JUTSU) */}
                 <button
                   onClick={() => setActiveTab('jutsu')}
                   disabled={activeBattle.currentTurn !== 'player' || isProcessingTurn || isOver}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-gradient-to-b from-indigo-950 to-slate-900 hover:from-indigo-900 hover:to-slate-800 border border-indigo-700/60 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg"
+                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gradient-to-b from-[#22172a] to-[#150d1a] hover:from-[#2e1f38] hover:to-[#1c1224] border-2 border-indigo-900/80 hover:border-indigo-400 text-[#f5ebd7] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg group"
                 >
-                  <Zap className="w-5 h-5 text-indigo-400" />
-                  <span className="text-xs font-black uppercase">Jutsu</span>
+                  <span className="text-xl font-bold text-indigo-400 group-hover:scale-110 transition font-sans">術</span>
+                  <span className="text-xs font-serif font-black tracking-wider">Jutsu</span>
                 </button>
 
-                {/* 3. Charge Chakra */}
+                {/* 3. Charge CP (気 - KI) */}
                 <button
                   onClick={handleChargeChakra}
                   disabled={activeBattle.currentTurn !== 'player' || isProcessingTurn || isOver}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-gradient-to-b from-sky-950 to-slate-900 hover:from-sky-900 hover:to-slate-800 border border-sky-700/60 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg"
+                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gradient-to-b from-[#14232a] to-[#0c161a] hover:from-[#1b2f38] hover:to-[#101e24] border-2 border-sky-900/80 hover:border-sky-400 text-[#f5ebd7] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg group"
                 >
-                  <Sparkles className="w-5 h-5 text-sky-400" />
-                  <span className="text-xs font-black uppercase">Charge CP</span>
+                  <span className="text-xl font-bold text-sky-400 group-hover:scale-110 transition font-sans">気</span>
+                  <span className="text-xs font-serif font-black tracking-wider">Chakra</span>
                 </button>
 
-                {/* 4. Companion Pet Skill */}
+                {/* 4. Pet Skill (獣 - KEMONO) */}
                 <button
                   onClick={handlePetAction}
                   disabled={
@@ -701,26 +690,21 @@ export const BattleView: React.FC = () => {
                     activeBattle.petCooldown > 0 ||
                     !character?.activePet
                   }
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-gradient-to-b from-emerald-950 to-slate-900 hover:from-emerald-900 hover:to-slate-800 border border-emerald-700/60 text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg"
+                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gradient-to-b from-[#152a1d] to-[#0d1a12] hover:from-[#1d3827] hover:to-[#112419] border-2 border-emerald-900/80 hover:border-emerald-400 text-[#f5ebd7] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 cursor-pointer shadow-lg group"
                 >
-                  <Feather className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs font-black uppercase">
-                    {character?.activePet ? 'Pet Skill' : 'No Pet'}
+                  <span className="text-xl font-bold text-emerald-400 group-hover:scale-110 transition font-sans">獣</span>
+                  <span className="text-xs font-serif font-black tracking-wider">
+                    {character?.activePet ? 'Pet Beast' : 'No Pet'}
                   </span>
-                  {activeBattle.petCooldown > 0 && (
-                    <span className="text-[9px] font-mono text-amber-400">
-                      CD: {activeBattle.petCooldown}
-                    </span>
-                  )}
                 </button>
 
-                {/* 5. Flee */}
+                {/* 5. Flee (逃 - NIGE) */}
                 <button
                   onClick={endBattle}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-gradient-to-b from-rose-950 to-slate-900 hover:from-rose-900 hover:to-slate-800 border border-rose-700/60 text-slate-100 transition active:scale-95 cursor-pointer shadow-lg"
+                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gradient-to-b from-[#2e1313] to-[#1c0b0b] hover:from-[#3d1a1a] hover:to-[#260e0e] border-2 border-red-900/80 hover:border-red-500 text-[#f5ebd7] transition active:scale-95 cursor-pointer shadow-lg group"
                 >
-                  <LogOut className="w-5 h-5 text-rose-400" />
-                  <span className="text-xs font-black uppercase">Flee</span>
+                  <span className="text-xl font-bold text-red-400 group-hover:scale-110 transition font-sans">逃</span>
+                  <span className="text-xs font-serif font-black tracking-wider">Retreat</span>
                 </button>
               </div>
             )}

@@ -190,20 +190,23 @@ export const NightclubCityGame: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-slate-950 text-white overflow-hidden select-none">
+    <div className="relative flex flex-col w-full h-full bg-[#050308] text-white overflow-hidden select-none">
       {/* Platform Arcade Header */}
       <ArcadeHeader title="Nightclub City" category="Social Club Tycoon" />
 
-      {/* Top Club Telemetry Bar */}
-      <div className="flex items-center justify-between px-6 py-2.5 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-xl z-20">
+      {/* Pulsating Hot Magenta & Cyan Laser Neon Border Line */}
+      <div className="w-full h-1 bg-gradient-to-r from-fuchsia-600 via-purple-500 to-cyan-400 shadow-[0_0_12px_rgba(217,70,239,0.8)]" />
+
+      {/* Top Club VIP Telemetry Bar */}
+      <div className="flex items-center justify-between px-6 py-2.5 bg-[#0b0712]/95 backdrop-blur-lg border-b border-fuchsia-950/80 shadow-2xl z-20">
         {/* Club Profile & Level */}
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-fuchsia-600/30 to-purple-950 border border-fuchsia-500/50 flex items-center justify-center text-fuchsia-400 shadow-inner">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-fuchsia-600 to-purple-950 border border-fuchsia-400/60 flex items-center justify-center text-fuchsia-200 shadow-[0_0_15px_rgba(217,70,239,0.4)]">
             <Disc3 className="w-6 h-6 animate-spin" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black uppercase text-white tracking-wide">
+              <span className="text-sm font-black uppercase text-white tracking-widest font-sans drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
                 {clubName}
               </span>
               <div className="flex items-center text-amber-400">
@@ -215,14 +218,14 @@ export const NightclubCityGame: React.FC = () => {
 
             {/* Level & XP Progress Bar */}
             <div className="flex items-center gap-3 mt-1 text-xs">
-              <span className="font-bold text-amber-400">Lv.{level}</span>
-              <div className="w-36 h-2 bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
+              <span className="font-bold text-fuchsia-400 font-mono">Lv.{level}</span>
+              <div className="w-36 h-2 bg-black rounded-full border border-fuchsia-900/60 overflow-hidden">
                 <div
                   style={{ width: `${Math.min(100, (xp / maxXp) * 100)}%` }}
-                  className="h-full bg-gradient-to-r from-fuchsia-500 to-pink-500"
+                  className="h-full bg-gradient-to-r from-fuchsia-500 to-pink-500 shadow-[0_0_8px_rgba(217,70,239,0.7)]"
                 />
               </div>
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-[10px] font-mono text-fuchsia-300/80">
                 {xp} / {maxXp} XP
               </span>
             </div>
@@ -231,17 +234,23 @@ export const NightclubCityGame: React.FC = () => {
 
         {/* Club Buzz / Hype & Capacity */}
         <div className="flex items-center gap-5">
-          {/* Hype Meter */}
+          {/* Hype Meter with Equalizer Animation */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center gap-1 text-[10px] font-black uppercase text-amber-400 tracking-wider mb-0.5">
-              <Flame className="w-3.5 h-3.5 fill-current text-orange-500" />
-              <span>Club Hype</span>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-400 tracking-wider mb-0.5">
+              <Flame className="w-3.5 h-3.5 fill-current text-orange-500 animate-pulse" />
+              <span>CLUB HYPE</span>
+              {/* Animated VU Equalizer bars */}
+              <div className="flex items-end gap-0.5 h-2.5 ml-1">
+                <span className="w-1 bg-cyan-400 rounded-sm animate-pulse h-full" />
+                <span className="w-1 bg-fuchsia-500 rounded-sm animate-bounce h-2/3" />
+                <span className="w-1 bg-amber-400 rounded-sm animate-pulse h-4/5" />
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-28 h-3 bg-slate-950 rounded-full border border-slate-800 overflow-hidden p-0.5">
+              <div className="w-28 h-3 bg-black rounded-full border border-fuchsia-900/60 overflow-hidden p-0.5">
                 <div
                   style={{ width: `${hype}%` }}
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 transition-all duration-300"
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 transition-all duration-300 shadow-[0_0_10px_rgba(244,63,94,0.6)]"
                 />
               </div>
               <span className="text-xs font-mono font-bold text-white">{hype}%</span>
@@ -249,28 +258,28 @@ export const NightclubCityGame: React.FC = () => {
           </div>
 
           {/* Guest Capacity */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-black/80 rounded-lg border border-cyan-500/40 text-xs font-mono text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.2)]">
             <Users className="w-4 h-4 text-cyan-400" />
-            <span className="text-slate-300">
+            <span>
               {guests.length} / {capacity} Guests
             </span>
           </div>
 
           {/* Currencies */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-xl border border-slate-800 text-amber-400 font-mono font-bold text-xs shadow-inner">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-black/80 rounded-lg border border-amber-500/40 text-amber-400 font-mono font-bold text-xs shadow-inner">
             <Coins className="w-4 h-4 text-amber-400" />
             <span>${cash.toLocaleString()}</span>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 rounded-xl border border-slate-800 text-amber-300 font-mono font-bold text-xs shadow-inner">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-black/80 rounded-lg border border-fuchsia-500/40 text-fuchsia-300 font-mono font-bold text-xs shadow-inner">
             <Gem className="w-4 h-4 text-fuchsia-400" />
             <span>{luxeCash} Luxe</span>
           </div>
         </div>
       </div>
 
-      {/* Main Interactive Club Floor Canvas */}
-      <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden">
+      {/* Main Isometric Club Canvas Viewport */}
+      <div className="relative flex-1 w-full overflow-hidden bg-black flex flex-col justify-center items-center">
         <canvas
           ref={canvasRef}
           width={960}
@@ -280,14 +289,14 @@ export const NightclubCityGame: React.FC = () => {
         />
       </div>
 
-      {/* Bottom Command Navigation Dock */}
-      <div className="h-20 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-between px-8 z-20">
-        {/* Left: Quick Actions */}
-        <div className="flex items-center gap-3">
-          {/* Mix Drinks */}
+      {/* Bottom Command Dock Bar: Glossy DJ Controller Launchpads */}
+      <div className="flex items-center justify-between px-6 py-3 bg-[#08040d]/95 backdrop-blur-xl border-t border-fuchsia-950/80 shadow-2xl z-20">
+        {/* Left: Club Operations Launchpads */}
+        <div className="flex items-center gap-2.5 overflow-x-auto">
+          {/* Cocktail Bar Mixing */}
           <button
             onClick={() => openModal('bar_menu')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-500 font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 font-black text-xs uppercase tracking-wider text-white shadow-[0_0_12px_rgba(245,158,11,0.3)] border border-amber-400/60 transition active:scale-95 cursor-pointer"
           >
             <GlassWater className="w-4 h-4" />
             <span>Mix Drinks</span>
@@ -296,7 +305,7 @@ export const NightclubCityGame: React.FC = () => {
           {/* DJ Music Booth */}
           <button
             onClick={() => openModal('dj_booth')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 font-black text-xs uppercase tracking-wider text-white shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/60 transition active:scale-95 cursor-pointer"
           >
             <Disc3 className="w-4 h-4" />
             <span>DJ Booth</span>
@@ -305,7 +314,7 @@ export const NightclubCityGame: React.FC = () => {
           {/* Decorate Catalog */}
           <button
             onClick={() => openModal('shop_furniture')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-fuchsia-600 hover:bg-fuchsia-500 font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-b from-fuchsia-600 to-fuchsia-700 hover:from-fuchsia-500 hover:to-fuchsia-600 font-black text-xs uppercase tracking-wider text-white shadow-[0_0_12px_rgba(217,70,239,0.3)] border border-fuchsia-400/60 transition active:scale-95 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Decorate</span>
@@ -314,7 +323,7 @@ export const NightclubCityGame: React.FC = () => {
           {/* Bouncer Door Velvet Rope */}
           <button
             onClick={() => openModal('bouncer_rope')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-black text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-b from-purple-700 to-purple-850 hover:from-purple-600 hover:to-purple-750 font-black text-xs uppercase tracking-wider text-white shadow-[0_0_12px_rgba(147,51,234,0.3)] border border-purple-400/60 transition active:scale-95 cursor-pointer"
           >
             <ShieldAlert className="w-4 h-4" />
             <span>Velvet Rope</span>
@@ -323,7 +332,7 @@ export const NightclubCityGame: React.FC = () => {
           {/* Staff Roster */}
           <button
             onClick={() => openModal('staff')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 font-black text-xs uppercase tracking-wider text-slate-200 hover:text-white shadow-md transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#140c1e] hover:bg-[#1e132c] font-black text-xs uppercase tracking-wider text-fuchsia-200 hover:text-white border border-fuchsia-900/60 shadow transition active:scale-95 cursor-pointer"
           >
             <Users className="w-4 h-4 text-amber-400" />
             <span>Staff</span>
@@ -332,10 +341,10 @@ export const NightclubCityGame: React.FC = () => {
           {/* Quests */}
           <button
             onClick={() => openModal('quests')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 font-black text-xs uppercase tracking-wider text-slate-200 hover:text-white shadow-md transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#140c1e] hover:bg-[#1e132c] font-black text-xs uppercase tracking-wider text-fuchsia-200 hover:text-white border border-fuchsia-900/60 shadow transition active:scale-95 cursor-pointer"
           >
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Quests</span>
+            <span>Milestones</span>
           </button>
         </div>
 
@@ -343,14 +352,14 @@ export const NightclubCityGame: React.FC = () => {
         <div>
           <button
             onClick={toggleMusicBeat}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-lg ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-lg border ${
               isBeatActive
-                ? 'bg-emerald-600 text-white animate-pulse'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse'
+                : 'bg-[#140c1e] hover:bg-[#1e132c] text-slate-400 hover:text-white border-fuchsia-950'
             }`}
           >
             <Volume2 className="w-4 h-4" />
-            <span>{isBeatActive ? 'Club Beat: PLAYING' : 'Club Beat: OFF'}</span>
+            <span>{isBeatActive ? 'Club Beat: ON' : 'Club Beat: OFF'}</span>
           </button>
         </div>
       </div>
