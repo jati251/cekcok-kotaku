@@ -175,34 +175,49 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
 
   // Scenery: Grandstands, Billboards, Trees, Barriers
   const { trees, cornerBarriers, billboards } = useMemo(() => {
-    const treesList: [number, number, number, number][] = [];
+    const treesList: [number, number, number][] = [];
     const barriersList: [number, number, number, number][] = [];
     const boardsList: { pos: [number, number, number]; rotY: number; text: string; color: string }[] = [];
 
     BARRIER_COLLIDERS.length = 0;
 
-    // Outer trees
-    for (let i = 0; i < 60; i++) {
-      const t = (i / 60) + (Math.random() - 0.5) * 0.05;
+    // Outer trees (Strictly validated to NEVER spawn near or on the track!)
+    for (let i = 0; i < 75; i++) {
+      const t = (i / 75) + (Math.random() - 0.5) * 0.04;
       const pt = spline.getPointAt((t + 1) % 1);
       const tangent = spline.getTangentAt((t + 1) % 1).normalize();
       const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-      const dist = 16 + Math.random() * 30;
+      const dist = 24 + Math.random() * 32; // Far out on the grass
       const side = i % 2 === 0 ? 1 : -1;
-      const treePos = pt.clone().addScaledVector(right, side * dist);
-      treesList.push([treePos.x, 0, treePos.z, 0.85 + Math.random() * 0.45]);
+      const treeX = pt.x + right.x * side * dist;
+      const treeZ = pt.z + right.z * side * dist;
+
+      // Validate that this tree position is at least 18m away from ANY segment of the track!
+      let tooClose = false;
+      for (let s = 0; s < 60; s++) {
+        const roadPt = spline.getPointAt(s / 60);
+        const dSq = (treeX - roadPt.x) ** 2 + (treeZ - roadPt.z) ** 2;
+        if (dSq < 18 * 18) {
+          tooClose = true;
+          break;
+        }
+      }
+
+      if (!tooClose) {
+        treesList.push([treeX, treeZ, 0.85 + Math.random() * 0.45]);
+      }
     }
 
-    // Corner barriers
+    // Corner barriers (placed strictly on grass outside the curb at 12.8m from centerline)
     const cornerT = [0.14, 0.22, 0.42, 0.52, 0.68, 0.76, 0.88];
     for (const t of cornerT) {
       const pt = spline.getPointAt(t);
       const tangent = spline.getTangentAt(t).normalize();
       const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-      const bPos = pt.clone().addScaledVector(right, TRACK_WIDTH / 2 + 1.8);
+      const bPos = pt.clone().addScaledVector(right, TRACK_WIDTH / 2 + 3.8);
       const rotY = Math.atan2(tangent.x, tangent.z);
       barriersList.push([bPos.x, 0.4, bPos.z, rotY]);
-      BARRIER_COLLIDERS.push({ position: [bPos.x, 0.4, bPos.z], radius: 2.8 });
+      BARRIER_COLLIDERS.push({ position: [bPos.x, 0.4, bPos.z], radius: 1.6 });
     }
 
     // Sponsor Corner Billboards
@@ -217,7 +232,7 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
       const pt = spline.getPointAt(cfg.t);
       const tangent = spline.getTangentAt(cfg.t).normalize();
       const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-      const bPos = pt.clone().addScaledVector(right, TRACK_WIDTH / 2 + 6);
+      const bPos = pt.clone().addScaledVector(right, TRACK_WIDTH / 2 + 7);
       const rotY = Math.atan2(tangent.x, tangent.z);
       boardsList.push({ pos: [bPos.x, 2.5, bPos.z], rotY, text: cfg.text, color: cfg.color });
     });
@@ -379,7 +394,7 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
       {/* 8. Scenery Trees (Multi-Tier Pine Trees) */}
       {!isNight &&
         trees.map((t, idx) => (
-          <group key={idx} position={[t[0], 0, t[1]]} scale={[t[3], t[3], t[3]]}>
+          <group key={idx} position={[t[0], 0, t[1]]} scale={[t[2], t[2], t[2]]}>
             {/* Trunk */}
             <mesh position={[0, 1.2, 0]}>
               <cylinderGeometry args={[0.35, 0.55, 2.4, 6]} />

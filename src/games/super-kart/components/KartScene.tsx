@@ -334,21 +334,25 @@ function KartSimulation() {
       }
     });
 
-    // 4. Collision: Player vs Track Corner Barriers
+    // 4. Collision: Player vs Track Corner Barriers (Clean slide, no sticky reverse)
     BARRIER_COLLIDERS.forEach((barrier) => {
       const dx = state.position.x - barrier.position[0];
       const dz = state.position.z - barrier.position[2];
       const dist = Math.sqrt(dx * dx + dz * dz);
+      const kartRadius = 1.1;
+      const minDist = barrier.radius + kartRadius;
 
-      if (dist < barrier.radius) {
-        const nx = dx / (dist || 1);
-        const nz = dz / (dist || 1);
-        const overlap = barrier.radius - dist;
+      if (dist < minDist && dist > 0.01) {
+        const nx = dx / dist;
+        const nz = dz / dist;
+        const overlap = minDist - dist;
 
-        state.position.x += nx * overlap * 1.1;
-        state.position.z += nz * overlap * 1.1;
+        // Push player smoothly outside the barrier
+        state.position.x += nx * overlap * 1.05;
+        state.position.z += nz * overlap * 1.05;
 
-        state.speed = -Math.abs(state.speed) * 0.35;
+        // Glancing friction: retain forward momentum without jitter or reverse lockup!
+        state.speed = Math.max(state.speed * 0.75, 0);
         kartAudio.playBump();
       }
     });

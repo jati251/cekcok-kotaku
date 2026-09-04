@@ -147,23 +147,31 @@ export function updateKartPhysics(
     state.hasStar = false;
   }
 
-  // 2. Offroad Detection
-  // Check distance from spline centerline
-  // Project player pos to 2D XZ
-  let minDistanceToCenterline = 0;
-  // Sample 20 points around approximate position or evaluate spline
-  const playerXZ = new THREE.Vector2(state.position.x, state.position.z);
-  // Simple closest point approximation from spline
-  const samples = 100;
+  // 2. Accurate Offroad Detection (Coarse + Fine sampling to eliminate chord error)
+  let bestT = 0;
   let closestDistSq = Infinity;
+  const samples = 120;
   for (let i = 0; i <= samples; i++) {
-    const pt = trackSpline.getPointAt(i / samples);
-    const dSq = (pt.x - playerXZ.x) ** 2 + (pt.z - playerXZ.y) ** 2;
+    const t = i / samples;
+    const pt = trackSpline.getPointAt(t);
+    const dSq = (pt.x - state.position.x) ** 2 + (pt.z - state.position.z) ** 2;
+    if (dSq < closestDistSq) {
+      closestDistSq = dSq;
+      bestT = t;
+    }
+  }
+
+  // Fine refinement around bestT
+  const deltaT = 1 / samples;
+  for (let step = -4; step <= 4; step++) {
+    const t = (bestT + (step / 4) * deltaT + 1) % 1;
+    const pt = trackSpline.getPointAt(t);
+    const dSq = (pt.x - state.position.x) ** 2 + (pt.z - state.position.z) ** 2;
     if (dSq < closestDistSq) {
       closestDistSq = dSq;
     }
   }
-  minDistanceToCenterline = Math.sqrt(closestDistSq);
+  const minDistanceToCenterline = Math.sqrt(closestDistSq);
   state.isOffroad = minDistanceToCenterline > OFFROAD_THRESHOLD;
 
   // 3. Boost Pad Check
