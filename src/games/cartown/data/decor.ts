@@ -1,0 +1,111 @@
+import { GarageDecorItem } from '../types';
+
+export const GARAGE_DECOR: GarageDecorItem[] = [
+  // --- Flooring ---
+  {
+    id: 'floor_concrete',
+    name: 'Industrial Polished Concrete',
+    category: 'flooring',
+    priceCoins: 0,
+    priceBucks: 0,
+    levelRequired: 1,
+    bonusPercent: 0,
+    description: 'Classic durable workshop floor with smooth gray epoxy sheen.',
+  },
+  {
+    id: 'floor_checkered',
+    name: 'Grand Prix Checkered Tiles',
+    category: 'flooring',
+    priceCoins: 3500,
+    priceBucks: 0,
+    levelRequired: 3,
+    bonusPercent: 5,
+    description: 'Black and white motorsport tile pattern that boosts garage prestige.',
+  },
+  {
+    id: 'floor_metallic',
+    name: 'Diamond Plate Steel Floor',
+    category: 'flooring',
+    priceCoins: 8500,
+    priceBucks: 3,
+    levelRequired: 6,
+    bonusPercent: 10,
+    description: 'Heavy duty slip-resistant diamond tread steel plating.',
+  },
+
+  // --- Lifts ---
+  {
+    id: 'lift_standard',
+    name: 'Hydraulic 2-Post Workshop Lift',
+    category: 'lift',
+    priceCoins: 1500,
+    priceBucks: 0,
+    levelRequired: 1,
+    bonusPercent: 0,
+    description: 'Standard overhead arm lift for oil changes and undercarriage work.',
+  },
+  {
+    id: 'lift_scissor',
+    name: 'Heavy-Duty 4-Post Alignment Rack',
+    category: 'lift',
+    priceCoins: 6000,
+    priceBucks: 0,
+    levelRequired: 4,
+    bonusPercent: 8,
+    description: 'Precision 4-post drive-on platform for suspension and dyno setups.',
+  },
+
+  // --- Toolboxes ---
+  {
+    id: 'toolbox_red',
+    name: 'Snap-Style Red Rolling Toolbox',
+    category: 'toolbox',
+    priceCoins: 2000,
+    priceBucks: 0,
+    levelRequired: 2,
+    bonusPercent: 5,
+    description: 'Steel roller cabinet with full drawer set of pneumatic impact wrenches.',
+  },
+  {
+    id: 'toolbox_black_pro',
+    name: 'Black Titanium Pro Tool Tower',
+    category: 'toolbox',
+    priceCoins: 7500,
+    priceBucks: 2,
+    levelRequired: 5,
+    bonusPercent: 12,
+    description: 'Commercial workstation with integrated power strips and LED drawer lighting.',
+  },
+
+  // --- Neon Signs & Decorations ---
+  {
+    id: 'neon_route66',
+    name: 'Route 66 Glowing Neon Sign',
+    category: 'neon',
+    priceCoins: 2500,
+    priceBucks: 0,
+    levelRequired: 2,
+    bonusPercent: 4,
+    description: 'Retro Americana neon sign that illuminates the garage back wall.',
+  },
+  {
+    id: 'neon_turbo',
+    name: 'Twin-Turbocharged Neon Sign',
+    category: 'neon',
+    priceCoins: 6500,
+    priceBucks: 1,
+    levelRequired: 5,
+    bonusPercent: 8,
+    description: 'High-voltage electric blue turbocharger with spinning neon fan blades.',
+  },
+  {
+    id: 'decor_trophy_case',
+    name: 'Grand Prix Trophy Display Case',
+    category: 'decoration',
+    priceCoins: 9000,
+    priceBucks: 4,
+    levelRequired: 7,
+    bonusPercent: 15,
+    description: 'Glass-enclosed showcase loaded with golden drag cups and championship banners.',
+  },
+];

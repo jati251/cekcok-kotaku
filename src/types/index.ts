@@ -21,7 +21,11 @@ export type ActiveGameTab =
   | 'feeding-frenzy'
   | 'pizza-frenzy'
   | 'saloon-showdown'
-  | 'insaniquarium';
+  | 'insaniquarium'
+  | 'eight-ball-pool'
+  | 'ninja-saga'
+  | 'nightclub-city'
+  | 'cartown';
 
 export interface LauncherGame {
   id: string;

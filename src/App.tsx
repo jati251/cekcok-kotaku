@@ -24,6 +24,10 @@ import {
   PizzaFrenzy,
   SaloonShowdown,
   Insaniquarium,
+  EightBallPool,
+  NinjaSagaGame,
+  NightclubCityGame,
+  CarTownGame,
 } from './games';
 
 export const App: React.FC = () => {
@@ -71,6 +75,14 @@ export const App: React.FC = () => {
         return <SaloonShowdown />;
       case 'insaniquarium':
         return <Insaniquarium />;
+      case 'eight-ball-pool':
+        return <EightBallPool />;
+      case 'ninja-saga':
+        return <NinjaSagaGame />;
+      case 'nightclub-city':
+        return <NightclubCityGame />;
+      case 'cartown':
+        return <CarTownGame />;
       case 'game':
       case 'combat':
       case 'visiting_ally':
