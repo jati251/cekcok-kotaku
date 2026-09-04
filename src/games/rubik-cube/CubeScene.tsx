@@ -1,13 +1,17 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, ContactShadows, Float } from '@react-three/drei'
-import RubikCube from './RubikCube'
-import type { RubikCubeHandle } from './RubikCube'
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, ContactShadows, Float } from '@react-three/drei';
+import RubikCube from './RubikCube';
+import type { RubikCubeHandle } from './RubikCube';
+import type { CubeTheme } from './types';
 
 interface CubeSceneProps {
-  cubeRef: React.RefObject<RubikCubeHandle | null>
+  cubeRef: React.RefObject<RubikCubeHandle | null>;
+  theme?: CubeTheme;
 }
 
-function CubeScene({ cubeRef }: CubeSceneProps) {
+export function CubeScene({ cubeRef, theme = 'competition' }: CubeSceneProps) {
+  const isCyber = theme === 'cyberpunk';
+
   return (
     <Canvas
       shadows
@@ -15,77 +19,79 @@ function CubeScene({ cubeRef }: CubeSceneProps) {
       gl={{
         antialias: true,
         toneMapping: 3, // ACESFilmic
-        toneMappingExposure: 1.2,
+        toneMappingExposure: isCyber ? 1.4 : 1.2,
       }}
       style={{
-        background: 'radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 50%, #050510 100%)',
+        background: isCyber
+          ? 'radial-gradient(ellipse at center, #0b132b 0%, #060913 60%, #020307 100%)'
+          : 'radial-gradient(ellipse at center, #111827 0%, #090d16 60%, #030712 100%)',
       }}
     >
-      {/* ── Lighting ── */}
-      <ambientLight intensity={0.4} />
+      {/* Lighting Setup */}
+      <ambientLight intensity={isCyber ? 0.6 : 0.45} />
       <directionalLight
         position={[6, 8, 4]}
-        intensity={1.8}
+        intensity={1.9}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.001}
       />
       <directionalLight
-        position={[-4, 6, -3]}
-        intensity={0.6}
-        color="#8888ff"
+        position={[-5, 6, -4]}
+        intensity={0.7}
+        color={isCyber ? '#38bdf8' : '#8888ff'}
       />
       <directionalLight
-        position={[0, -2, 6]}
-        intensity={0.3}
-        color="#ff8844"
-      />
-
-      {/* Subtle rim light */}
-      <directionalLight
-        position={[-3, 0, 5]}
+        position={[0, -3, 6]}
         intensity={0.4}
-        color="#4466ff"
+        color={isCyber ? '#f43f5e' : '#ff8844'}
       />
 
-      {/* ── Cube with subtle float animation ── */}
-      <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.15}>
-        <RubikCube ref={cubeRef} />
+      {/* Cyber Rim Light */}
+      <directionalLight
+        position={[-4, 0, 5]}
+        intensity={0.5}
+        color={isCyber ? '#a855f7' : '#4466ff'}
+      />
+
+      {/* Speedcube with gentle float dynamics */}
+      <Float speed={1.4} rotationIntensity={0.04} floatIntensity={0.12}>
+        <RubikCube ref={cubeRef} theme={theme} />
       </Float>
 
-      {/* ── Ground shadow ── */}
+      {/* Contact Floor Shadow */}
       <ContactShadows
         position={[0, -2.4, 0]}
-        opacity={0.6}
-        scale={8}
-        blur={3}
+        opacity={0.65}
+        scale={8.5}
+        blur={2.8}
         far={4}
         resolution={512}
       />
 
-      {/* ── Floor grid for depth reference ── */}
+      {/* Floor Ground Grid */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.25, 0]}>
-        <planeGeometry args={[12, 12]} />
+        <planeGeometry args={[16, 16]} />
         <meshStandardMaterial
-          color="#0a0a1a"
+          color={isCyber ? '#030712' : '#080d1a'}
           transparent
-          opacity={0.4}
+          opacity={0.45}
           roughness={1}
           metalness={0}
         />
       </mesh>
 
-      {/* ── Controls ── */}
+      {/* Precision Orbit Controls */}
       <OrbitControls
         enablePan={false}
-        minDistance={3.5}
-        maxDistance={10}
+        minDistance={3.2}
+        maxDistance={9.5}
         enableDamping
         dampingFactor={0.08}
-        rotateSpeed={0.8}
+        rotateSpeed={0.85}
       />
     </Canvas>
-  )
+  );
 }
 
-export default CubeScene
+export default CubeScene;
