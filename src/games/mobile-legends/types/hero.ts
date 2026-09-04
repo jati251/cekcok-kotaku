@@ -116,6 +116,8 @@ export interface ActiveHeroEntity {
     slowIntensity?: number;
   };
   inBush: boolean;
+  currentBushId?: string | null;
+  revealTimer?: number; // duration during which hero is revealed even in bush (e.g. after attack)
   isStealthed: boolean;
   stealthTimer: number;
 }

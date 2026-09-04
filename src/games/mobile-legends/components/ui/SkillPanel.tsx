@@ -22,12 +22,12 @@ export const SkillPanel: React.FC = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
   };
 
-  const triggerSkill = (key: 'q' | 'w' | 'e') => {
+  const triggerSkill = (key: '1' | '2' | '3') => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key }));
   };
 
   const triggerSpell = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
   };
 
   const triggerRecall = () => {
@@ -47,7 +47,7 @@ export const SkillPanel: React.FC = () => {
           <span className="text-[9px] font-bold">Recall [B]</span>
         </button>
 
-        {/* Regen (R) */}
+        {/* Regen */}
         <button
           onClick={() => {
             useMobaStore.getState().updateTelemetry({
@@ -66,7 +66,7 @@ export const SkillPanel: React.FC = () => {
 
       {/* 2. Skills Cluster & Spell */}
       <div className="relative w-64 h-64">
-        {/* Skill 1 (Q) */}
+        {/* Skill 1 (1 / J) */}
         <div className="absolute bottom-2 left-2">
           {canLevelSkill[0] && (
             <button
@@ -77,7 +77,7 @@ export const SkillPanel: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => triggerSkill('q')}
+            onClick={() => triggerSkill('1')}
             disabled={skillLevels[0] === 0 || skillCooldowns[0] > 0}
             className={`relative w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center active:scale-95 transition shadow-xl overflow-hidden ${
               skillCooldowns[0] > 0
@@ -86,7 +86,7 @@ export const SkillPanel: React.FC = () => {
             }`}
           >
             <span className="text-lg">{heroDef.skills[0].icon}</span>
-            <span className="text-[9px] font-bold text-slate-400">[Q]</span>
+            <span className="text-[9px] font-bold text-slate-300">[1]</span>
             {skillCooldowns[0] > 0 && (
               <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center font-mono font-black text-amber-400 text-sm">
                 {Math.ceil(skillCooldowns[0])}s
@@ -95,7 +95,7 @@ export const SkillPanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Skill 2 (W) */}
+        {/* Skill 2 (2 / K) */}
         <div className="absolute top-12 left-10">
           {canLevelSkill[1] && (
             <button
@@ -106,7 +106,7 @@ export const SkillPanel: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => triggerSkill('w')}
+            onClick={() => triggerSkill('2')}
             disabled={skillLevels[1] === 0 || skillCooldowns[1] > 0}
             className={`relative w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center active:scale-95 transition shadow-xl overflow-hidden ${
               skillCooldowns[1] > 0
@@ -115,7 +115,7 @@ export const SkillPanel: React.FC = () => {
             }`}
           >
             <span className="text-lg">{heroDef.skills[1].icon}</span>
-            <span className="text-[9px] font-bold text-slate-400">[W]</span>
+            <span className="text-[9px] font-bold text-slate-300">[2]</span>
             {skillCooldowns[1] > 0 && (
               <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center font-mono font-black text-amber-400 text-sm">
                 {Math.ceil(skillCooldowns[1])}s
@@ -124,7 +124,7 @@ export const SkillPanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Skill 3 / Ultimate (E) */}
+        {/* Skill 3 / Ultimate (3 / L) */}
         <div className="absolute top-2 right-12">
           {canLevelSkill[2] && (
             <button
@@ -135,7 +135,7 @@ export const SkillPanel: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => triggerSkill('e')}
+            onClick={() => triggerSkill('3')}
             disabled={skillLevels[2] === 0 || skillCooldowns[2] > 0}
             className={`relative w-16 h-16 rounded-full border-2 flex flex-col items-center justify-center active:scale-95 transition shadow-2xl overflow-hidden ${
               skillCooldowns[2] > 0
@@ -144,7 +144,7 @@ export const SkillPanel: React.FC = () => {
             }`}
           >
             <span className="text-2xl">{heroDef.skills[2].icon}</span>
-            <span className="text-[10px] font-bold text-amber-400">[E]</span>
+            <span className="text-[10px] font-bold text-amber-400">[3 / Ult]</span>
             {skillCooldowns[2] > 0 && (
               <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center font-mono font-black text-amber-400 text-base">
                 {Math.ceil(skillCooldowns[2])}s
@@ -153,7 +153,7 @@ export const SkillPanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Battle Spell (D) */}
+        {/* Battle Spell (F / 4) */}
         <div className="absolute bottom-2 left-20">
           <button
             onClick={triggerSpell}
@@ -165,7 +165,7 @@ export const SkillPanel: React.FC = () => {
             }`}
           >
             <span className="text-base">{spellDef.icon}</span>
-            <span className="text-[9px] font-bold text-slate-400">[D]</span>
+            <span className="text-[9px] font-bold text-slate-300">[F]</span>
             {spellCooldown > 0 && (
               <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center font-mono font-black text-amber-400 text-xs">
                 {Math.ceil(spellCooldown)}s

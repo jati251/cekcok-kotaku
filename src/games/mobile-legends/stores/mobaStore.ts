@@ -34,6 +34,18 @@ export interface PlayerTelemetry {
   position: { x: number; y: number; z: number };
 }
 
+export interface MinimapRadarData {
+  destroyedTurretIds: string[];
+  heroes: {
+    id: string;
+    team: Team;
+    isPlayer: boolean;
+    x: number;
+    z: number;
+    isVisible: boolean;
+  }[];
+}
+
 interface MobaState {
   matchState: MatchState;
   selectedHeroId: string;
@@ -48,6 +60,7 @@ interface MobaState {
   isScoreboardOpen: boolean;
   quickBuyItem: ItemDefinition | null;
   activeMinimapPing: { type: 'attack' | 'retreat' | 'gather'; x: number; z: number; text: string } | null;
+  minimapRadar: MinimapRadarData;
 
   // Actions
   selectHero: (heroId: string) => void;
@@ -64,6 +77,7 @@ interface MobaState {
   triggerMinimapPing: (type: 'attack' | 'retreat' | 'gather', x?: number, z?: number) => void;
   pushAnnouncerBanner: (type: AnnouncerEventType, title: string, subtitle: string, team: Team) => void;
   updateTelemetry: (data: Partial<PlayerTelemetry>) => void;
+  updateMinimapRadar: (data: MinimapRadarData) => void;
   incrementMatchDuration: (dt: number) => void;
   recordKill: (isPlayerTeamKill: boolean) => void;
   endMatch: (isVictory: boolean) => void;
@@ -94,7 +108,7 @@ const INITIAL_PLAYER_TELEMETRY: PlayerTelemetry = {
   inBush: false,
   isDead: false,
   respawnTimer: 0,
-  position: { x: -70, y: 0, z: 70 },
+  position: { x: -42, y: 0, z: 42 },
 };
 
 export const useMobaStore = create<MobaState>((set, get) => ({
@@ -111,6 +125,10 @@ export const useMobaStore = create<MobaState>((set, get) => ({
   isScoreboardOpen: false,
   quickBuyItem: null,
   activeMinimapPing: null,
+  minimapRadar: {
+    destroyedTurretIds: [],
+    heroes: [],
+  },
 
   selectHero: (heroId) => {
     mobaAudio.playSkill('dash');
@@ -309,6 +327,10 @@ export const useMobaStore = create<MobaState>((set, get) => ({
         ...data,
       },
     }));
+  },
+
+  updateMinimapRadar: (data) => {
+    set({ minimapRadar: data });
   },
 
   incrementMatchDuration: (dt) => {

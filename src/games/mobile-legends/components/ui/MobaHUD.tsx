@@ -98,27 +98,36 @@ export const MobaHUD: React.FC = () => {
       <AnnouncerBanner />
 
       {/* 3. Bush Stealth Indicator */}
-      {playerTelemetry.inBush && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 text-xs font-bold shadow-lg backdrop-blur-md animate-pulse">
+      {playerTelemetry.inBush && playerTelemetry.currentHp > 0 && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 text-xs font-bold shadow-lg backdrop-blur-md animate-pulse">
           <EyeOff size={14} /> Concealed in Bush (Stealth Active)
+        </div>
+      )}
+
+      {/* 3b. Respawn Countdown Banner */}
+      {playerTelemetry.respawnTimer > 0 && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-2xl bg-red-950/90 border border-red-500/80 text-red-300 text-sm font-black shadow-2xl backdrop-blur-md animate-bounce">
+          <span>💀 Resurrecting in {playerTelemetry.respawnTimer}s...</span>
         </div>
       )}
 
       {/* 4. Controls Help Overlay Popover */}
       {showHelp && (
-        <div className="absolute top-16 left-4 w-72 bg-slate-900/95 border border-slate-700 rounded-2xl p-4 shadow-2xl backdrop-blur-md pointer-events-auto z-40 text-xs text-slate-300 space-y-2">
+        <div className="absolute top-16 left-4 w-76 bg-slate-900/95 border border-slate-700 rounded-2xl p-4 shadow-2xl backdrop-blur-md pointer-events-auto z-40 text-xs text-slate-300 space-y-2.5">
           <div className="flex items-center justify-between font-bold text-amber-400 border-b border-slate-800 pb-2">
             <span>🎮 MOBA Controls</span>
             <button onClick={() => setShowHelp(false)} className="text-slate-400 hover:text-white">
               <X size={14} />
             </button>
           </div>
-          <div className="space-y-1 text-[11px]">
-            <div><span className="font-bold text-slate-100">W, A, S, D:</span> Move Hero</div>
-            <div><span className="font-bold text-slate-100">Space / Click:</span> Basic Attack</div>
-            <div><span className="font-bold text-slate-100">Q, W, E:</span> Skill 1, 2, Ultimate</div>
-            <div><span className="font-bold text-slate-100">D:</span> Battle Spell (Flicker/Execute)</div>
-            <div><span className="font-bold text-slate-100">B:</span> Recall to Fountain Base</div>
+          <div className="space-y-1.5 text-[11px]">
+            <div><span className="font-bold text-slate-100">Right-Click Ground:</span> Move Hero to Target</div>
+            <div><span className="font-bold text-slate-100">W, A, S, D:</span> Smooth WASD Movement</div>
+            <div><span className="font-bold text-slate-100">Space / Click Target:</span> Basic Attack (Turrets & Enemies)</div>
+            <div><span className="font-bold text-slate-100">1, 2, 3 (or J, K, L):</span> Skill 1, 2, Ultimate</div>
+            <div><span className="font-bold text-slate-100">F (or 4):</span> Battle Spell (Flicker/Execute)</div>
+            <div><span className="font-bold text-slate-100">B:</span> Recall to Base Fountain</div>
+            <div><span className="font-bold text-slate-100">Mouse Aim:</span> Aim Skillshots towards Cursor</div>
             <div><span className="font-bold text-slate-100">Tab:</span> Toggle 5v5 Scoreboard</div>
           </div>
         </div>

@@ -20,6 +20,7 @@ export interface TurretEntity {
   isDestroyed: boolean;
   hasShieldPlating: boolean; // First 5 minutes damage reduction
   consecutiveHitsOnTarget: number;
+  attackCooldown: number; // Seconds until next turret projectile shot
 }
 
 export interface BaseCoreEntity {

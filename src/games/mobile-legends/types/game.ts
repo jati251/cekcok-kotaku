@@ -18,6 +18,7 @@ export type AnnouncerEventType =
   | 'turtle_slain'
   | 'lord_spawned'
   | 'lord_summoned'
+  | 'respawned'
   | 'victory'
   | 'defeat';
 

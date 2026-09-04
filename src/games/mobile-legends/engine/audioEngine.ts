@@ -274,6 +274,7 @@ class MobaAudioEngine {
         turtle_slain: 'The Turtle has been slain.',
         lord_spawned: 'The Lord has awakened.',
         lord_summoned: 'The Lord has been summoned!',
+        respawned: 'Hero has respawned!',
         victory: 'Victory!',
         defeat: 'Defeat.',
       };
