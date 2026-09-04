@@ -9,8 +9,8 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #0c0f17;
-    color: #e2e8f0;
+    background-color: #06080e;
+    color: #f1f5f9;
     font-family: var(--font-sans);
     user-select: none;
     overflow: hidden;
@@ -20,30 +20,59 @@
 
 /* Custom scrollbars for launcher & modals */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(8, 11, 20, 0.7);
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(51, 65, 85, 0.8);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.9);
+  background: rgba(148, 163, 184, 0.9);
 }
 
-/* Tactical glowing pulse animations */
+/* Gaming Station Ambient Background Elements */
+.game-deck-bg {
+  background:
+    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 25%, rgba(236, 72, 153, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.07) 0%, transparent 50%),
+    #07090f;
+}
+
+.cyber-grid-mesh {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+}
+
+/* Glowing pulse animations */
 @keyframes tactical-pulse {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
   }
   50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.6);
   }
 }
 
 .tactical-glow {
   animation: tactical-pulse 3s infinite ease-in-out;
+}
+
+@keyframes beam-sweep {
+  0% {
+    transform: translateX(-100%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-25deg);
+  }
+}
+
+.animate-beam {
+  animation: beam-sweep 2.8s infinite ease-in-out;
 }
