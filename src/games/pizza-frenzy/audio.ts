@@ -144,6 +144,11 @@ class PizzaFrenzyAudio {
 
   // Day clear fanfare
   public playDayComplete() {
+    this.playFanfare();
+  }
+
+  // Triumphant fanfare
+  public playFanfare() {
     if (this.isMuted) return;
     this.initContext();
     if (!this.ctx) return;
@@ -167,6 +172,55 @@ class PizzaFrenzyAudio {
       osc.start(t);
       osc.stop(t + 0.55);
     });
+  }
+
+  // Police Siren wail
+  public playPoliceSiren() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(650, t);
+    osc.frequency.linearRampToValueAtTime(950, t + 0.18);
+    osc.frequency.linearRampToValueAtTime(650, t + 0.36);
+
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
+  // Angry customer lost patience
+  public playCustomerAngry() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(90, t + 0.25);
+
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.3);
   }
 
   public stopAll() {

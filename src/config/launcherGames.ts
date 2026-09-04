@@ -399,4 +399,26 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Procedural Web Audio: throaty engine idle rumbles, turbo spool & blow-off valves, tire burnouts, and ratchet wrenches',
     ],
   },
+  {
+    id: 'super-kart',
+    title: 'Super Kart 3D',
+    tagline: '3D arcade kart racer powered by Three.js with power-slide drifting, multi-tier mini-turbo, and dynamic chase camera',
+    genre: '3D Arcade Kart Racing',
+    category: 'racing',
+    status: 'playable',
+    releaseYear: '2026',
+    accentColor: '#ef4444',
+    description:
+      'High-octane 3D arcade kart racing inspired by Mario Kart! Hop into power-slides around tight hairpins, charge Blue, Orange, and Purple drift sparks for massive Mini-Turbo boosts, blast through glowing nitro pads, and set record lap times across the 3D Grand Prix circuit.',
+    features: [
+      'Authentic Mario Kart drift mechanics: hop, slip angle, and 3-tier Mini-Turbo charging (Blue, Orange, Purple sparks)',
+      'Dynamic 3rd-person chase camera with smooth lerp follow and speed-warp FOV expansion up to 76°',
+      '3D procedural Grand Prix circuit with red-and-white curbs, grandstand banners, and start/finish gantry arch',
+      'Neon yellow chevron boost pads delivering instant high-speed nitro propulsion',
+      'Off-road detection: cutting across grass slows you down unless riding a nitro boost',
+      '2D real-time radar MiniMap tracking player position and heading orientation',
+      'Retro arcade HUD: digital speedometer, lap counter (Lap 1/3), lap timers, and finish podium celebration',
+      'Instant track respawn (R key) to nearest checkpoint whenever you need a quick recovery',
+    ],
+  },
 ];

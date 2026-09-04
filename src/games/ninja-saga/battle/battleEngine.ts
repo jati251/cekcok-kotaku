@@ -9,6 +9,10 @@ import {
 } from '../types';
 import { JUTSUS } from '../data/jutsus';
 import { ninjaAudio } from '../audio';
+import {
+  nativeCalculateNinjaDamage,
+  nativeDecideNinjaAI,
+} from '../services/rustNinjaBridge';
 
 // Element counter advantage map
 // Fire > Wind > Lightning > Earth > Water > Fire
@@ -166,6 +170,24 @@ export function calculateDamage(
   const finalDamage = Math.round(baseDmg * multiplier * elementMult * critMult * variance);
 
   return { damage: Math.max(1, finalDamage), isCrit, isDodge: false };
+}
+
+// Asynchronously calculate damage leveraging Rust native engine when available
+export async function calculateDamageAsync(
+  attacker: BattleFighter,
+  defender: BattleFighter,
+  multiplier: number = 1.0,
+  jutsuElement: string = attacker.element
+): Promise<{ damage: number; isCrit: boolean; isDodge: boolean }> {
+  const native = await nativeCalculateNinjaDamage(attacker, defender, multiplier, jutsuElement);
+  if (native) {
+    return {
+      damage: native.damage,
+      isCrit: native.is_crit,
+      isDodge: native.is_dodge,
+    };
+  }
+  return calculateDamage(attacker, defender, multiplier, jutsuElement);
 }
 
 // Apply damage to fighter respecting shields
@@ -371,4 +393,23 @@ export function executeAITurn(battle: BattleInstance): void {
   }
 
   battle.currentTurn = 'player';
+}
+
+// Asynchronously execute AI turn leveraging Rust native decision engine
+export async function executeAITurnAsync(battle: BattleInstance): Promise<void> {
+  const ai = battle.enemy;
+  const decision = await nativeDecideNinjaAI(ai, ai.equippedJutsus);
+  if (decision && decision.action_type === 'charge' && ai.cp < ai.maxCp * 0.3) {
+    const recovered = Math.round(ai.maxCp * 0.4);
+    ai.cp = Math.min(ai.maxCp, ai.cp + recovered);
+    battle.logs.unshift({
+      id: Math.random().toString(),
+      text: `${ai.name} enters a defensive stance and charges +${recovered} CP!`,
+      type: 'enemy',
+    });
+    ninjaAudio.playChakraCharge();
+    battle.currentTurn = 'player';
+    return;
+  }
+  executeAITurn(battle);
 }

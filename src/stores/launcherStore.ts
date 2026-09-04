@@ -116,6 +116,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'ninja-saga': 'ninja-saga',
       'nightclub-city': 'nightclub-city',
       'cartown': 'cartown',
+      'super-kart': 'super-kart',
     };
 
     const titles: Record<string, string> = {
@@ -140,6 +141,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'ninja-saga': 'Ninja Saga',
       'nightclub-city': 'Nightclub City',
       'cartown': 'Car Town',
+      'super-kart': 'Super Kart 3D',
     };
 
     const title = titles[gameId] || gameId;

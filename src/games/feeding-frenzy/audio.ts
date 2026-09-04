@@ -175,6 +175,84 @@ class FeedingFrenzyAudio {
     osc.stop(t + 0.35);
   }
 
+  // Dash boost whoosh
+  public playDashBoost() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, t);
+    osc.frequency.exponentialRampToValueAtTime(140, t + 0.2);
+
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+
+  // Game over solemn descending chords
+  public playGameOver() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const notes = [293.66, 261.63, 220.0, 174.61]; // D4, C4, A3, F3
+    notes.forEach((freq, i) => {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime + i * 0.18;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.35);
+    });
+  }
+
+  // Victory grand fanfare
+  public playVictoryFanfare() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const melody = [523.25, 659.25, 783.99, 1046.5, 987.77, 1046.5];
+    melody.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime + idx * 0.12;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + (idx === melody.length - 1 ? 0.6 : 0.18));
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + (idx === melody.length - 1 ? 0.65 : 0.2));
+    });
+  }
+
   public stopAll() {
     if (this.ctx && this.ctx.state !== 'closed') {
       this.ctx.suspend().catch(() => {});

@@ -1,4 +1,4 @@
-// Order dispatching, customer patience, and delivery kinematics for Pizza Frenzy
+// Order dispatching, customer archetypes, fleet kinematics, and tip combos for Pizza Frenzy Deluxe
 import {
   CustomerOrder,
   DeliveryScooter,
@@ -6,46 +6,79 @@ import {
   CityBuilding,
   Particle,
   PizzaGameState,
-  PizzaType,
+  DistrictDefinition,
+  VEHICLE_CONFIGS,
   PIZZA_CONFIGS,
 } from './types';
 import { pizzaAudio } from './audio';
 
 export class PizzaPhysics {
+  // --- 1. Order Spawning ---
   public static spawnOrder(
     buildings: CityBuilding[],
     orders: CustomerOrder[],
+    district: DistrictDefinition,
     day: number
   ): CustomerOrder | null {
-    // Find buildings without active orders
     const occupiedBuildingIds = new Set(orders.map((o) => o.buildingId));
     const available = buildings.filter((b) => !occupiedBuildingIds.has(b.id));
     if (available.length === 0) return null;
 
     const building = available[Math.floor(Math.random() * available.length)];
-    const types: PizzaType[] = ['pepperoni', 'margherita', 'supreme', 'veggie'];
-    const type = types[Math.floor(Math.random() * types.length)];
+    const availableToppings = district.unlockedToppings;
+    const topping = availableToppings[Math.floor(Math.random() * availableToppings.length)];
 
-    const isVIP = Math.random() < 0.15;
-    const isPrankster = Math.random() < 0.12 && day > 1;
-    const basePatience = Math.max(7, 14 - day * 0.8);
+    // Customer Archetype Randomizer
+    const roll = Math.random();
+    let kind: 'regular' | 'vip' | 'prankster' | 'thief' | 'speedy' = 'regular';
+    let customerName = 'Hungry Citizen';
+    let avatarIcon = '🍕';
+    let tipMult = 1.0;
+
+    if (roll < 0.14) {
+      kind = 'vip';
+      customerName = 'Movie Star VIP';
+      avatarIcon = '⭐';
+      tipMult = 3.0;
+    } else if (roll < 0.24 && day > 1) {
+      kind = 'prankster';
+      customerName = 'Prank Caller Kid';
+      avatarIcon = '😈';
+      tipMult = 0;
+    } else if (roll < 0.32 && day > 2) {
+      kind = 'thief';
+      customerName = 'Sneaky Pizza Burglar';
+      avatarIcon = '🦹';
+      tipMult = 0;
+    } else if (roll < 0.42) {
+      kind = 'speedy';
+      customerName = 'Rush Hour Commuter';
+      avatarIcon = '⚡';
+      tipMult = 1.8;
+    }
+
+    const basePatience = Math.max(8, 16 - district.districtNumber * 1.5);
+    const maxPatience = kind === 'speedy' ? basePatience * 0.6 : kind === 'vip' ? basePatience * 0.85 : basePatience;
 
     pizzaAudio.playPhoneRing();
 
     return {
       id: Math.random().toString(36).substring(2, 9),
       buildingId: building.id,
-      type,
+      type: topping,
+      customerKind: kind,
+      customerName,
+      avatarIcon,
       x: building.x,
       y: building.y,
       patience: 1.0,
-      maxPatience: isVIP ? basePatience * 0.75 : basePatience,
-      points: isVIP ? PIZZA_CONFIGS[type].basePoints * 2 : PIZZA_CONFIGS[type].basePoints,
-      isVIP,
-      isPrankster,
+      maxPatience,
+      points: PIZZA_CONFIGS[topping].basePoints,
+      tipMultiplier: tipMult,
     };
   }
 
+  // --- 2. Order Dispatching ---
   public static dispatchOrder(
     pizzeria: Pizzeria,
     order: CustomerOrder,
@@ -54,17 +87,19 @@ export class PizzaPhysics {
     particles: Particle[],
     state: PizzaGameState
   ) {
+    // 1. Check matching pizza topping
     if (pizzeria.type !== order.type) {
-      // Wrong pizza sent!
       pizzaAudio.playBuzzer();
       state.comboStreak = 0;
+      state.isFrenzyActive = false;
+
       particles.push({
         x: order.x,
-        y: order.y - 20,
+        y: order.y - 25,
         vx: 0,
-        vy: -30,
-        life: 0.8,
-        maxLife: 0.8,
+        vy: -35,
+        life: 0.9,
+        maxLife: 0.9,
         color: '#ef4444',
         type: 'text',
         text: 'WRONG PIZZA!',
@@ -72,27 +107,54 @@ export class PizzaPhysics {
       return;
     }
 
-    if (order.isPrankster) {
-      // Prankster busted!
+    // 2. Prankster Encounter
+    if (order.customerKind === 'prankster') {
       pizzaAudio.playBuzzer();
-      // Remove order
+      state.comboStreak = 0;
       const idx = orders.findIndex((o) => o.id === order.id);
       if (idx !== -1) orders.splice(idx, 1);
+
       particles.push({
         x: order.x,
-        y: order.y - 20,
+        y: order.y - 25,
         vx: 0,
-        vy: -30,
-        life: 0.9,
-        maxLife: 0.9,
+        vy: -35,
+        life: 1.0,
+        maxLife: 1.0,
         color: '#f97316',
         type: 'text',
-        text: 'PRANKSTER BUSTED!',
+        text: '😈 PRANKSTER BUSTED!',
       });
       return;
     }
 
-    // Launch scooter
+    // 3. Thief Encounter
+    if (order.customerKind === 'thief') {
+      pizzaAudio.playPoliceSiren();
+      state.thievesBusted += 1;
+      state.cash += 200;
+      state.score += 200;
+      const idx = orders.findIndex((o) => o.id === order.id);
+      if (idx !== -1) orders.splice(idx, 1);
+
+      particles.push({
+        x: order.x,
+        y: order.y - 30,
+        vx: 0,
+        vy: -40,
+        life: 1.2,
+        maxLife: 1.2,
+        color: '#38bdf8',
+        type: 'text',
+        text: '🚨 THIEF APPREHENDED! +$200',
+      });
+      return;
+    }
+
+    // 4. Successful Delivery Dispatch
+    const tier = state.upgrades.vehicleTier;
+    const speed = VEHICLE_CONFIGS[tier].speed;
+
     pizzaAudio.playScooterThrottle();
     pizzaAudio.playOvenBell();
 
@@ -100,6 +162,7 @@ export class PizzaPhysics {
       id: Math.random().toString(36).substring(2, 9),
       pizzeriaId: pizzeria.id,
       orderId: order.id,
+      tier,
       startX: pizzeria.x,
       startY: pizzeria.y,
       targetX: order.x,
@@ -107,11 +170,13 @@ export class PizzaPhysics {
       x: pizzeria.x,
       y: pizzeria.y,
       progress: 0,
-      speed: 1.8, // Completes in ~0.55s
+      speed,
       color: pizzeria.color,
+      trailTimer: 0,
     });
   }
 
+  // --- 3. Vehicle Kinematics ---
   public static updateScooters(
     scooters: DeliveryScooter[],
     orders: CustomerOrder[],
@@ -121,37 +186,48 @@ export class PizzaPhysics {
   ) {
     for (let i = scooters.length - 1; i >= 0; i--) {
       const s = scooters[i];
-      s.progress += s.speed * dt;
+      const dist = Math.hypot(s.targetX - s.startX, s.targetY - s.startY);
+      const step = (s.speed / Math.max(1, dist)) * dt;
+      s.progress += step;
 
-      // Lerp position
-      s.x = s.startX + (s.targetX - s.startX) * s.progress;
-      s.y = s.startY + (s.targetY - s.startY) * s.progress;
+      s.x = s.startX + (s.targetX - s.startX) * Math.min(1, s.progress);
+      s.y = s.startY + (s.targetY - s.startY) * Math.min(1, s.progress);
 
-      // Exhaust smoke
-      if (Math.random() < 0.4) {
+      // Exhaust Smoke Particles
+      s.trailTimer += dt;
+      if (s.trailTimer > 0.08) {
+        s.trailTimer = 0;
         particles.push({
           x: s.x,
           y: s.y,
-          vx: (Math.random() - 0.5) * 20,
-          vy: (Math.random() - 0.5) * 20,
-          life: 0.3,
-          maxLife: 0.3,
-          color: 'rgba(203, 213, 225, 0.4)',
+          vx: (Math.random() - 0.5) * 15,
+          vy: (Math.random() - 0.5) * 15,
+          life: 0.35,
+          maxLife: 0.35,
+          color: s.tier === 'chopper' ? '#38bdf8' : 'rgba(203, 213, 225, 0.6)',
           type: 'smoke',
+          size: 3,
         });
       }
 
-      if (s.progress >= 1.0) {
-        // Delivery reached!
+      // Reached Customer Target
+      if (s.progress >= 1) {
         scooters.splice(i, 1);
-        const orderIdx = orders.findIndex((o) => o.id === s.orderId);
-        if (orderIdx !== -1) {
-          const deliveredOrder = orders[orderIdx];
-          orders.splice(orderIdx, 1);
+        const oIdx = orders.findIndex((o) => o.id === s.orderId);
 
+        if (oIdx !== -1) {
+          const order = orders[oIdx];
+          orders.splice(oIdx, 1);
+
+          // Calculate Earnings with Combo Streaks & VIP Multipliers
           state.comboStreak += 1;
-          const tipMultiplier = 1 + (state.comboStreak - 1) * 0.15;
-          const earned = Math.round(deliveredOrder.points * tipMultiplier);
+          if (state.comboStreak >= 3) {
+            state.isFrenzyActive = true;
+            state.frenzyTimer = 6.0;
+          }
+
+          const streakMult = Math.min(4, 1 + (state.comboStreak - 1) * 0.3);
+          const earned = Math.round(order.points * order.tipMultiplier * streakMult);
 
           state.cash += earned;
           state.score += earned;
@@ -159,60 +235,93 @@ export class PizzaPhysics {
 
           pizzaAudio.playCashRegister();
 
-          // Spawning money floating text
+          // Confetti for VIP or High Streaks
+          if (order.customerKind === 'vip' || state.comboStreak >= 4) {
+            pizzaAudio.playFanfare();
+            const colors = ['#f59e0b', '#ec4899', '#38bdf8', '#10b981'];
+            for (let c = 0; c < 12; c++) {
+              particles.push({
+                x: order.x,
+                y: order.y - 20,
+                vx: (Math.random() - 0.5) * 120,
+                vy: (Math.random() - 0.5) * 120 - 40,
+                life: 0.8,
+                maxLife: 0.8,
+                color: colors[c % colors.length],
+                type: 'confetti',
+              });
+            }
+          }
+
+          // Tip Floater Text
           particles.push({
-            x: deliveredOrder.x,
-            y: deliveredOrder.y - 25,
+            x: order.x,
+            y: order.y - 30,
             vx: 0,
-            vy: -45,
-            life: 0.8,
-            maxLife: 0.8,
-            color: '#10b981',
+            vy: -40,
+            life: 0.9,
+            maxLife: 0.9,
+            color: order.customerKind === 'vip' ? '#fbbf24' : '#10b981',
             type: 'text',
-            text: `+$${earned} ${state.comboStreak > 2 ? `(${state.comboStreak}x Streak!)` : ''}`,
+            text: order.customerKind === 'vip' ? `⭐ VIP +$${earned}` : `+$${earned}`,
           });
 
-          // Check Day Target
-          if (state.cash >= state.targetCash && !state.isDayComplete) {
+          // Check Day Target Revenue
+          if (state.cash >= state.targetCash) {
             state.isDayComplete = true;
-            pizzaAudio.playDayComplete();
+            pizzaAudio.playFanfare();
           }
         }
       }
     }
   }
 
+  // --- 4. Order Patience & Frenzy Decay ---
   public static updateOrders(
     orders: CustomerOrder[],
     particles: Particle[],
     state: PizzaGameState,
     dt: number
   ) {
+    if (state.isFrenzyActive) {
+      state.frenzyTimer -= dt;
+      if (state.frenzyTimer <= 0) {
+        state.isFrenzyActive = false;
+      }
+    }
+
     for (let i = orders.length - 1; i >= 0; i--) {
-      const o = orders[i];
-      o.patience -= dt / o.maxPatience;
+      const ord = orders[i];
+      // Hotbox insulation upgrade gives bonus patience
+      const patienceDecay = dt / (ord.maxPatience + state.upgrades.hotboxInsulation * 2);
+      ord.patience -= patienceDecay;
 
-      if (o.patience <= 0) {
-        // Order expired!
+      // Customer Lost Patience & Hung Up
+      if (ord.patience <= 0) {
         orders.splice(i, 1);
-        state.ordersMissed += 1;
-        state.comboStreak = 0;
-        pizzaAudio.playBuzzer();
 
-        particles.push({
-          x: o.x,
-          y: o.y - 20,
-          vx: 0,
-          vy: -30,
-          life: 0.7,
-          maxLife: 0.7,
-          color: '#ef4444',
-          type: 'text',
-          text: 'MISSED!',
-        });
+        // Don't penalize missed orders for pranksters or thieves
+        if (ord.customerKind !== 'prankster' && ord.customerKind !== 'thief') {
+          state.ordersMissed += 1;
+          state.comboStreak = 0;
+          state.isFrenzyActive = false;
+          pizzaAudio.playCustomerAngry();
 
-        if (state.ordersMissed >= state.maxMissedAllowed) {
-          state.isGameOver = true;
+          particles.push({
+            x: ord.x,
+            y: ord.y - 25,
+            vx: 0,
+            vy: -30,
+            life: 0.8,
+            maxLife: 0.8,
+            color: '#ef4444',
+            type: 'text',
+            text: 'LOST ORDER!',
+          });
+
+          if (state.ordersMissed >= state.maxMissedAllowed) {
+            state.isGameOver = true;
+          }
         }
       }
     }

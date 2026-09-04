@@ -12,3 +12,4 @@ export * from './eight-ball-pool/EightBallPool';
 export * from './ninja-saga/NinjaSagaGame';
 export * from './nightclub-city/NightclubCityGame';
 export * from './cartown/CarTownGame';
+export * from './super-kart';

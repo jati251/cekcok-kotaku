@@ -25,7 +25,8 @@ export type ActiveGameTab =
   | 'eight-ball-pool'
   | 'ninja-saga'
   | 'nightclub-city'
-  | 'cartown';
+  | 'cartown'
+  | 'super-kart';
 
 export interface LauncherGame {
   id: string;

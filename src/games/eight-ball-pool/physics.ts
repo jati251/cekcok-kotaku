@@ -1,5 +1,6 @@
 import { Ball, Pocket, CushionSegment, TableConfig, AimTrajectory } from './types';
 import { poolAudio } from './audio';
+import { nativePredictCueTrajectory } from './services/rustBilliardsBridge';
 
 export const TABLE_WIDTH = 960;
 export const TABLE_HEIGHT = 480;
@@ -433,4 +434,18 @@ export function isValidBallPlacement(
   }
 
   return true;
+}
+
+// Raycast aim trajectory asynchronously using native Rust engine when available
+export async function calculateAimTrajectoryAsync(
+  cueBall: Ball,
+  aimAngle: number,
+  balls: Ball[],
+  table: TableConfig
+): Promise<AimTrajectory> {
+  const native = await nativePredictCueTrajectory(cueBall.x, cueBall.y, aimAngle, balls);
+  if (native) {
+    return native;
+  }
+  return calculateAimTrajectory(cueBall, aimAngle, balls, table);
 }

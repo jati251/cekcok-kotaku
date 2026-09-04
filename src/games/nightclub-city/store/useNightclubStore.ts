@@ -16,6 +16,7 @@ import { MUSIC_TRACKS } from '../data/music';
 import { CELEBRITIES } from '../data/celebrities';
 import { INITIAL_QUESTS } from '../data/quests';
 import { nightclubAudio } from '../audio';
+import { nativeCalculateDJTrackHype } from '../services/rustNightclubBridge';
 
 interface NightclubState {
   clubName: string;
@@ -423,7 +424,19 @@ export const useNightclubStore = create<NightclubState>((set, get) => ({
 
   scratchDJRecord: () => {
     nightclubAudio.playRecordScratch();
-    const { quests } = get();
+    const { quests, currentTrack, hype } = get();
+
+    // Trigger asynchronous native Rust hype computation if in Tauri
+    nativeCalculateDJTrackHype(currentTrack?.bpm ?? 128, 1, hype)
+      .then((res) => {
+        if (res) {
+          set((state) => ({
+            cash: state.cash + Math.round(res.bonus_cash * 0.1),
+            hype: Math.min(100, state.hype + Math.round(res.bonus_popularity)),
+          }));
+        }
+      })
+      .catch(() => {});
 
     const updatedQuests = quests.map((q) => {
       if (q.targetType === 'dj_scratch' && !q.completed) {

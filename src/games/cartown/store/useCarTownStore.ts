@@ -15,6 +15,7 @@ import {
 import { CAR_CATALOG } from '../data/cars';
 import { INITIAL_CAR_TOWN_QUESTS } from '../data/quests';
 import { carTownAudio } from '../audio';
+import { nativeEvaluateGearShift } from '../services/rustCarTownBridge';
 
 interface CarTownState {
   coins: number;
@@ -511,8 +512,22 @@ export const useCarTownStore = create<CarTownState>((set, get) => ({
     }
 
     // Drop RPM back to powerband
-    const newRpm = 4200;
-    const speedBoost = rating === 'perfect' ? 12 : rating === 'good' ? 6 : rating === 'redline' ? -4 : 2;
+    let newRpm = 4200;
+    let speedBoost = rating === 'perfect' ? 12 : rating === 'good' ? 6 : rating === 'redline' ? -4 : 2;
+
+    // Trigger native Rust shift evaluator when running in Tauri
+    nativeEvaluateGearShift(playerGear, playerRpm, 1)
+      .then((res) => {
+        if (res) {
+          set((state) => ({
+            raceState: {
+              ...state.raceState,
+              playerSpeedMph: Math.max(10, state.raceState.playerSpeedMph + (res.speed_boost_mph > 0 ? 2 : 0)),
+            },
+          }));
+        }
+      })
+      .catch(() => {});
 
     set({
       raceState: {
