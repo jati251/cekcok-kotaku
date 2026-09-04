@@ -107,7 +107,7 @@ export const TRACK_DEFINITIONS: Record<TrackId, TrackDefinition> = {
 };
 
 export const TRACK_WIDTH = 18;
-export const OFFROAD_THRESHOLD = 11.8; // Road half-width (9.0) + Curbs (1.8) + Kart margin (1.0) = 11.8m
+export const OFFROAD_THRESHOLD = 13.2; // Road half-width (9.0) + Curbs (1.8) + Kart tolerance (2.4) = 13.2m
 
 export const BOOST_PADS: BoostPadData[] = TRACK_DEFINITIONS.hills.boostPads;
 

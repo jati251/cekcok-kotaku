@@ -79,6 +79,7 @@ function KartSimulation() {
   const kartGroupRef = useRef<THREE.Group>(null);
   const nextCheckpointRef = useRef(1);
   const telemetryThrottleRef = useRef(0);
+  const bumpAudioCooldownRef = useRef(0);
 
   // Entities state
   const itemBoxesRef = useRef<ItemBoxEntity[]>([...INITIAL_ITEM_BOXES]);
@@ -312,29 +313,48 @@ function KartSimulation() {
       kartAudio.playBoost();
     }
 
-    // 3. Collision: Player vs AI Opponents
+    bumpAudioCooldownRef.current = Math.max(0, bumpAudioCooldownRef.current - dt);
+
+    // 3. Collision: Player vs AI Opponents (Physical separation & momentum transfer)
     aiCompetitorsRef.current.forEach((ai) => {
       const dx = state.position.x - ai.position.x;
       const dz = state.position.z - ai.position.z;
       const dist = Math.sqrt(dx * dx + dz * dz);
-      const minDistance = 2.2;
+      const minDistance = 2.4;
 
       if (dist < minDistance && dist > 0.01) {
         const nx = dx / dist;
         const nz = dz / dist;
         const overlap = minDistance - dist;
 
+        // Push player and AI cleanly apart
         state.position.x += nx * overlap * 0.55;
         state.position.z += nz * overlap * 0.55;
         ai.position.x -= nx * overlap * 0.55;
         ai.position.z -= nz * overlap * 0.55;
 
-        state.speed *= 0.85;
-        kartAudio.playBump();
+        // Deflect AI lane offset so AI gently swerves away
+        ai.laneOffset -= (nx * 0.5 + nz * 0.5) * overlap;
+
+        // Velocity impact along normal
+        const travelAngle = state.rotationY;
+        const vx = Math.sin(travelAngle) * state.speed;
+        const vz = Math.cos(travelAngle) * state.speed;
+        const vRel = vx * nx + vz * nz;
+
+        // Only lose momentum if ramming into the other kart
+        if (vRel < 0) {
+          state.speed *= 0.95;
+        }
+
+        if (bumpAudioCooldownRef.current <= 0) {
+          kartAudio.playBump();
+          bumpAudioCooldownRef.current = 0.25;
+        }
       }
     });
 
-    // 4. Collision: Player vs Track Corner Barriers (Clean slide, no sticky reverse)
+    // 4. Collision: Player vs Track Barriers (Physical reflection & glancing slide - NO sticky lockup!)
     BARRIER_COLLIDERS.forEach((barrier) => {
       const dx = state.position.x - barrier.position[0];
       const dz = state.position.z - barrier.position[2];
@@ -347,13 +367,33 @@ function KartSimulation() {
         const nz = dz / dist;
         const overlap = minDist - dist;
 
-        // Push player smoothly outside the barrier
-        state.position.x += nx * overlap * 1.05;
-        state.position.z += nz * overlap * 1.05;
+        // Push player outside the barrier volume immediately
+        state.position.x += nx * overlap * 1.02;
+        state.position.z += nz * overlap * 1.02;
 
-        // Glancing friction: retain forward momentum without jitter or reverse lockup!
-        state.speed = Math.max(state.speed * 0.75, 0);
-        kartAudio.playBump();
+        // Resolve velocity vector
+        const travelAngle = state.rotationY + state.driftAngle * 0.5;
+        let vx = Math.sin(travelAngle) * state.speed;
+        let vz = Math.cos(travelAngle) * state.speed;
+
+        const vNormal = vx * nx + vz * nz;
+        // If moving INTO barrier, reflect normal component (restitution = 0.25)
+        if (vNormal < 0) {
+          vx -= (1 + 0.25) * vNormal * nx;
+          vz -= (1 + 0.25) * vNormal * nz;
+
+          // Preserve tangential speed along the wall with slight friction
+          state.speed = Math.hypot(vx, vz) * 0.88;
+
+          // Smoothly deflect kart heading away from the wall
+          const deflectedAngle = Math.atan2(vx, vz);
+          state.rotationY = THREE.MathUtils.lerp(state.rotationY, deflectedAngle, 0.4);
+
+          if (bumpAudioCooldownRef.current <= 0) {
+            kartAudio.playBump();
+            bumpAudioCooldownRef.current = 0.25;
+          }
+        }
       }
     });
 

@@ -82,6 +82,49 @@ function generateCurbTexture(colorA: string, colorB: string): THREE.CanvasTextur
   return texture;
 }
 
+// Procedural flush neon boost pad texture (Eliminates 3D pyramids and clipping!)
+function generateBoostPadTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Pad body
+  const bg = ctx.createLinearGradient(0, 0, 512, 0);
+  bg.addColorStop(0, '#0284c7');
+  bg.addColorStop(0.5, '#38bdf8');
+  bg.addColorStop(1, '#0284c7');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 256);
+
+  // Outer border
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = '#e0f2fe';
+  ctx.strokeRect(7, 7, 498, 242);
+
+  // 3 Vibrant Forward Chevrons
+  ctx.fillStyle = '#fef08a';
+  ctx.shadowColor = '#facc15';
+  ctx.shadowBlur = 16;
+
+  [65, 128, 191].forEach((yPos) => {
+    ctx.beginPath();
+    ctx.moveTo(256, yPos - 28);
+    ctx.lineTo(390, yPos + 22);
+    ctx.lineTo(350, yPos + 22);
+    ctx.lineTo(256, yPos - 8);
+    ctx.lineTo(162, yPos + 22);
+    ctx.lineTo(122, yPos + 22);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export function Track3D({ spline, trackDef }: Track3DProps) {
   const isNight = trackDef.theme === 'night';
 
@@ -90,6 +133,7 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
     () => generateCurbTexture(trackDef.curbColorA, trackDef.curbColorB),
     [trackDef.curbColorA, trackDef.curbColorB]
   );
+  const boostPadTexture = useMemo(() => generateBoostPadTexture(), []);
 
   // Generate asphalt road geometry & curbs along the Catmull-Rom spline
   const { roadGeometry, leftCurbGeometry, rightCurbGeometry } = useMemo(() => {
@@ -192,12 +236,12 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
       const treeX = pt.x + right.x * side * dist;
       const treeZ = pt.z + right.z * side * dist;
 
-      // Validate that this tree position is at least 18m away from ANY segment of the track!
+      // Validate that this tree position is at least 24m away from ANY segment of the track!
       let tooClose = false;
-      for (let s = 0; s < 60; s++) {
-        const roadPt = spline.getPointAt(s / 60);
+      for (let s = 0; s < 120; s++) {
+        const roadPt = spline.getPointAt(s / 120);
         const dSq = (treeX - roadPt.x) ** 2 + (treeZ - roadPt.z) ** 2;
-        if (dSq < 18 * 18) {
+        if (dSq < 24 * 24) {
           tooClose = true;
           break;
         }
@@ -412,25 +456,13 @@ export function Track3D({ spline, trackDef }: Track3DProps) {
           </group>
         ))}
 
-      {/* 9. Animated Chevron Boost Pads */}
+      {/* 9. Sleek Flush Chevron Boost Pads (No 3D cones or z-fighting!) */}
       {trackDef.boostPads.map((pad: BoostPadData, idx: number) => (
         <group key={idx} position={pad.position} rotation={[0, pad.rotationY, 0]}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[14, 5]} />
-            <meshStandardMaterial
-              color="#0284c7"
-              emissive="#38bdf8"
-              emissiveIntensity={0.85}
-              roughness={0.2}
-            />
+          <mesh position={[0, 0.055, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[14, 5.2]} />
+            <meshBasicMaterial map={boostPadTexture} transparent />
           </mesh>
-          {/* Glowing Chevron Arrow Decals */}
-          {[-1.2, 0, 1.2].map((offZ, ai) => (
-            <mesh key={ai} position={[0, 0.06, offZ]} rotation={[-Math.PI / 2, 0, 0]}>
-              <coneGeometry args={[1.2, 2.2, 3]} />
-              <meshBasicMaterial color="#fef08a" />
-            </mesh>
-          ))}
         </group>
       ))}
     </group>

@@ -8,7 +8,8 @@ export interface AICompetitorState {
   kartColor: string;
   progress: number; // 0 to 1
   lap: number;
-  laneOffset: number; // lateral offset from centerline
+  laneOffset: number; // current lateral offset
+  baseLaneOffset: number; // intended lateral racing line
   baseSpeed: number; // progress increment per second
   spinoutTimer: number;
   position: THREE.Vector3;
@@ -21,12 +22,13 @@ export const INITIAL_AI_COMPETITORS: AICompetitorState[] = [
     name: 'Luigi',
     color: '#22c55e',
     kartColor: '#16a34a',
-    progress: 0.015,
+    progress: 0.018,
     lap: 1,
     laneOffset: -3.5,
+    baseLaneOffset: -3.5,
     baseSpeed: 0.038,
     spinoutTimer: 0,
-    position: new THREE.Vector3(0, 0.4, 0),
+    position: new THREE.Vector3(-3.5, 0.06, 12),
     rotationY: 0,
   },
   {
@@ -34,12 +36,13 @@ export const INITIAL_AI_COMPETITORS: AICompetitorState[] = [
     name: 'Peach',
     color: '#f472b6',
     kartColor: '#ec4899',
-    progress: 0.035,
+    progress: 0.032,
     lap: 1,
     laneOffset: 3.2,
+    baseLaneOffset: 3.2,
     baseSpeed: 0.036,
     spinoutTimer: 0,
-    position: new THREE.Vector3(0, 0.4, 0),
+    position: new THREE.Vector3(3.2, 0.06, 20),
     rotationY: 0,
   },
   {
@@ -47,12 +50,13 @@ export const INITIAL_AI_COMPETITORS: AICompetitorState[] = [
     name: 'Bowser',
     color: '#eab308',
     kartColor: '#ca8a04',
-    progress: 0.055,
+    progress: 0.048,
     lap: 1,
-    laneOffset: 0.5,
+    laneOffset: 0.0,
+    baseLaneOffset: 0.0,
     baseSpeed: 0.039,
     spinoutTimer: 0,
-    position: new THREE.Vector3(0, 0.4, 0),
+    position: new THREE.Vector3(0.0, 0.06, 30),
     rotationY: 0,
   },
 ];
@@ -89,6 +93,9 @@ export function updateAIRacers(
       ai.lap += 1;
     }
 
+    // Smoothly recover from collisions back towards designated racing line
+    ai.laneOffset = THREE.MathUtils.lerp(ai.laneOffset, ai.baseLaneOffset, dt * 1.5);
+
     // Compute 3D position from spline with lane offset
     const pt = spline.getPointAt(ai.progress);
     const tangent = spline.getTangentAt(ai.progress).normalize();
@@ -96,7 +103,7 @@ export function updateAIRacers(
 
     const worldPos = pt.clone().addScaledVector(right, ai.laneOffset);
     ai.position.copy(worldPos);
-    ai.position.y = 0.4;
+    ai.position.y = 0.06;
     ai.rotationY = Math.atan2(tangent.x, tangent.z);
   });
 

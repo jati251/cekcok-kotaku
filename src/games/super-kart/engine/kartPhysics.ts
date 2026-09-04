@@ -174,6 +174,17 @@ export function updateKartPhysics(
   const minDistanceToCenterline = Math.sqrt(closestDistSq);
   state.isOffroad = minDistanceToCenterline > OFFROAD_THRESHOLD;
 
+  // 2b. Soft Track Outer Boundary (Keep kart within playfield without getting lost in the void)
+  const MAX_OFFROAD_LIMIT = 18.0;
+  if (minDistanceToCenterline > MAX_OFFROAD_LIMIT) {
+    const closestPt = trackSpline.getPointAt(bestT);
+    const toCenter = new THREE.Vector3().subVectors(closestPt, state.position);
+    toCenter.y = 0;
+    const distOver = minDistanceToCenterline - MAX_OFFROAD_LIMIT;
+    state.position.addScaledVector(toCenter.normalize(), distOver + 0.2);
+    state.speed = Math.min(state.speed, OFFROAD_TOP_SPEED);
+  }
+
   // 3. Boost Pad Check
   for (const pad of BOOST_PADS) {
     const padDistSq =
