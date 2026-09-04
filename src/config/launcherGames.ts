@@ -298,4 +298,23 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Bandit types: quick-draw duelists, dynamite tossers, and armored desperados',
     ],
   },
+  {
+    id: 'insaniquarium',
+    title: 'Insaniquarium Deluxe',
+    tagline: 'The craziest aquarium simulation — feed guppies, collect coins, and blast invading aliens',
+    genre: 'Aquarium Defense / PopCap Classic',
+    category: 'arcade',
+    status: 'playable',
+    releaseYear: '2004',
+    accentColor: '#0284c7',
+    description:
+      'Manage a chaotic virtual aquarium! Drop pellets to feed ravenous guppies, collect sparkling silver coins and gold gems, purchase Stinky the Snail to help scoop loot, and fire defensive lasers to defeat extraterrestrial aliens.',
+    features: [
+      'Guppy lifecycle: Small -> Medium -> Large -> King Guppy dropping silver, gold, and star gems',
+      'Food quality and max pellet capacity upgrades in the aquarium header shop',
+      'Extraterrestrial alien invasions with klaxon sirens and defensive laser cannons',
+      'Stinky the Snail pet assistant vacuuming fallen coins along the seabed',
+      'Three-piece mystery egg hatching progression to complete the level',
+    ],
+  },
 ];

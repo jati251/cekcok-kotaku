@@ -111,6 +111,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'feeding-frenzy': 'feeding-frenzy',
       'pizza-frenzy': 'pizza-frenzy',
       'saloon-showdown': 'saloon-showdown',
+      'insaniquarium': 'insaniquarium',
     };
 
     const titles: Record<string, string> = {
@@ -130,6 +131,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'feeding-frenzy': 'Feeding Frenzy',
       'pizza-frenzy': 'Pizza Frenzy',
       'saloon-showdown': 'Saloon Showdown',
+      'insaniquarium': 'Insaniquarium Deluxe',
     };
 
     const title = titles[gameId] || gameId;

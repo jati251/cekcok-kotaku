@@ -20,7 +20,8 @@ export type ActiveGameTab =
   | 'balloon-frenzy'
   | 'feeding-frenzy'
   | 'pizza-frenzy'
-  | 'saloon-showdown';
+  | 'saloon-showdown'
+  | 'insaniquarium';
 
 export interface LauncherGame {
   id: string;

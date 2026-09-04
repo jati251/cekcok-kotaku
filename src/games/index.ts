@@ -7,3 +7,4 @@ export * from './arcade-2d';
 export * from './feeding-frenzy/FeedingFrenzy';
 export * from './pizza-frenzy/PizzaFrenzy';
 export * from './saloon-showdown/SaloonShowdown';
+export * from './insaniquarium/Insaniquarium';
