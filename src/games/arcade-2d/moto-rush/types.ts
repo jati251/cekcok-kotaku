@@ -31,8 +31,10 @@ export interface Particle {
 export interface PlayerState {
   x: number;
   y: number;
+  targetY: number;
   width: number;
   height: number;
+  currentLane: number;
   vy: number;
   isJumping: boolean;
   jumpVelocity: number;
@@ -53,33 +55,26 @@ export interface GameState {
   started: boolean;
   paused: boolean;
   highScore: number;
+  viewportWidth: number;
+  viewportHeight: number;
 }
 
-export const CANVAS_W = 800;
-export const CANVAS_H = 450;
-export const ROAD_TOP = 180;
-export const ROAD_BOTTOM = CANVAS_H - 40;
-export const NUM_LANES = 3;
-export const LANE_HEIGHT = (ROAD_BOTTOM - ROAD_TOP) / NUM_LANES;
-
-export const LANES = [
-  ROAD_TOP + LANE_HEIGHT * 0.5,
-  ROAD_TOP + LANE_HEIGHT * 1.5,
-  ROAD_TOP + LANE_HEIGHT * 2.5,
-];
-
-export const PLAYER_START_X = 120;
-export const PLAYER_START_Y = LANES[1];
 export const PLAYER_W = 55;
-export const PLAYER_H = 32;
+export const PLAYER_H = 30;
+export const INITIAL_SPEED = 6;
+export const MAX_SPEED = 16;
+export const SPEED_INCREMENT = 0.0012;
+export const GRAVITY = 0.65;
+export const NUM_LANES = 3;
 
-export const INITIAL_SPEED = 5;
-export const MAX_SPEED = 14;
-export const SPEED_INCREMENT = 0.001;
-
-export const GRAVITY = 0.6;
-export const JUMP_STRENGTH = -11;
-export const GROUND_Y = LANES[1];
-
-export const OBSTACLE_TYPES: Array<Obstacle['type']> = ['car', 'barrier', 'rock'];
-export const CAR_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
+export function getRoadMetrics(h: number) {
+  const roadTop = Math.round(h * 0.42);
+  const roadBottom = h - 30;
+  const laneHeight = (roadBottom - roadTop) / NUM_LANES;
+  const lanes = [
+    roadTop + laneHeight * 0.5,
+    roadTop + laneHeight * 1.5,
+    roadTop + laneHeight * 2.5,
+  ];
+  return { roadTop, roadBottom, laneHeight, lanes };
+}

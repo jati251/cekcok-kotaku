@@ -78,29 +78,11 @@ export interface GameState {
   started: boolean;
   paused: boolean;
   highScore: number;
-  shootCooldown: number;
-  enemySpawnTimer: number;
-  fuelSpawnTimer: number;
+  viewportWidth: number;
+  viewportHeight: number;
 }
 
-export const CANVAS_W = 800;
-export const CANVAS_H = 500;
-
 export const PLAYER_W = 38;
-export const PLAYER_H = 42;
-export const PLAYER_SPEED = 4.5;
-export const PLAYER_START_X = CANVAS_W / 2;
-export const PLAYER_START_Y = CANVAS_H - 80;
-
-export const SCROLL_SPEED = 1.8;
-export const BULLET_SPEED = 8;
-export const SHOOT_COOLDOWN = 10;
-export const ENEMY_SPAWN_INTERVAL = 55;
-export const FUEL_SPAWN_INTERVAL = 120;
-export const FUEL_DRAIN = 0.025;
-export const MAX_FUEL = 100;
-
-export const TERRAIN_MIN_GAP = 200;
-export const TERRAIN_SEGMENT_HEIGHT = 60;
-export const TERRAIN_WIDTH = 60;
-export const TERRAIN_VARIATION = 80;
+export const PLAYER_H = 34;
+export const BASE_SCROLL_SPEED = 2.8;
+export const TERRAIN_BLOCK_H = 25;

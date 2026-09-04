@@ -1,232 +1,258 @@
-import {
-  CANVAS_W,
-  CANVAS_H,
-  ROAD_TOP,
-  GameState,
-} from './types';
+import { GameState, getRoadMetrics } from './types';
 
-export function darkenColor(hex: string, factor: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgb(${Math.floor(r * (1 - factor))},${Math.floor(g * (1 - factor))},${Math.floor(b * (1 - factor))})`;
+export function renderMotoGame(ctx: CanvasRenderingContext2D, state: GameState, stripeOffset: number) {
+  const w = state.viewportWidth;
+  const h = state.viewportHeight;
+  const { roadTop, roadBottom, lanes } = getRoadMetrics(h);
+
+  ctx.clearRect(0, 0, w, h);
+
+  // 1. Synthwave Cyber City Sunset Sky
+  drawCitySkyline(ctx, w, roadTop, stripeOffset);
+
+  // 2. Neon Highway Road
+  drawHighway(ctx, w, h, roadTop, roadBottom, lanes, stripeOffset);
+
+  // 3. Obstacles (Cars, Barriers, Rocks)
+  for (const obs of state.obstacles) {
+    if (obs.type === 'car') {
+      drawNeonCar(ctx, obs.x, obs.y, obs.width, obs.height, obs.color);
+    } else if (obs.type === 'barrier') {
+      drawRoadBarrier(ctx, obs.x, obs.y, obs.width, obs.height);
+    } else {
+      drawRoadRock(ctx, obs.x, obs.y, obs.width, obs.height);
+    }
+  }
+
+  // 4. Gold Coins
+  for (const c of state.coins) {
+    if (!c.collected) {
+      drawCoin(ctx, c.x, c.y + c.bobOffset, c.width);
+    }
+  }
+
+  // 5. Particles (Smoke, Sparks, Crash)
+  for (const pt of state.particles) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - pt.life / pt.maxLife);
+    ctx.fillStyle = pt.color;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 6. Player Motorcycle
+  const p = state.player;
+  drawPlayerMotorcycle(ctx, p.x, p.y, p.width, p.height, p.isJumping);
 }
 
-export function drawMotorcycle(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+function drawCitySkyline(ctx: CanvasRenderingContext2D, w: number, roadTop: number, offset: number) {
+  // Sunset gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, roadTop);
+  skyGrad.addColorStop(0, '#090514');
+  skyGrad.addColorStop(0.5, '#2e1065');
+  skyGrad.addColorStop(0.85, '#e11d48');
+  skyGrad.addColorStop(1, '#f97316');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, w, roadTop);
+
+  // Giant retro sun
+  const sunX = w * 0.75;
+  const sunY = roadTop * 0.65;
+  const sunR = roadTop * 0.35;
+  const sunGrad = ctx.createLinearGradient(0, sunY - sunR, 0, sunY + sunR);
+  sunGrad.addColorStop(0, '#fde047');
+  sunGrad.addColorStop(1, '#f43f5e');
+  ctx.fillStyle = sunGrad;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Distant city skyscrapers
+  ctx.fillStyle = '#0f172a';
+  const bOff = (offset * 0.25) % 80;
+  for (let x = -80; x < w + 80; x += 55) {
+    const bh = 45 + ((Math.abs(x) * 17) % 65);
+    ctx.fillRect(x - bOff, roadTop - bh, 48, bh);
+
+    // Glowing windows
+    ctx.fillStyle = '#fde047';
+    for (let wy = roadTop - bh + 8; wy < roadTop - 8; wy += 12) {
+      if ((x + wy) % 3 === 0) {
+        ctx.fillRect(x - bOff + 10, wy, 5, 5);
+        ctx.fillRect(x - bOff + 25, wy, 5, 5);
+      }
+    }
+    ctx.fillStyle = '#0f172a';
+  }
+}
+
+function drawHighway(ctx: CanvasRenderingContext2D, w: number, h: number, roadTop: number, roadBottom: number, _lanes: number[], offset: number) {
+  // Asphalt Road
+  const roadGrad = ctx.createLinearGradient(0, roadTop, 0, roadBottom);
+  roadGrad.addColorStop(0, '#111827');
+  roadGrad.addColorStop(1, '#030712');
+  ctx.fillStyle = roadGrad;
+  ctx.fillRect(0, roadTop, w, roadBottom - roadTop);
+
+  // Road borders
+  ctx.fillStyle = '#e11d48';
+  ctx.shadowColor = '#f43f5e';
+  ctx.shadowBlur = 8;
+  ctx.fillRect(0, roadTop - 4, w, 4);
+  ctx.fillRect(0, roadBottom, w, 4);
+  ctx.shadowBlur = 0;
+
+  // Lane dividers
+  const laneH = (roadBottom - roadTop) / 3;
+  ctx.strokeStyle = '#38bdf8';
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 6;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([30, 20]);
+  ctx.lineDashOffset = -offset;
+
+  for (let i = 1; i < 3; i++) {
+    const ly = roadTop + i * laneH;
+    ctx.beginPath();
+    ctx.moveTo(0, ly);
+    ctx.lineTo(w, ly);
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+
+  // Road verge ground
+  ctx.fillStyle = '#090d16';
+  ctx.fillRect(0, roadBottom + 4, w, h - roadBottom);
+}
+
+function drawPlayerMotorcycle(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, isJumping: boolean) {
+  ctx.save();
   const cx = x + w / 2;
   const cy = y + h / 2;
 
-  // Wheels
-  ctx.fillStyle = '#2c3e50';
+  // Jump shadow
+  if (isJumping) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(cx, y + h + 15, w * 0.4, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Cyan neon underglow
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 12;
   ctx.beginPath();
-  ctx.arc(cx - 14, cy + 10, 10, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy + 12, w * 0.45, 6, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Wheels
+  ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.arc(cx + 14, cy + 10, 10, 0, Math.PI * 2);
+  ctx.arc(cx - 16, cy + 8, 10, 0, Math.PI * 2);
+  ctx.arc(cx + 16, cy + 8, 10, 0, Math.PI * 2);
   ctx.fill();
 
   // Rims
-  ctx.fillStyle = '#95a5a6';
+  ctx.fillStyle = '#38bdf8';
   ctx.beginPath();
-  ctx.arc(cx - 14, cy + 10, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(cx + 14, cy + 10, 5, 0, Math.PI * 2);
+  ctx.arc(cx - 16, cy + 8, 4, 0, Math.PI * 2);
+  ctx.arc(cx + 16, cy + 8, 4, 0, Math.PI * 2);
   ctx.fill();
 
-  // Frame
-  ctx.fillStyle = '#e74c3c';
-  ctx.fillRect(cx - 18, cy - 6, 36, 12);
-
-  // Engine
-  ctx.fillStyle = '#7f8c8d';
-  ctx.fillRect(cx - 6, cy + 2, 12, 8);
-
-  // Seat
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(cx - 4, cy - 14, 10, 10);
-
-  // Handlebars
-  ctx.strokeStyle = '#bdc3c7';
-  ctx.lineWidth = 2;
+  // Bike body
+  ctx.fillStyle = '#e11d48';
   ctx.beginPath();
-  ctx.moveTo(cx + 10, cy - 6);
-  ctx.lineTo(cx + 16, cy - 16);
-  ctx.stroke();
-
-  // Rider
-  ctx.fillStyle = '#f1c40f';
-  ctx.beginPath();
-  ctx.arc(cx - 6, cy - 20, 7, 0, Math.PI * 2);
+  ctx.roundRect(cx - 18, cy - 6, 36, 11, 4);
   ctx.fill();
 
-  ctx.fillStyle = '#2ecc71';
-  ctx.fillRect(cx - 4, cy - 14, 8, 8);
-}
-
-export function drawCar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = darkenColor(color, 0.3);
-  ctx.fillRect(x + 8, y - 10, 25, 12);
-  ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(x + 10, y - 8, 10, 8);
-  ctx.fillRect(x + 22, y - 8, 10, 8);
-  ctx.fillStyle = '#2c3e50';
+  // Headlight beam
+  ctx.fillStyle = 'rgba(253, 224, 71, 0.3)';
   ctx.beginPath();
-  ctx.arc(x + 10, y + h + 2, 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x + w - 10, y + h + 2, 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#f1c40f';
-  ctx.fillRect(x + w - 4, y + 4, 3, 4);
-}
-
-export function drawBarrier(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.fillStyle = '#e67e22';
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#f1c40f';
-  for (let i = 0; i < h; i += 6) ctx.fillRect(x, y + i, w, 3);
-}
-
-export function drawRock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.fillStyle = '#7f8c8d';
-  ctx.beginPath();
-  ctx.moveTo(x + 2, y + h);
-  ctx.lineTo(x, y + h * 0.5);
-  ctx.lineTo(x + w * 0.3, y);
-  ctx.lineTo(x + w * 0.7, y + 2);
-  ctx.lineTo(x + w, y + h * 0.4);
-  ctx.lineTo(x + w - 2, y + h);
+  ctx.moveTo(cx + 22, cy - 2);
+  ctx.lineTo(cx + 90, cy - 14);
+  ctx.lineTo(cx + 90, cy + 10);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#5d6d7e';
-  ctx.lineWidth = 1;
-  ctx.stroke();
+
+  // Rider
+  ctx.fillStyle = '#0284c7';
+  ctx.beginPath();
+  ctx.arc(cx - 4, cy - 16, 7, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Helmet visor
+  ctx.fillStyle = '#fde047';
+  ctx.fillRect(cx + 1, cy - 17, 5, 3);
+
+  ctx.restore();
 }
 
-export function drawCoin(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
-  ctx.fillStyle = '#f1c40f';
+function drawNeonCar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+  ctx.save();
+  // Car body
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
   ctx.beginPath();
-  ctx.arc(x, y, s, 0, Math.PI * 2);
+  ctx.roundRect(x, y, w, h, 6);
   ctx.fill();
-  ctx.strokeStyle = '#e67e22';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = '#e67e22';
-  ctx.font = `bold ${s + 2}px monospace`;
+
+  // Roof & windshield
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+  ctx.fillRect(x + 10, y + 3, w - 24, h - 6);
+
+  // Red Taillights
+  ctx.fillStyle = '#ef4444';
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 6;
+  ctx.fillRect(x, y + 4, 3, 5);
+  ctx.fillRect(x, y + h - 9, 3, 5);
+
+  ctx.restore();
+}
+
+function drawRoadBarrier(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.fillStyle = '#f97316';
+  ctx.shadowColor = '#f97316';
+  ctx.shadowBlur = 6;
+  ctx.fillRect(x, y, w, h);
+
+  // White hazard diagonal dashes
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < h; i += 8) {
+    ctx.fillRect(x, y + i, w, 4);
+  }
+  ctx.restore();
+}
+
+function drawRoadRock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.fillStyle = '#64748b';
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCoin(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  ctx.save();
+  ctx.fillStyle = '#facc15';
+  ctx.shadowColor = '#facc15';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ca8a04';
+  ctx.font = `bold ${Math.round(size * 0.7)}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('¢', x, y + 1);
-}
-
-export function drawBackground(ctx: CanvasRenderingContext2D, offset: number) {
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, ROAD_TOP);
-  skyGrad.addColorStop(0, '#1a1a2e');
-  skyGrad.addColorStop(0.5, '#16213e');
-  skyGrad.addColorStop(1, '#0f3460');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, CANVAS_W, ROAD_TOP);
-
-  // Stars
-  ctx.fillStyle = '#ffffff';
-  for (let i = 0; i < 30; i++) {
-    const sx = (i * 137 + 42 + offset * 0.3) % CANVAS_W;
-    const sy = ((i * 97 + 42 * 3) % (ROAD_TOP - 40)) + 10;
-    ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1);
-  }
-
-  // Mountains
-  ctx.fillStyle = '#1a1a3e';
-  const mOff = offset * 0.2;
-  for (let i = 0; i < 4; i++) {
-    const mx = i * 250 - (mOff % 250);
-    ctx.beginPath();
-    ctx.moveTo(mx - 50, ROAD_TOP);
-    ctx.lineTo(mx + 60, ROAD_TOP - 100);
-    ctx.lineTo(mx + 170, ROAD_TOP - 60);
-    ctx.lineTo(mx + 280, ROAD_TOP);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // City silhouette
-  ctx.fillStyle = '#0d0d2b';
-  const bOff = offset * 0.5;
-  for (let i = 0; i < 8; i++) {
-    const bx = i * 120 - (bOff % 120);
-    const bh = 30 + ((i * 73) % 50);
-    ctx.fillRect(bx, ROAD_TOP - bh, 40, bh);
-    ctx.fillRect(bx + 55, ROAD_TOP - bh - 15, 25, bh + 15);
-  }
-}
-
-export function drawRoad(ctx: CanvasRenderingContext2D, offset: number) {
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(0, ROAD_TOP, CANVAS_W, CANVAS_H - ROAD_TOP);
-  ctx.strokeStyle = '#f1c40f';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, ROAD_TOP);
-  ctx.lineTo(CANVAS_W, ROAD_TOP);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(0, CANVAS_H);
-  ctx.lineTo(CANVAS_W, CANVAS_H);
-  ctx.stroke();
-
-  // Lane dashes
-  ctx.fillStyle = '#f1c40f';
-  const dashOff = offset % 60;
-  for (let cx = -dashOff; cx < CANVAS_W + 60; cx += 60) ctx.fillRect(cx, ROAD_TOP + 35, 30, 3);
-
-  // Side markers
-  ctx.fillStyle = '#e74c3c';
-  for (let rx = -((offset * 0.8) % 40); rx < CANVAS_W + 40; rx += 40) ctx.fillRect(rx, ROAD_TOP - 6, 12, 6);
-}
-
-export function gameRender(ctx: CanvasRenderingContext2D, state: GameState) {
-  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  drawBackground(ctx, state.distance);
-  drawRoad(ctx, state.distance);
-
-  // Coins
-  for (const c of state.coins) {
-    if (!c.collected) {
-      const bob = Math.sin(c.bobOffset) * 4;
-      drawCoin(ctx, c.x + c.width / 2, c.y + c.height / 2 + bob, 10);
-    }
-  }
-
-  // Obstacles
-  for (const obs of state.obstacles) {
-    if (obs.type === 'car') {
-      drawCar(ctx, obs.x, obs.y, obs.width, obs.height, obs.color);
-    } else if (obs.type === 'barrier') {
-      drawBarrier(ctx, obs.x, obs.y, obs.width, obs.height);
-    } else if (obs.type === 'rock') {
-      drawRock(ctx, obs.x, obs.y, obs.width, obs.height);
-    }
-  }
-
-  // Player
-  const p = state.player;
-  drawMotorcycle(ctx, p.x, p.y, p.width, p.height);
-
-  // Particles
-  for (const part of state.particles) {
-    ctx.fillStyle = part.color;
-    ctx.globalAlpha = part.life / part.maxLife;
-    ctx.beginPath();
-    ctx.arc(part.x, part.y, part.size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
-  // In-canvas heads-up info
-  ctx.fillStyle = '#f1c40f';
-  ctx.font = 'bold 13px monospace';
-  ctx.fillText(`Distance: ${Math.floor(state.distance)}m`, 20, 30);
-  ctx.fillText(`Speed: ${Math.floor(state.speed * 10)} km/h`, 20, 50);
+  ctx.fillText('$', x + size / 2, y + size / 2);
+  ctx.restore();
 }

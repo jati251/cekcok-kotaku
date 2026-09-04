@@ -1,29 +1,30 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState } from './types';
-import { createInitialSkyState, gameTick } from './engine';
-import { renderSkyGame } from './renderer';
-import { skyAudio } from './audio';
+import { SpaceGameState } from './types';
+import { createInitialSpaceState, updateSpacePhysics } from './physics';
+import { renderSpaceGame } from './renderer';
+import { spaceAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Plane, Fuel, Crosshair } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Shield, Radio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function SkyRaid() {
+export function SpaceBlast() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef<GameState>(createInitialSkyState(900, 600));
+  const stateRef = useRef<SpaceGameState>(createInitialSpaceState(900, 600));
   const keysRef = useRef<Set<string>>(new Set());
   const animRef = useRef<number>(0);
 
   const [uiScore, setUiScore] = useState(0);
-  const [uiLives, setUiLives] = useState(3);
-  const [uiFuel, setUiFuel] = useState(100);
-  const [uiDistanceKm, setUiDistanceKm] = useState(0);
+  const [uiShield, setUiShield] = useState(100);
+  const [uiWave, setUiWave] = useState(1);
+  const [uiSpreadActive, setUiSpreadActive] = useState(false);
+  const [uiRapidActive, setUiRapidActive] = useState(false);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
-  const [isMuted, setIsMuted] = useState(skyAudio.getMuted());
+  const [isMuted, setIsMuted] = useState(spaceAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
-      return parseInt(localStorage.getItem('skyRaidHighScore') || '0', 10);
+      return parseInt(localStorage.getItem('spaceBlastHighScore') || '0', 10);
     } catch {
       return 0;
     }
@@ -46,7 +47,7 @@ export function SkyRaid() {
     if (score > uiHighScore) {
       setUiHighScore(score);
       try {
-        localStorage.setItem('skyRaidHighScore', score.toString());
+        localStorage.setItem('spaceBlastHighScore', score.toString());
       } catch {}
     }
   };
@@ -92,13 +93,14 @@ export function SkyRaid() {
         return;
       }
 
-      gameTick(state, keysRef.current);
+      updateSpacePhysics(state, keysRef.current);
 
       if (state.started) {
         setUiScore(state.score);
-        setUiLives(state.lives);
-        setUiFuel(Math.round(state.fuel));
-        setUiDistanceKm(Math.round(state.distance * 0.05));
+        setUiShield(Math.max(0, state.ship.shield));
+        setUiWave(state.wave);
+        setUiSpreadActive(state.spreadTimer > 0);
+        setUiRapidActive(state.rapidTimer > 0);
 
         if (state.gameOver && !uiGameOver) {
           setUiGameOver(true);
@@ -106,7 +108,7 @@ export function SkyRaid() {
         }
       }
 
-      renderSkyGame(ctx, state);
+      renderSpaceGame(ctx, state);
       animRef.current = requestAnimationFrame(loop);
     };
 
@@ -117,53 +119,56 @@ export function SkyRaid() {
   const resetGame = () => {
     const w = canvasRef.current?.width || 900;
     const h = canvasRef.current?.height || 600;
-    const nextState = createInitialSkyState(w, h);
+    const nextState = createInitialSpaceState(w, h);
     nextState.started = true;
     stateRef.current = nextState;
 
     setUiScore(0);
-    setUiLives(3);
-    setUiFuel(100);
-    setUiDistanceKm(0);
+    setUiShield(100);
+    setUiWave(1);
+    setUiSpreadActive(false);
+    setUiRapidActive(false);
     setUiGameOver(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Sky Raid" category="River Aviator" score={uiScore} level={`${uiDistanceKm} km`} lives={uiLives} />
+      <ArcadeHeader title="Space Blast" category="Cosmic Defender" score={uiScore} level={`Wave ${uiWave}`} />
 
-      {/* Aviator Cockpit Military HUD */}
-      <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-amber-950/90 backdrop-blur-md border-b border-amber-500/20 text-xs text-slate-300 shrink-0">
+      {/* Retro-Futuristic Cockpit HUD */}
+      <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-purple-950/90 via-slate-900/90 to-blue-950/90 backdrop-blur-md border-b border-purple-500/20 text-xs text-slate-300 shrink-0">
         <div className="flex items-center gap-4">
-          {/* Fuel Level */}
+          {/* Shields Bar */}
           <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900/80 border border-slate-800">
-            <Fuel className={`w-3.5 h-3.5 ${uiFuel < 25 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`} />
+            <Shield className="w-3.5 h-3.5 text-cyan-400" />
             <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-150 ${
-                  uiFuel > 40 ? 'bg-amber-400' : 'bg-rose-500 animate-pulse'
+                  uiShield > 50 ? 'bg-cyan-400' : uiShield > 20 ? 'bg-amber-400' : 'bg-rose-500'
                 }`}
-                style={{ width: `${uiFuel}%` }}
+                style={{ width: `${uiShield}%` }}
               />
             </div>
-            <span className="font-mono text-[10px] text-amber-300">{uiFuel}%</span>
+            <span className="font-mono text-[10px] text-cyan-300">{uiShield}%</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono">
-            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{uiDistanceKm} KM</span>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono font-bold">
+            <Radio className="w-3.5 h-3.5 text-purple-400" />
+            <span>WAVE {uiWave}</span>
           </div>
 
-          {/* Squadron Aircraft Lives */}
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/40 border border-slate-800">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Plane
-                key={i}
-                className={`w-3.5 h-3.5 ${i < uiLives ? 'text-amber-400' : 'text-slate-600'}`}
-              />
-            ))}
-          </div>
+          {uiSpreadActive && (
+            <span className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] animate-pulse">
+              TRIPLE SPREAD
+            </span>
+          )}
+
+          {uiRapidActive && (
+            <span className="px-2 py-0.5 rounded bg-pink-500/20 border border-pink-500/40 text-pink-300 font-mono text-[10px] animate-pulse">
+              RAPID OVERDRIVE
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -173,7 +178,7 @@ export function SkyRaid() {
           </div>
 
           <button
-            onClick={() => setIsMuted(skyAudio.toggleMute())}
+            onClick={() => setIsMuted(spaceAudio.toggleMute())}
             className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer border border-slate-800"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
@@ -181,11 +186,11 @@ export function SkyRaid() {
         </div>
       </div>
 
-      {/* Fullscreen River Canvas */}
+      {/* Fullscreen Interactive Canvas */}
       <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden">
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* Start Mission Modal */}
+        {/* Start Game Modal */}
         <AnimatePresence>
           {!uiStarted && (
             <motion.div
@@ -194,22 +199,22 @@ export function SkyRaid() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
             >
-              <div className="max-w-md w-full bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl shadow-amber-950/50">
+              <div className="max-w-md w-full bg-slate-900/95 border-2 border-purple-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl shadow-purple-950/60">
                 <div className="space-y-1">
-                  <span className="text-4xl">🛩️🌊🎖️</span>
-                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-300">
-                    SKY RAID
+                  <span className="text-4xl">🚀🌌💥</span>
+                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300">
+                    SPACE BLAST
                   </h2>
-                  <p className="text-xs text-amber-300/80">River Canyon Aerial Strike Operation</p>
+                  <p className="text-xs text-purple-300/80">Vector Zero-G Tactical Interceptor</p>
                 </div>
 
-                <div className="bg-slate-950/80 p-4 rounded-xl border border-amber-900/40 text-xs space-y-2 text-slate-300 text-left">
-                  <p className="text-amber-300 font-bold text-center pb-1 border-b border-slate-800">Flight Instructions</p>
-                  <p>Navigate the treacherous river canyon, intercept enemy aircraft, and collect red fuel cans to stay airborne!</p>
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-purple-900/40 text-xs space-y-2 text-slate-300 text-left">
+                  <p className="text-purple-300 font-bold text-center pb-1 border-b border-slate-800">Pilot Briefing</p>
+                  <p>Repel invading alien squadrons and destroy drifting asteroids before they breach our defensive quadrant!</p>
                   <div className="space-y-1 font-mono text-[11px] pt-1">
-                    <div className="text-cyan-400">WASD / Arrows: Steer Fighter Aircraft</div>
-                    <div className="text-amber-400">Space: Dual Forward Machineguns</div>
-                    <div className="text-rose-400">Avoid Canyon Rock Banks & Collisions</div>
+                    <div className="text-cyan-300">WASD / Arrows: Inertial Thruster Navigation</div>
+                    <div className="text-amber-400">Space: Plasma Laser Cannons</div>
+                    <div className="text-pink-400">Powerups: Energy Shield, Spread Blaster, Nuke</div>
                   </div>
                 </div>
 
@@ -217,16 +222,16 @@ export function SkyRaid() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 cursor-pointer"
                 >
-                  SCRAMBLE SQUADRON!
+                  ENGAGE ENGINES!
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Mission Failed Modal */}
+        {/* Game Over Modal */}
         <AnimatePresence>
           {uiGameOver && (
             <motion.div
@@ -237,23 +242,23 @@ export function SkyRaid() {
             >
               <div className="max-w-md w-full bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
                 <div className="space-y-1">
-                  <span className="text-4xl">💥✈️</span>
-                  <h2 className="text-3xl font-black text-rose-500">MISSION TERMINATED</h2>
-                  <p className="text-xs text-slate-400">Squadron downed in the canyon</p>
+                  <span className="text-4xl">💥🛸</span>
+                  <h2 className="text-3xl font-black text-rose-500">SHIP COMPROMISED</h2>
+                  <p className="text-xs text-slate-400">Hull integrity exhausted by enemy ordnance</p>
                 </div>
 
                 <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-300">
-                    <span>Flight Score:</span>
-                    <span className="font-mono text-emerald-400 font-bold text-lg">{uiScore}</span>
+                    <span>Final Score:</span>
+                    <span className="font-mono text-cyan-400 font-bold text-lg">{uiScore}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Distance Reached:</span>
-                    <span className="font-mono text-amber-400 font-bold text-base">{uiDistanceKm} KM</span>
+                    <span>Wave Reached:</span>
+                    <span className="font-mono text-purple-400 font-bold text-base">Wave {uiWave}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Squadron Record:</span>
-                    <span className="font-mono text-cyan-400 font-bold text-base">{uiHighScore}</span>
+                    <span>Personal Record:</span>
+                    <span className="font-mono text-amber-400 font-bold text-base">{uiHighScore}</span>
                   </div>
                 </div>
 
@@ -261,10 +266,10 @@ export function SkyRaid() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={resetGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>RE-LAUNCH</span>
+                  <span>RE-DEPLOY</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -275,4 +280,4 @@ export function SkyRaid() {
   );
 }
 
-export default SkyRaid;
+export default SpaceBlast;

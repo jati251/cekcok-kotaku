@@ -1,29 +1,30 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState } from './types';
-import { createInitialSkyState, gameTick } from './engine';
-import { renderSkyGame } from './renderer';
-import { skyAudio } from './audio';
+import { SnowGameState } from './types';
+import { createInitialSnowState, updateSnowPhysics } from './physics';
+import { renderSnowGame } from './renderer';
+import { snowboardAudio } from './audio';
 import { ArcadeHeader } from '../ArcadeHeader';
-import { Trophy, Volume2, VolumeX, RotateCcw, Plane, Fuel, Crosshair } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Zap, Compass, Wind } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function SkyRaid() {
+export function SnowboardRush() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef<GameState>(createInitialSkyState(900, 600));
+  const stateRef = useRef<SnowGameState>(createInitialSnowState(900, 600));
   const keysRef = useRef<Set<string>>(new Set());
   const animRef = useRef<number>(0);
 
   const [uiScore, setUiScore] = useState(0);
-  const [uiLives, setUiLives] = useState(3);
-  const [uiFuel, setUiFuel] = useState(100);
-  const [uiDistanceKm, setUiDistanceKm] = useState(0);
+  const [uiDistance, setUiDistance] = useState(0);
+  const [uiSpeedKmh, setUiSpeedKmh] = useState(30);
+  const [uiMultiplier, setUiMultiplier] = useState(1);
+  const [uiBoosted, setUiBoosted] = useState(false);
   const [uiGameOver, setUiGameOver] = useState(false);
   const [uiStarted, setUiStarted] = useState(false);
-  const [isMuted, setIsMuted] = useState(skyAudio.getMuted());
+  const [isMuted, setIsMuted] = useState(snowboardAudio.getMuted());
   const [uiHighScore, setUiHighScore] = useState(() => {
     try {
-      return parseInt(localStorage.getItem('skyRaidHighScore') || '0', 10);
+      return parseInt(localStorage.getItem('snowboardRushHighScore') || '0', 10);
     } catch {
       return 0;
     }
@@ -46,7 +47,7 @@ export function SkyRaid() {
     if (score > uiHighScore) {
       setUiHighScore(score);
       try {
-        localStorage.setItem('skyRaidHighScore', score.toString());
+        localStorage.setItem('snowboardRushHighScore', score.toString());
       } catch {}
     }
   };
@@ -92,13 +93,14 @@ export function SkyRaid() {
         return;
       }
 
-      gameTick(state, keysRef.current);
+      updateSnowPhysics(state, keysRef.current);
 
       if (state.started) {
         setUiScore(state.score);
-        setUiLives(state.lives);
-        setUiFuel(Math.round(state.fuel));
-        setUiDistanceKm(Math.round(state.distance * 0.05));
+        setUiDistance(state.distance);
+        setUiSpeedKmh(Math.round(state.speed * 4.2));
+        setUiMultiplier(state.trickMultiplier);
+        setUiBoosted(state.boostTimer > 0);
 
         if (state.gameOver && !uiGameOver) {
           setUiGameOver(true);
@@ -106,7 +108,7 @@ export function SkyRaid() {
         }
       }
 
-      renderSkyGame(ctx, state);
+      renderSnowGame(ctx, state);
       animRef.current = requestAnimationFrame(loop);
     };
 
@@ -117,63 +119,56 @@ export function SkyRaid() {
   const resetGame = () => {
     const w = canvasRef.current?.width || 900;
     const h = canvasRef.current?.height || 600;
-    const nextState = createInitialSkyState(w, h);
+    const nextState = createInitialSnowState(w, h);
     nextState.started = true;
     stateRef.current = nextState;
 
     setUiScore(0);
-    setUiLives(3);
-    setUiFuel(100);
-    setUiDistanceKm(0);
+    setUiDistance(0);
+    setUiSpeedKmh(30);
+    setUiMultiplier(1);
+    setUiBoosted(false);
     setUiGameOver(false);
     setUiStarted(true);
   };
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950 select-none overflow-hidden font-sans">
-      <ArcadeHeader title="Sky Raid" category="River Aviator" score={uiScore} level={`${uiDistanceKm} km`} lives={uiLives} />
+      <ArcadeHeader title="Snowboard Rush" category="Alpine Extreme" score={uiScore} level={`${uiDistance}m`} />
 
-      {/* Aviator Cockpit Military HUD */}
-      <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-amber-950/90 backdrop-blur-md border-b border-amber-500/20 text-xs text-slate-300 shrink-0">
+      {/* Frosted Alpine Extreme HUD */}
+      <div className="flex items-center justify-between px-6 py-2.5 bg-gradient-to-r from-sky-950/90 via-slate-900/90 to-cyan-950/90 backdrop-blur-md border-b border-sky-500/20 text-xs text-slate-300 shrink-0">
         <div className="flex items-center gap-4">
-          {/* Fuel Level */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900/80 border border-slate-800">
-            <Fuel className={`w-3.5 h-3.5 ${uiFuel < 25 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`} />
-            <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-150 ${
-                  uiFuel > 40 ? 'bg-amber-400' : 'bg-rose-500 animate-pulse'
-                }`}
-                style={{ width: `${uiFuel}%` }}
-              />
-            </div>
-            <span className="font-mono text-[10px] text-amber-300">{uiFuel}%</span>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 font-mono font-bold">
+            <Compass className="w-4 h-4 text-sky-400" />
+            <span>{uiDistance} M</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono">
-            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{uiDistanceKm} KM</span>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono">
+            <Wind className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{uiSpeedKmh} KM/H</span>
           </div>
 
-          {/* Squadron Aircraft Lives */}
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/40 border border-slate-800">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Plane
-                key={i}
-                className={`w-3.5 h-3.5 ${i < uiLives ? 'text-amber-400' : 'text-slate-600'}`}
-              />
-            ))}
+          <div
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono transition ${
+              uiBoosted
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 animate-pulse'
+                : 'bg-slate-800/40 border-slate-700 text-slate-400'
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${uiBoosted ? 'text-amber-400' : 'text-slate-500'}`} />
+            <span>TRICK: {uiMultiplier}x {uiBoosted ? '(NITRO)' : ''}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span>RECORD: {uiHighScore}</span>
+            <span>BEST: {uiHighScore}</span>
           </div>
 
           <button
-            onClick={() => setIsMuted(skyAudio.toggleMute())}
+            onClick={() => setIsMuted(snowboardAudio.toggleMute())}
             className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer border border-slate-800"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
@@ -181,11 +176,11 @@ export function SkyRaid() {
         </div>
       </div>
 
-      {/* Fullscreen River Canvas */}
+      {/* Fullscreen Interactive Canvas */}
       <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden">
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* Start Mission Modal */}
+        {/* Start Game Modal */}
         <AnimatePresence>
           {!uiStarted && (
             <motion.div
@@ -194,22 +189,22 @@ export function SkyRaid() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-6 z-30"
             >
-              <div className="max-w-md w-full bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl shadow-amber-950/50">
+              <div className="max-w-md w-full bg-slate-900/95 border-2 border-sky-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl shadow-sky-950/60">
                 <div className="space-y-1">
-                  <span className="text-4xl">🛩️🌊🎖️</span>
-                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-300">
-                    SKY RAID
+                  <span className="text-4xl">🏂🏔️⚡</span>
+                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-amber-300">
+                    SNOWBOARD RUSH
                   </h2>
-                  <p className="text-xs text-amber-300/80">River Canyon Aerial Strike Operation</p>
+                  <p className="text-xs text-sky-300/80">Alpine Freestyle Downhill Run</p>
                 </div>
 
-                <div className="bg-slate-950/80 p-4 rounded-xl border border-amber-900/40 text-xs space-y-2 text-slate-300 text-left">
-                  <p className="text-amber-300 font-bold text-center pb-1 border-b border-slate-800">Flight Instructions</p>
-                  <p>Navigate the treacherous river canyon, intercept enemy aircraft, and collect red fuel cans to stay airborne!</p>
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-sky-900/40 text-xs space-y-2 text-slate-300 text-left">
+                  <p className="text-sky-300 font-bold text-center pb-1 border-b border-slate-800">Pro Slopestyle Guide</p>
+                  <p>Bomb downhill, launch off snow ramps, and stick 360° spins to build your score!</p>
                   <div className="space-y-1 font-mono text-[11px] pt-1">
-                    <div className="text-cyan-400">WASD / Arrows: Steer Fighter Aircraft</div>
-                    <div className="text-amber-400">Space: Dual Forward Machineguns</div>
-                    <div className="text-rose-400">Avoid Canyon Rock Banks & Collisions</div>
+                    <div className="text-amber-400">↑ / Space: Ollie Jump off kickers</div>
+                    <div className="text-cyan-300">← / →: Mid-Air Rotation (Stick landing flat!)</div>
+                    <div className="text-emerald-400">↓: Aero tuck for top speed</div>
                   </div>
                 </div>
 
@@ -217,16 +212,16 @@ export function SkyRaid() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={resetGame}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-sky-600/30 cursor-pointer"
                 >
-                  SCRAMBLE SQUADRON!
+                  DROP IN!
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Mission Failed Modal */}
+        {/* Wipeout Game Over Modal */}
         <AnimatePresence>
           {uiGameOver && (
             <motion.div
@@ -237,23 +232,23 @@ export function SkyRaid() {
             >
               <div className="max-w-md w-full bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
                 <div className="space-y-1">
-                  <span className="text-4xl">💥✈️</span>
-                  <h2 className="text-3xl font-black text-rose-500">MISSION TERMINATED</h2>
-                  <p className="text-xs text-slate-400">Squadron downed in the canyon</p>
+                  <span className="text-4xl">💥❄️</span>
+                  <h2 className="text-3xl font-black text-rose-500">WIPEOUT!</h2>
+                  <p className="text-xs text-slate-400">Crashed into obstacles or failed landing angle</p>
                 </div>
 
                 <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-300">
-                    <span>Flight Score:</span>
+                    <span>Total Score:</span>
                     <span className="font-mono text-emerald-400 font-bold text-lg">{uiScore}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Distance Reached:</span>
-                    <span className="font-mono text-amber-400 font-bold text-base">{uiDistanceKm} KM</span>
+                    <span>Distance:</span>
+                    <span className="font-mono text-cyan-400 font-bold text-base">{uiDistance} M</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Squadron Record:</span>
-                    <span className="font-mono text-cyan-400 font-bold text-base">{uiHighScore}</span>
+                    <span>High Score:</span>
+                    <span className="font-mono text-amber-400 font-bold text-base">{uiHighScore}</span>
                   </div>
                 </div>
 
@@ -261,10 +256,10 @@ export function SkyRaid() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={resetGame}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>RE-LAUNCH</span>
+                  <span>TRY AGAIN</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -275,4 +270,4 @@ export function SkyRaid() {
   );
 }
 
-export default SkyRaid;
+export default SnowboardRush;
