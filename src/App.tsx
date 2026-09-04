@@ -29,6 +29,7 @@ import {
   NightclubCityGame,
   CarTownGame,
   SuperKartGame,
+  MobileLegendsGame,
 } from './games';
 
 export const App: React.FC = () => {
@@ -86,6 +87,8 @@ export const App: React.FC = () => {
         return <CarTownGame />;
       case 'super-kart':
         return <SuperKartGame />;
+      case 'mobile-legends':
+        return <MobileLegendsGame />;
       case 'game':
       case 'combat':
       case 'visiting_ally':

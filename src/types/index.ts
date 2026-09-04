@@ -26,7 +26,8 @@ export type ActiveGameTab =
   | 'ninja-saga'
   | 'nightclub-city'
   | 'cartown'
-  | 'super-kart';
+  | 'super-kart'
+  | 'mobile-legends';
 
 export interface LauncherGame {
   id: string;

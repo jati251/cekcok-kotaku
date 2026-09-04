@@ -117,6 +117,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'nightclub-city': 'nightclub-city',
       'cartown': 'cartown',
       'super-kart': 'super-kart',
+      'mobile-legends': 'mobile-legends',
     };
 
     const titles: Record<string, string> = {
@@ -142,6 +143,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'nightclub-city': 'Nightclub City',
       'cartown': 'Car Town',
       'super-kart': 'Super Kart 3D',
+      'mobile-legends': 'Mobile Legends: Bang Bang 3D',
     };
 
     const title = titles[gameId] || gameId;

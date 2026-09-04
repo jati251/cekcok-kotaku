@@ -13,3 +13,4 @@ export * from './ninja-saga/NinjaSagaGame';
 export * from './nightclub-city/NightclubCityGame';
 export * from './cartown/CarTownGame';
 export * from './super-kart';
+export { MobileLegendsGame } from './mobile-legends';

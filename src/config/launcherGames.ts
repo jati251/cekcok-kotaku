@@ -421,4 +421,28 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Instant track respawn (R key) to nearest checkpoint whenever you need a quick recovery',
     ],
   },
+  {
+    id: 'mobile-legends',
+    title: 'Mobile Legends: Bang Bang 3D',
+    tagline: 'Authentic 3D MOBA with 5v5 AI battles, 3-lane Land of Dawn, 6 iconic heroes, full item shop, and Lord epic boss',
+    genre: '3D MOBA Action',
+    category: 'action',
+    status: 'playable',
+    releaseYear: '2026',
+    accentColor: '#6366f1',
+    description:
+      'Experience the thrill of Mobile Legends in full 3D! Choose from 6 iconic heroes (Layla, Miya, Tigreal, Eudora, Alucard, Saber), push 3 lanes, ambush in stealth bushes, farm jungle creeps for Blue/Red buffs, slay the Turtle and summon the mighty Lord, level up skills, purchase from 25+ authentic items with Quick-Buy, and claim Victory by destroying the enemy Base Core.',
+    features: [
+      'Full 3D Land of Dawn battlefield with 3 lanes (Top, Mid, Bot), riverbed, and stealth bushes',
+      '6 Iconic Heroes across Marksman, Tank, Mage, Fighter, and Assassin classes with full 3-skill kits and passives',
+      '5v5 Intelligent AI bots with role-based laning, farming, ganking, and base recall',
+      'Minion wave simulation with melee, ranged, and siege cannons plus last-hit gold bounty',
+      '18 Active Turrets with escalating laser heat and Base Core Nexus shields',
+      'Jungle camps with Blue & Red buffs, river Turtle, and summonable lane-pushing Lord boss',
+      'Full in-game equipment shop with 25+ items (Blade of Despair, Immortality, Holy Crystal) and Quick-Buy bar',
+      'Procedural Web Audio with authentic MLBB announcer: First Blood, Double Kill, Maniac, Savage, and Legendary',
+      'Dual controls: Desktop (Right-click / WASD, QWER) & On-Screen Mobile MOBA controls',
+    ],
+  },
 ];
+
