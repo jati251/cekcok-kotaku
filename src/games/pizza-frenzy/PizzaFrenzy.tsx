@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
 import {
   Pizzeria,
@@ -51,28 +51,33 @@ export const PizzaFrenzy: React.FC = () => {
   const orderSpawnTimerRef = useRef<number>(0);
   const gameTimeRef = useRef<number>(0);
 
-  const initCanvas = (canvas: HTMLCanvasElement | null) => {
+  const selectPizzeria = (id: string) => {
+    selectedPizzeriaRef.current = id;
+    setSelectedPizzeriaId(id);
+    pizzaAudio.playOvenBell();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-    canvasRef.current = canvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const resize = () => {
+    const handleResize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvasRef.current.width = rect.width * dpr;
-      canvasRef.current.height = rect.height * dpr;
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
+      const w = Math.max(400, Math.floor(rect.width));
+      const h = Math.max(300, Math.floor(rect.height));
 
-      // Re-layout city based on dimensions
-      pizzeriasRef.current = CityMapGenerator.getPizzerias(rect.width, rect.height);
-      buildingsRef.current = CityMapGenerator.generateBuildings(rect.width, rect.height);
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
+
+      pizzeriasRef.current = CityMapGenerator.getPizzerias(w, h);
+      buildingsRef.current = CityMapGenerator.generateBuildings(w, h);
     };
 
-    resize();
-    const observer = new ResizeObserver(resize);
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
 
     // Keyboard shortcuts (1: NW Pepperoni, 2: NE Margherita, 3: SW Supreme, 4: SE Veggie)
@@ -88,10 +93,15 @@ export const PizzaFrenzy: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
 
+    let lastUiSync = 0;
+
     // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
+
+      const w = canvasRef.current?.width || 800;
+      const h = canvasRef.current?.height || 600;
 
       if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isDayComplete) {
         gameTimeRef.current += dt;
@@ -135,15 +145,18 @@ export const PizzaFrenzy: React.FC = () => {
           if (part.life <= 0) particlesRef.current.splice(p, 1);
         }
 
-        setHudState({ ...stateRef.current });
+        // Throttled UI sync (~10 times per second)
+        if (now - lastUiSync > 100) {
+          lastUiSync = now;
+          setHudState({ ...stateRef.current });
+        }
       }
 
       // Render
-      const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
       PizzaRenderer.render(
         ctx,
-        rect.width,
-        rect.height,
+        w,
+        h,
         buildingsRef.current,
         pizzeriasRef.current,
         ordersRef.current,
@@ -158,13 +171,13 @@ export const PizzaFrenzy: React.FC = () => {
     };
 
     animFrameRef.current = requestAnimationFrame(loop);
-  };
 
-  const selectPizzeria = (id: string) => {
-    selectedPizzeriaRef.current = id;
-    setSelectedPizzeriaId(id);
-    pizzaAudio.playOvenBell();
-  };
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('keydown', handleKeyDown);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -243,7 +256,7 @@ export const PizzaFrenzy: React.FC = () => {
         onPointerDown={handlePointerDown}
         className="relative flex-1 w-full h-full overflow-hidden cursor-pointer touch-none"
       >
-        <canvas ref={initCanvas} className="w-full h-full block" />
+        <canvas ref={canvasRef} className="w-full h-full block" />
 
         {/* Top Floating Telemetry */}
         <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">

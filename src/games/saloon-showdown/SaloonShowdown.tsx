@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
 import { SaloonTarget, BulletHole, Particle, SaloonGameState } from './types';
 import { SaloonEngine, SaloonSlot } from './engine';
@@ -45,26 +45,36 @@ export const SaloonShowdown: React.FC = () => {
   const spawnTimerRef = useRef<number>(0);
   const gameTimeRef = useRef<number>(0);
 
-  const initCanvas = (canvas: HTMLCanvasElement | null) => {
+  const toggleDeadEye = () => {
+    if (stateRef.current.deadEyeMeter > 20) {
+      stateRef.current.isDeadEyeActive = !stateRef.current.isDeadEyeActive;
+      if (stateRef.current.isDeadEyeActive) {
+        saloonAudio.playHeartbeat();
+      }
+      setHudState({ ...stateRef.current });
+    }
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-    canvasRef.current = canvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const resize = () => {
+    const handleResize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvasRef.current.width = rect.width * dpr;
-      canvasRef.current.height = rect.height * dpr;
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
+      const w = Math.max(400, Math.floor(rect.width));
+      const h = Math.max(300, Math.floor(rect.height));
 
-      slotsRef.current = SaloonEngine.getSlots(rect.width, rect.height);
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
+
+      slotsRef.current = SaloonEngine.getSlots(w, h);
     };
 
-    resize();
-    const observer = new ResizeObserver(resize);
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
 
     // Keyboard controls
@@ -81,10 +91,15 @@ export const SaloonShowdown: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
 
+    let lastUiSync = 0;
+
     // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
+
+      const width = canvasRef.current?.width || 800;
+      const height = canvasRef.current?.height || 600;
 
       if (!stateRef.current.isPaused && !stateRef.current.isGameOver) {
         // Dead-Eye slows time by 75%
@@ -135,15 +150,18 @@ export const SaloonShowdown: React.FC = () => {
           bulletHolesRef.current.splice(0, bulletHolesRef.current.length - 25);
         }
 
-        setHudState({ ...stateRef.current });
+        // Throttled UI sync
+        if (now - lastUiSync > 100) {
+          lastUiSync = now;
+          setHudState({ ...stateRef.current });
+        }
       }
 
       // Render
-      const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
       SaloonRenderer.render(
         ctx,
-        rect.width,
-        rect.height,
+        width,
+        height,
         slotsRef.current,
         targetsRef.current,
         bulletHolesRef.current,
@@ -157,17 +175,13 @@ export const SaloonShowdown: React.FC = () => {
     };
 
     animFrameRef.current = requestAnimationFrame(loop);
-  };
 
-  const toggleDeadEye = () => {
-    if (stateRef.current.deadEyeMeter > 20) {
-      stateRef.current.isDeadEyeActive = !stateRef.current.isDeadEyeActive;
-      if (stateRef.current.isDeadEyeActive) {
-        saloonAudio.playHeartbeat();
-      }
-      setHudState({ ...stateRef.current });
-    }
-  };
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('keydown', handleKeyDown);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -229,7 +243,7 @@ export const SaloonShowdown: React.FC = () => {
         onContextMenu={(e) => e.preventDefault()}
         className="relative flex-1 w-full h-full overflow-hidden cursor-none touch-none"
       >
-        <canvas ref={initCanvas} className="w-full h-full block" />
+        <canvas ref={canvasRef} className="w-full h-full block" />
 
         {/* Top Floating HUD */}
         <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">

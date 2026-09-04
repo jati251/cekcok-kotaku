@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
 import { Fish, BonusItem, HazardJellyfish, Particle, FrenzyGameState, TIER_CONFIGS } from './types';
 import { FrenzyPhysics } from './physics';
@@ -58,29 +58,25 @@ export const FeedingFrenzy: React.FC = () => {
   const bonusTimerRef = useRef<number>(0);
   const gameTimeRef = useRef<number>(0);
 
-  // Initialize Game Loop & ResizeObserver using ref callback
-  const initCanvas = (canvas: HTMLCanvasElement | null) => {
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-    canvasRef.current = canvas;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const resize = () => {
+    const handleResize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvasRef.current.width = rect.width * dpr;
-      canvasRef.current.height = rect.height * dpr;
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
+      const w = Math.max(400, Math.floor(rect.width));
+      const h = Math.max(300, Math.floor(rect.height));
+
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
     };
 
-    resize();
-    const observer = new ResizeObserver(resize);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) observer.observe(containerRef.current);
 
     // Keyboard handlers
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -101,16 +97,18 @@ export const FeedingFrenzy: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
+    let lastUiSync = 0;
+
     // Main Game Loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
 
+      const width = canvasRef.current?.width || 800;
+      const height = canvasRef.current?.height || 600;
+
       if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
         gameTimeRef.current += dt;
-        const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
-        const width = rect.width;
-        const height = rect.height;
 
         // 1. Update Player
         FrenzyPhysics.updatePlayer(
@@ -205,16 +203,18 @@ export const FeedingFrenzy: React.FC = () => {
         );
         FrenzyPhysics.updateFrenzyMeter(stateRef.current, dt);
 
-        // Sync React HUD state
-        setHudState({ ...stateRef.current });
+        // Throttled UI sync
+        if (now - lastUiSync > 100) {
+          lastUiSync = now;
+          setHudState({ ...stateRef.current });
+        }
       }
 
       // Render Scene
-      const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
       FrenzyRenderer.render(
         ctx,
-        rect.width,
-        rect.height,
+        width,
+        height,
         playerRef.current,
         npcListRef.current,
         bonusesRef.current,
@@ -227,7 +227,14 @@ export const FeedingFrenzy: React.FC = () => {
     };
 
     animFrameRef.current = requestAnimationFrame(loop);
-  };
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -293,7 +300,7 @@ export const FeedingFrenzy: React.FC = () => {
         onPointerUp={handlePointerUp}
         className="relative flex-1 w-full h-full overflow-hidden cursor-crosshair touch-none"
       >
-        <canvas ref={initCanvas} className="w-full h-full block" />
+        <canvas ref={canvasRef} className="w-full h-full block" />
 
         {/* HUD Overlay */}
         <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">

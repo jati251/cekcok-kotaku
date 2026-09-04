@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ArcadeHeader } from '../arcade-2d/ArcadeHeader';
 import {
   Guppy,
@@ -93,37 +93,39 @@ export const Insaniquarium: React.FC = () => {
   const lastTimeRef = useRef<number>(performance.now());
   const gameTimeRef = useRef<number>(0);
 
-  const initCanvas = (canvas: HTMLCanvasElement | null) => {
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-    canvasRef.current = canvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const resize = () => {
+    const handleResize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvasRef.current.width = rect.width * dpr;
-      canvasRef.current.height = rect.height * dpr;
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
-      snailRef.current.y = rect.height - 35;
+      const w = Math.max(400, Math.floor(rect.width));
+      const h = Math.max(300, Math.floor(rect.height));
+
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
+      snailRef.current.y = h - 35;
     };
 
-    resize();
-    const observer = new ResizeObserver(resize);
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
+
+    let lastUiSync = 0;
 
     // Game loop
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
 
+      const width = canvasRef.current?.width || 800;
+      const height = canvasRef.current?.height || 600;
+
       if (!stateRef.current.isPaused && !stateRef.current.isGameOver && !stateRef.current.isVictory) {
         gameTimeRef.current += dt;
-        const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
-        const width = rect.width;
-        const height = rect.height;
 
         // Alien Spawn Timer
         stateRef.current.alienSpawnTimer -= dt;
@@ -217,15 +219,18 @@ export const Insaniquarium: React.FC = () => {
           stateRef.current.isGameOver = true;
         }
 
-        setHudState({ ...stateRef.current });
+        // Throttled UI sync
+        if (now - lastUiSync > 100) {
+          lastUiSync = now;
+          setHudState({ ...stateRef.current });
+        }
       }
 
       // Render
-      const rect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
       AquariumRenderer.render(
         ctx,
-        rect.width,
-        rect.height,
+        width,
+        height,
         guppiesRef.current,
         carnivoresRef.current,
         pelletsRef.current,
@@ -241,7 +246,12 @@ export const Insaniquarium: React.FC = () => {
     };
 
     animFrameRef.current = requestAnimationFrame(loop);
-  };
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   const handleCanvasClick = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -459,7 +469,7 @@ export const Insaniquarium: React.FC = () => {
         onPointerDown={handleCanvasClick}
         className="relative flex-1 w-full h-full overflow-hidden cursor-crosshair touch-none"
       >
-        <canvas ref={initCanvas} className="w-full h-full block" />
+        <canvas ref={canvasRef} className="w-full h-full block" />
 
         {/* Alien Attack Siren Banner */}
         {hudState.isAlienAttacking && (
