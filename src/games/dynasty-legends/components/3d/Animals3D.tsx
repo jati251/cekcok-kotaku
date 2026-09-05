@@ -1,6 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { proceduralTextures } from './textures/proceduralTextures';
 
 // Individual 3D Han Warhorse (Cavalry Steed)
 export const Warhorse3D: React.FC<{
@@ -20,6 +21,7 @@ export const Warhorse3D: React.FC<{
   const headRef = useRef<THREE.Group>(null);
   const tailRef = useRef<THREE.Mesh>(null);
   const animOffset = useMemo(() => Math.random() * Math.PI * 2, []);
+  const coatTex = useMemo(() => proceduralTextures.getHorseCoatTexture(coatColor), [coatColor]);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime() + animOffset;
@@ -42,7 +44,7 @@ export const Warhorse3D: React.FC<{
       {/* 1. Muscular Horse Torso / Barrel */}
       <mesh position={[0, 1.3, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.75, 0.85, 1.8]} />
-        <meshStandardMaterial color={coatColor} roughness={0.7} />
+        <meshStandardMaterial map={coatTex} color={coatColor} roughness={0.7} />
       </mesh>
 
       {/* Rump / Haunches rounding */}

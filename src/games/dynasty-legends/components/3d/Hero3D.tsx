@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { HeroType } from '../../types';
 import type { HeroState3D } from '../../engine/dynasty3dEngine';
 import { proceduralTextures } from './textures/proceduralTextures';
+import { HeroWeapons3D } from './HeroWeapons3D';
+import { HeroHead3D } from './HeroHead3D';
 
 interface Hero3DProps {
   player: HeroState3D;
@@ -368,52 +370,13 @@ export const Hero3D: React.FC<Hero3DProps> = ({ player }) => {
           <meshStandardMaterial color={heroColorConfig.robe} side={THREE.DoubleSide} roughness={0.7} />
         </mesh>
 
-        {/* Head Group with Ancient Chinese Warrior Helmet */}
-        <group ref={headRef} position={[0, 0.82, 0]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.19, 14, 14]} />
-            <meshStandardMaterial color="#fed7aa" roughness={0.6} />
-          </mesh>
-
-          {/* Heavy Warrior Helmet with Crest & Forehead Visor */}
-          <mesh position={[0, 0.12, -0.02]} castShadow>
-            <cylinderGeometry args={[0.18, 0.22, 0.18, 14]} />
-            <meshStandardMaterial color={heroColorConfig.armor} metalness={0.85} roughness={0.2} />
-          </mesh>
-          <mesh position={[0, 0.22, 0.02]}>
-            <coneGeometry args={[0.08, 0.22, 6]} />
-            <meshStandardMaterial color={heroColorConfig.trim} metalness={0.9} />
-          </mesh>
-
-          {/* Guan Yu's Majestic Flowing Beard & Cap */}
-          {player.heroType === HeroType.GUAN_YU && (
-            <group>
-              <mesh ref={beardRef} position={[0, -0.25, 0.14]}>
-                <coneGeometry args={[0.12, 0.55, 8]} />
-                <meshStandardMaterial color="#0f172a" roughness={0.9} />
-              </mesh>
-              {/* Green Daoist Silk Headband */}
-              <mesh position={[0, 0.12, 0]}>
-                <cylinderGeometry args={[0.2, 0.21, 0.12, 12]} />
-                <meshStandardMaterial color="#166534" roughness={0.8} />
-              </mesh>
-            </group>
-          )}
-
-          {/* Lu Bu's Iconic Twin Pheasant Feathers (1.2m tall dramatic plumes) */}
-          {player.heroType === HeroType.LU_BU && (
-            <group ref={feathersRef} position={[0, 0.25, 0]}>
-              <mesh position={[-0.14, 0.65, -0.08]} rotation={[0.25, 0, -0.32]}>
-                <cylinderGeometry args={[0.015, 0.035, 1.2, 6]} />
-                <meshStandardMaterial color="#ef4444" roughness={0.4} />
-              </mesh>
-              <mesh position={[0.14, 0.65, -0.08]} rotation={[0.25, 0, 0.32]}>
-                <cylinderGeometry args={[0.015, 0.035, 1.2, 6]} />
-                <meshStandardMaterial color="#ef4444" roughness={0.4} />
-              </mesh>
-            </group>
-          )}
-        </group>
+        <HeroHead3D
+          headRef={headRef}
+          beardRef={beardRef}
+          feathersRef={feathersRef}
+          heroType={player.heroType}
+          heroColorConfig={heroColorConfig}
+        />
 
         {/* Tiered Winged Shoulder Pauldrons */}
         <group position={[-0.36, 0.58, 0]} rotation={[0, 0, -0.35]}>
@@ -472,107 +435,7 @@ export const Hero3D: React.FC<Hero3DProps> = ({ player }) => {
 
           {/* Weapon Mount */}
           <group ref={weaponRef} position={[0, -0.42, 0.1]}>
-            {/* Heavy Weapon Pole / Shaft */}
-            <mesh position={[0, 0.75, 0]} rotation={[Math.PI * 0.08, 0, 0]}>
-              <cylinderGeometry args={[0.035, 0.035, 2.5, 8]} />
-              <meshStandardMaterial map={woodTex} color="#451a03" roughness={0.8} />
-            </mesh>
-
-            {/* Authentic Dynasty Warriors 5 Weapon Models */}
-            {player.heroType === HeroType.GUAN_YU && (
-              // Green Dragon Crescent Blade (Guandao)
-              <group position={[0, 1.85, 0]} rotation={[0, -0.4, 0.12]}>
-                {/* Golden Dragon Head Socket (Long Kou) */}
-                <mesh position={[0, 0.1, 0]}>
-                  <boxGeometry args={[0.12, 0.22, 0.1]} />
-                  <meshStandardMaterial color="#eab308" metalness={0.9} roughness={0.25} />
-                </mesh>
-                {/* Main Forged Steel Crescent Blade */}
-                <mesh position={[0.1, 0.7, 0]} rotation={[0, 0, 0.1]}>
-                  <boxGeometry args={[0.16, 1.1, 0.025]} />
-                  <meshStandardMaterial
-                    color="#cbd5e1"
-                    metalness={0.95}
-                    roughness={0.15}
-                  />
-                </mesh>
-                {/* Jade Green Dragon Spine Inlay */}
-                <mesh position={[0.04, 0.68, 0]} rotation={[0, 0, 0.1]}>
-                  <boxGeometry args={[0.06, 1.05, 0.03]} />
-                  <meshStandardMaterial
-                    color="#15803d"
-                    metalness={0.7}
-                    roughness={0.3}
-                  />
-                </mesh>
-                {/* Flowing Red Silk Tassel */}
-                <mesh position={[-0.06, 0.05, 0]}>
-                  <coneGeometry args={[0.07, 0.4, 6]} />
-                  <meshStandardMaterial color="#b91c1c" roughness={0.8} />
-                </mesh>
-              </group>
-            )}
-
-            {player.heroType === HeroType.ZHAO_YUN && (
-              // Fierce Dragon Spear with Red/Cyan Tassel
-              <group position={[0, 1.9, 0]}>
-                <mesh position={[0, 0.45, 0]}>
-                  <coneGeometry args={[0.12, 0.95, 6]} />
-                  <meshStandardMaterial
-                    color="#38bdf8"
-                    metalness={0.95}
-                    roughness={0.1}
-                    emissive="#0284c7"
-                    emissiveIntensity={0.6}
-                  />
-                </mesh>
-                {/* Red Spear Tassel */}
-                <mesh position={[0, -0.05, 0]}>
-                  <coneGeometry args={[0.1, 0.35, 6]} />
-                  <meshStandardMaterial color="#ef4444" roughness={0.9} />
-                </mesh>
-              </group>
-            )}
-
-            {player.heroType === HeroType.LU_BU && (
-              // Sky Piercer Halberd (Twin Crescent Blades + Heavy Spike)
-              <group position={[0, 1.85, 0]}>
-                <mesh position={[0, 0.5, 0]}>
-                  <coneGeometry args={[0.12, 1.1, 4]} />
-                  <meshStandardMaterial
-                    color="#ef4444"
-                    metalness={0.92}
-                    emissive="#dc2626"
-                    emissiveIntensity={0.7}
-                  />
-                </mesh>
-                {/* Left Crescent */}
-                <mesh position={[-0.24, 0.1, 0]} rotation={[0, 0, 0.6]}>
-                  <torusGeometry args={[0.24, 0.035, 6, 14, Math.PI]} />
-                  <meshStandardMaterial color="#f59e0b" metalness={0.9} />
-                </mesh>
-                {/* Right Crescent */}
-                <mesh position={[0.24, 0.1, 0]} rotation={[0, 0, -0.6]}>
-                  <torusGeometry args={[0.24, 0.035, 6, 14, Math.PI]} />
-                  <meshStandardMaterial color="#f59e0b" metalness={0.9} />
-                </mesh>
-              </group>
-            )}
-
-            {player.heroType === HeroType.LU_XUN && (
-              // Twin Flame Swallow Blade
-              <group position={[0, 1.2, 0]}>
-                <mesh>
-                  <boxGeometry args={[0.1, 1.3, 0.03]} />
-                  <meshStandardMaterial
-                    color="#f97316"
-                    metalness={0.9}
-                    emissive="#ea580c"
-                    emissiveIntensity={0.65}
-                  />
-                </mesh>
-              </group>
-            )}
+            <HeroWeapons3D heroType={player.heroType} woodTex={woodTex} />
           </group>
         </group>
       </group>

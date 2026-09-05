@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { AlliedSoldier3D } from '../../engine/dynasty3dEngine';
+import { proceduralTextures } from './textures/proceduralTextures';
 
 interface AlliedTroops3DProps {
   allies: AlliedSoldier3D[];
@@ -14,6 +15,8 @@ const AlliedSoldierUnit3D: React.FC<{ soldier: AlliedSoldier3D }> = ({ soldier }
   const rightArmRef = useRef<THREE.Group>(null);
   const lastPosRef = useRef({ x: soldier.position.x, z: soldier.position.z });
   const walkPhaseRef = useRef<number>(Math.random() * Math.PI * 2);
+  const armorTex = useMemo(() => proceduralTextures.getWarriorArmorTexture('#1e40af'), []);
+  const woodTex = useMemo(() => proceduralTextures.getWoodTexture(), []);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -56,7 +59,7 @@ const AlliedSoldierUnit3D: React.FC<{ soldier: AlliedSoldier3D }> = ({ soldier }
       {/* Iron Cuirass Plate */}
       <mesh position={[0, 0.74, 0.02]}>
         <boxGeometry args={[0.44, 0.4, 0.29]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        <meshStandardMaterial map={armorTex} color="#334155" metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Head with Imperial Han Helmet */}
@@ -95,7 +98,7 @@ const AlliedSoldierUnit3D: React.FC<{ soldier: AlliedSoldier3D }> = ({ soldier }
           {/* Spear Shaft */}
           <mesh position={[0, 0.45, 0]}>
             <cylinderGeometry args={[0.022, 0.022, 1.6, 6]} />
-            <meshStandardMaterial color="#451a03" roughness={0.8} />
+            <meshStandardMaterial map={woodTex} color="#451a03" roughness={0.8} />
           </mesh>
           {/* Iron Spearhead */}
           <mesh position={[0, 1.3, 0]}>

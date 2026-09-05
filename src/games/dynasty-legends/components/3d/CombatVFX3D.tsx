@@ -14,17 +14,29 @@ interface CombatVFX3DProps {
   arrows: Arrow3D[];
 }
 
-// Dynamic Sparks spawned from weapon slashes (Incandescent shower)
+// 1. Shared Static Geometries (Zero GPU allocations per frame to prevent WebGL context crash)
+const SPARK_PLANE_GEO = new THREE.PlaneGeometry(1, 1);
+const SLASH_ARC_GEO = new THREE.RingGeometry(0.75, 1.0, 32, 1, 0, Math.PI * 0.85);
+const SLASH_CORE_GEO = new THREE.RingGeometry(0.88, 1.0, 32, 1, 0, Math.PI * 0.85);
+const SHOCKWAVE_RING_GEO = new THREE.RingGeometry(0.75, 1.0, 32);
+const SHOCKWAVE_DUST_GEO = new THREE.RingGeometry(0.85, 1.0, 24);
+const DEBRIS_GEO = new THREE.DodecahedronGeometry(1, 0);
+const FIRE_CIRCLE_GEO = new THREE.CircleGeometry(1, 24);
+const FIRE_RING_GEO = new THREE.RingGeometry(0.75, 1.0, 24);
+const ARROW_SHAFT_GEO = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 6);
+const ARROW_HEAD_GEO = new THREE.ConeGeometry(0.05, 0.15, 6);
+
+// Dynamic Spark Shower with Zero Allocation
 const SlashSparkShower3D: React.FC<{ slash: SlashEffect3D }> = ({ slash }) => {
   const progress = Math.min(1, slash.progress / slash.maxLife);
   const opacity = Math.max(0, 1 - progress);
 
-  // Generate 24 dynamic spark offsets based on slash id
+  // Precalculated 16 sparks with deterministic trajectories
   const sparks = React.useMemo(() => {
     const seed = Number(slash.id.replace(/\D/g, '').slice(-4) || '10');
-    return Array.from({ length: 24 }).map((_, i) => {
-      const angle = (i / 24) * Math.PI * 1.4 - 0.5;
-      const speed = 2.2 + ((seed + i * 11) % 15) * 0.22;
+    return Array.from({ length: 16 }).map((_, i) => {
+      const angle = (i / 16) * Math.PI * 1.4 - 0.5;
+      const speed = 2.0 + ((seed + i * 11) % 15) * 0.2;
       const lift = 0.4 + ((seed + i * 5) % 8) * 0.2;
       const col =
         i % 4 === 0
@@ -41,15 +53,19 @@ const SlashSparkShower3D: React.FC<{ slash: SlashEffect3D }> = ({ slash }) => {
   return (
     <group position={[slash.position.x, slash.position.y + 1.0, slash.position.z]} rotation={[0, slash.rotationY, 0]}>
       {sparks.map((sp, idx) => {
-        const r = slash.radius * 0.6 + progress * sp.speed * 2.8;
+        const r = slash.radius * 0.6 + progress * sp.speed * 2.5;
         const x = Math.sin(sp.angle) * r;
         const z = Math.cos(sp.angle) * r;
-        const y = progress * sp.lift * 2.2 - (progress * 1.8) ** 2 * 0.5; // gravity arc
-        const pScale = Math.max(0.02, 0.14 * (1 - progress));
+        const y = progress * sp.lift * 2.0 - (progress * 1.6) ** 2 * 0.5;
+        const s = Math.max(0.02, 0.3 * (1 - progress));
 
         return (
-          <mesh key={idx} position={[x, y, z]}>
-            <planeGeometry args={[pScale * 2.2, pScale * 2.2]} />
+          <mesh
+            key={idx}
+            position={[x, y, z]}
+            scale={[s, s, s]}
+            geometry={SPARK_PLANE_GEO}
+          >
             <meshBasicMaterial color={sp.col} transparent opacity={opacity} side={THREE.DoubleSide} />
           </mesh>
         );
@@ -70,19 +86,17 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
       {slashes.map((slash) => {
         const progress = Math.min(1, slash.progress / slash.maxLife);
         const opacity = Math.max(0, 1 - progress);
-        const arcRadius = slash.radius * (0.8 + progress * 0.4);
+        const arcRadius = slash.radius * (0.8 + progress * 0.35);
 
         return (
           <group key={slash.id}>
             <group
               position={[slash.position.x, slash.position.y + 1.0, slash.position.z]}
               rotation={[0, slash.rotationY, slash.isCharge ? -0.2 : 0.1]}
+              scale={[arcRadius, arcRadius, arcRadius]}
             >
               {/* Glowing Slash Arc Mesh */}
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry
-                  args={[arcRadius - 0.5, arcRadius + 0.3, 32, 1, 0, Math.PI * 0.85]}
-                />
+              <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={SLASH_ARC_GEO}>
                 <meshBasicMaterial
                   color={slash.color}
                   side={THREE.DoubleSide}
@@ -92,10 +106,7 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
               </mesh>
 
               {/* Inner Core Bright Edge */}
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry
-                  args={[arcRadius - 0.1, arcRadius + 0.1, 32, 1, 0, Math.PI * 0.85]}
-                />
+              <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={SLASH_CORE_GEO}>
                 <meshBasicMaterial
                   color="#ffffff"
                   side={THREE.DoubleSide}
@@ -123,8 +134,9 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
             <mesh
               position={[wave.position.x, 0.05, wave.position.z]}
               rotation={[-Math.PI / 2, 0, 0]}
+              scale={[currentRadius, currentRadius, 1]}
+              geometry={SHOCKWAVE_RING_GEO}
             >
-              <ringGeometry args={[Math.max(0.1, currentRadius - 0.6), currentRadius, 36]} />
               <meshBasicMaterial
                 color={wave.color}
                 side={THREE.DoubleSide}
@@ -137,8 +149,9 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
             <mesh
               position={[wave.position.x, 0.12, wave.position.z]}
               rotation={[-Math.PI / 2, 0, 0]}
+              scale={[currentRadius * 1.05, currentRadius * 1.05, 1]}
+              geometry={SHOCKWAVE_DUST_GEO}
             >
-              <ringGeometry args={[Math.max(0.1, currentRadius - 0.25), currentRadius + 0.3, 24]} />
               <meshBasicMaterial
                 color="#78716c"
                 side={THREE.DoubleSide}
@@ -147,14 +160,19 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
               />
             </mesh>
 
-            {/* Flying Earth/Stone Debris Chunks */}
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-              const a = (i / 8) * Math.PI * 2 + wave.id.length;
+            {/* Flying Earth/Stone Debris Chunks (Scaled static dodecahedrons) */}
+            {[0, 1, 2, 3, 4, 5].map((i) => {
+              const a = (i / 6) * Math.PI * 2;
               const r = currentRadius * 0.85;
-              const h = Math.sin(progress * Math.PI) * 1.6 * (0.8 + (i % 3) * 0.4);
+              const h = Math.sin(progress * Math.PI) * 1.5 * (0.8 + (i % 3) * 0.3);
+              const s = Math.max(0.04, 0.16 * (1 - progress * 0.5));
               return (
-                <mesh key={i} position={[wave.position.x + Math.sin(a) * r, h, wave.position.z + Math.cos(a) * r]}>
-                  <dodecahedronGeometry args={[0.16 * (1 - progress * 0.5), 0]} />
+                <mesh
+                  key={i}
+                  position={[wave.position.x + Math.sin(a) * r, h, wave.position.z + Math.cos(a) * r]}
+                  scale={[s, s, s]}
+                  geometry={DEBRIS_GEO}
+                >
                   <meshBasicMaterial color="#57534e" transparent opacity={opacity * 0.9} />
                 </mesh>
               );
@@ -169,9 +187,12 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
         const opacity = Math.sin(progress * Math.PI) * 0.6;
 
         return (
-          <group key={fire.id} position={[fire.position.x, 0.04, fire.position.z]}>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[fire.radius, 24]} />
+          <group
+            key={fire.id}
+            position={[fire.position.x, 0.04, fire.position.z]}
+            scale={[fire.radius, fire.radius, 1]}
+          >
+            <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={FIRE_CIRCLE_GEO}>
               <meshBasicMaterial
                 color="#ea580c"
                 side={THREE.DoubleSide}
@@ -179,8 +200,7 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
                 opacity={opacity}
               />
             </mesh>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[fire.radius - 0.4, fire.radius, 24]} />
+            <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={FIRE_RING_GEO}>
               <meshBasicMaterial
                 color="#fbbf24"
                 side={THREE.DoubleSide}
@@ -197,13 +217,11 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
         return (
           <group key={arr.id} position={[arr.position.x, arr.position.y, arr.position.z]}>
             {/* Arrow Shaft */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.02, 0.02, 0.8, 6]} />
+            <mesh rotation={[Math.PI / 2, 0, 0]} geometry={ARROW_SHAFT_GEO}>
               <meshStandardMaterial color="#78350f" />
             </mesh>
             {/* Arrowhead */}
-            <mesh position={[0, 0, 0.45]} rotation={[Math.PI / 2, 0, 0]}>
-              <coneGeometry args={[0.05, 0.15, 6]} />
+            <mesh position={[0, 0, 0.45]} rotation={[Math.PI / 2, 0, 0]} geometry={ARROW_HEAD_GEO}>
               <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
             </mesh>
           </group>

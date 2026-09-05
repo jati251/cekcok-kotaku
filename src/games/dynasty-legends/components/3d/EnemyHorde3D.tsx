@@ -186,6 +186,7 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
   const renderColor = isHitFlash ? '#ffffff' : mainColor;
   const strawHatTex = useMemo(() => proceduralTextures.getStrawHatTexture(), []);
   const woodTex = useMemo(() => proceduralTextures.getWoodTexture(), []);
+  const armorTex = useMemo(() => proceduralTextures.getWarriorArmorTexture(mainColor), [mainColor]);
 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]}>
@@ -215,6 +216,7 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
         <mesh position={[0, 0.05, 0.02]}>
           <boxGeometry args={[0.44, 0.42, 0.3]} />
           <meshStandardMaterial
+            map={armorTex}
             color={isBoss ? '#450a0a' : isCaptain ? '#1e293b' : '#451a03'}
             metalness={isCaptain || isBoss ? 0.8 : 0.3}
             roughness={0.4}
