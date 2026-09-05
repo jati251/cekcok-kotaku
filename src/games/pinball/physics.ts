@@ -327,18 +327,15 @@ export class PinballEngine {
       }
     }
 
-    // 4. Update Balls physics
+    // 4. Update Balls physics with 8x Sub-stepping for Continuous Collision Detection (CCD)
+    const SUB_STEPS = 8;
+    const subGravity = this.gravity / SUB_STEPS;
+    const maxSpeed = 18;
+
     for (let i = this.balls.length - 1; i >= 0; i--) {
       const b = this.balls[i];
 
-      b.vy += this.gravity;
-      b.vx *= 0.998;
-      b.vy *= 0.998;
-
-      b.x += b.vx;
-      b.y += b.vy;
-
-      // Add motion trail
+      // Add motion trail once per frame
       if (Math.hypot(b.vx, b.vy) > 3) {
         b.trail.push({ x: b.x, y: b.y, alpha: 0.6 });
       }
@@ -347,20 +344,71 @@ export class PinballEngine {
         if (b.trail[t].alpha <= 0) b.trail.splice(t, 1);
       }
 
-      // Plunger lane constraint
-      if (b.x > 395) {
-        if (b.y > 640) {
+      // Sub-stepping loop
+      for (let step = 0; step < SUB_STEPS; step++) {
+        b.vy += subGravity;
+        b.vx *= 0.9997;
+        b.vy *= 0.9997;
+
+        // Velocity speed limiter (prevents tunneling through walls)
+        const spd = Math.hypot(b.vx, b.vy);
+        if (spd > maxSpeed) {
+          b.vx = (b.vx / spd) * maxSpeed;
+          b.vy = (b.vy / spd) * maxSpeed;
+        }
+
+        // Advance sub-step position
+        b.x += b.vx / SUB_STEPS;
+        b.y += b.vy / SUB_STEPS;
+
+        // Plunger lane bottom rest
+        if (b.x > 395 && b.y > 640) {
           b.y = 640;
           b.vy = 0;
         }
+
+        // Wall collisions
+        for (const wall of this.walls) {
+          this.checkWallCollision(b, wall);
+        }
+
+        // Flippers
+        if (!this.isTilted) {
+          this.checkFlipperCollision(b, this.leftFlipper);
+          this.checkFlipperCollision(b, this.rightFlipper);
+        }
+
+        // Strict Arena Boundary Containment (prevents ball from ever flying outside arena)
+        // 1. Left outer wall clamp
+        if (b.x < 28 + b.radius) {
+          b.x = 28 + b.radius;
+          b.vx = Math.abs(b.vx) * 0.7;
+        }
+        // 2. Right outer wall clamp
+        if (b.x > 428 - b.radius) {
+          b.x = 428 - b.radius;
+          b.vx = -Math.abs(b.vx) * 0.7;
+        }
+        // 3. Top ceiling clamp
+        if (b.y < 32 + b.radius) {
+          b.y = 32 + b.radius;
+          b.vy = Math.abs(b.vy) * 0.7;
+        }
+        // 4. Plunger lane separator (one-way gate from top)
+        if (b.y > 175 && b.y < 650) {
+          if (b.x > 395 - b.radius && b.x < 395) {
+            // Rebound back left into main playfield
+            b.x = 395 - b.radius;
+            b.vx = -Math.abs(b.vx) * 0.75;
+          } else if (b.x > 395 && b.x < 395 + b.radius) {
+            // Inside shooter lane: rebound right
+            b.x = 395 + b.radius;
+            b.vx = Math.abs(b.vx) * 0.75;
+          }
+        }
       }
 
-      // Wall collisions
-      for (const wall of this.walls) {
-        this.checkWallCollision(b, wall);
-      }
-
-      // Bumpers
+      // Bumpers (checked per-frame)
       for (const bmp of this.bumpers) {
         if (bmp.hitTimer > 0) bmp.hitTimer--;
 
@@ -379,12 +427,6 @@ export class PinballEngine {
           this.spawnParticles(bmp.x, bmp.y, 16, bmp.color);
           pinballAudio.bumper();
         }
-      }
-
-      // Flippers
-      if (!this.isTilted) {
-        this.checkFlipperCollision(b, this.leftFlipper);
-        this.checkFlipperCollision(b, this.rightFlipper);
       }
 
       // Rollover Lanes Check
@@ -460,8 +502,7 @@ export class PinballEngine {
       if (this.vortex.active && this.vortex.captureTimer === 0) {
         const vDist = Math.hypot(b.x - this.vortex.x, b.y - this.vortex.y);
         if (vDist < this.vortex.radius + 4 && Math.hypot(b.vx, b.vy) < 9) {
-          // Ball falls into sinkhole!
-          this.vortex.captureTimer = 85; // ~1.5s lock
+          this.vortex.captureTimer = 85;
           this.addScore(5000 * this.multiplier);
           this.addPopup('VORTEX LOCK!', this.vortex.x, this.vortex.y - 15, '#c084fc');
           this.setDMD('*** VORTEX LOCK: CHARGING CORE ***');
@@ -545,8 +586,16 @@ export class PinballEngine {
     const dist = Math.hypot(dx, dy);
 
     if (dist < b.radius) {
-      const nx = dist === 0 ? 0 : dx / dist;
-      const ny = dist === 0 ? -1 : dy / dist;
+      let nx = dist === 0 ? 0 : dx / dist;
+      let ny = dist === 0 ? -1 : dy / dist;
+
+      // Ensure normal points inwards toward table center (220, 350)
+      const toCenterX = 220 - closestX;
+      const toCenterY = 350 - closestY;
+      if (nx * toCenterX + ny * toCenterY < -0.01) {
+        nx = -nx;
+        ny = -ny;
+      }
 
       b.x = closestX + nx * b.radius;
       b.y = closestY + ny * b.radius;
@@ -588,8 +637,14 @@ export class PinballEngine {
     const dist = Math.hypot(dx, dy);
 
     if (dist < b.radius + 6) {
-      const nx = dist === 0 ? 0 : dx / dist;
-      const ny = dist === 0 ? -1 : dy / dist;
+      let nx = dist === 0 ? 0 : dx / dist;
+      let ny = dist === 0 ? -1 : dy / dist;
+
+      // Flippers must always launch the ball UPWARDS into the table (ny must be negative)
+      if (ny > 0) {
+        nx = -nx;
+        ny = -ny;
+      }
 
       b.x = closestX + nx * (b.radius + 6);
       b.y = closestY + ny * (b.radius + 6);
