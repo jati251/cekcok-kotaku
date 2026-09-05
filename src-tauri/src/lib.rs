@@ -17,6 +17,7 @@ use games::ninja_saga::{
     calculate_ninja_damage, calculate_ninja_rewards, decide_ninja_ai_turn,
     resolve_ninja_turn_effects,
 };
+use games::pacman::simulate_pacman_tick;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -50,6 +51,8 @@ pub fn run() {
             // Nightclub City Engine
             simulate_club_tick,
             calculate_dj_track_hype,
+            // Pacman Classic Engine
+            simulate_pacman_tick,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

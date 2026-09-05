@@ -127,7 +127,7 @@ export function createInitialGhosts(): GhostEntity[] {
   ];
 }
 
-export function createInitialGameState(highScore: number = 10000): {
+export function createInitialGameState(highScore: number = 10000, level: number = 1): {
   gameState: PacmanGameState;
   maze: number[][];
   pacman: PacmanEntity;
@@ -143,7 +143,7 @@ export function createInitialGameState(highScore: number = 10000): {
       score: 0,
       highScore,
       lives: 3,
-      level: 1,
+      level,
       dotsRemaining: total,
       totalDots: total,
       status: 'ready',
@@ -244,21 +244,10 @@ export function updatePacman(
   const centerTileX = (currentTileX + 0.5) * TILE_SIZE;
   const centerTileY = (currentTileY + 0.5) * TILE_SIZE;
 
-  // If stopped (pacman.dir === 'NONE'), start moving immediately in nextDir if path is clear
-  if (pacman.dir === 'NONE' && pacman.nextDir !== 'NONE') {
-    const offset = DIR_OFFSETS[pacman.nextDir];
-    if (!isWallOrGate(currentTileX + offset.dx, currentTileY + offset.dy, maze, false)) {
-      pacman.x = centerTileX;
-      pacman.y = centerTileY;
-      pacman.dir = pacman.nextDir;
-      pacman.nextDir = 'NONE';
-    }
-  }
-
-  // If turning perpendicular, snap to center of tile when close enough
+  // Cornering: if requested nextDir is perpendicular or Pacman is stopped
   if (pacman.nextDir !== 'NONE' && pacman.nextDir !== pacman.dir) {
     const distToCenter = Math.hypot(pacman.x - centerTileX, pacman.y - centerTileY);
-    if (distToCenter <= 6.5) {
+    if (distToCenter <= 7.0 || pacman.dir === 'NONE') {
       const offset = DIR_OFFSETS[pacman.nextDir];
       if (!isWallOrGate(currentTileX + offset.dx, currentTileY + offset.dy, maze, false)) {
         pacman.x = centerTileX;
@@ -269,24 +258,32 @@ export function updatePacman(
     }
   }
 
-  // Move in current direction
+  // Move in current direction with wall-clamping
   if (pacman.dir !== 'NONE') {
     const offset = DIR_OFFSETS[pacman.dir];
-    const nextX = pacman.x + offset.dx * pacman.speed;
-    const nextY = pacman.y + offset.dy * pacman.speed;
+    const nextTileX = currentTileX + offset.dx;
+    const nextTileY = currentTileY + offset.dy;
+    const nextTileIsWall = isWallOrGate(nextTileX, nextTileY, maze, false);
 
-    // Check collision in current direction
-    const checkTileX = Math.floor((nextX + offset.dx * (TILE_SIZE * 0.45)) / TILE_SIZE);
-    const checkTileY = Math.floor((nextY + offset.dy * (TILE_SIZE * 0.45)) / TILE_SIZE);
+    if (nextTileIsWall) {
+      // Wall ahead: advance only up to centerTile and stop
+      let reachedCenter = false;
+      if (pacman.dir === 'LEFT' && (pacman.x - pacman.speed) <= centerTileX) reachedCenter = true;
+      else if (pacman.dir === 'RIGHT' && (pacman.x + pacman.speed) >= centerTileX) reachedCenter = true;
+      else if (pacman.dir === 'UP' && (pacman.y - pacman.speed) <= centerTileY) reachedCenter = true;
+      else if (pacman.dir === 'DOWN' && (pacman.y + pacman.speed) >= centerTileY) reachedCenter = true;
 
-    if (isWallOrGate(checkTileX, checkTileY, maze, false)) {
-      // Hit wall, snap to center and stop
-      pacman.x = centerTileX;
-      pacman.y = centerTileY;
-      pacman.dir = 'NONE';
+      if (reachedCenter) {
+        pacman.x = centerTileX;
+        pacman.y = centerTileY;
+        pacman.dir = 'NONE'; // Stopped neatly at wall center
+      } else {
+        pacman.x += offset.dx * pacman.speed;
+        pacman.y += offset.dy * pacman.speed;
+      }
     } else {
-      pacman.x = nextX;
-      pacman.y = nextY;
+      pacman.x += offset.dx * pacman.speed;
+      pacman.y += offset.dy * pacman.speed;
       if (pacman.dir === 'LEFT' || pacman.dir === 'RIGHT') {
         pacman.y = centerTileY;
       } else if (pacman.dir === 'UP' || pacman.dir === 'DOWN') {
@@ -510,13 +507,14 @@ export function updateGhost(
   const centerTileY = (tileY + 0.5) * TILE_SIZE;
   const distToCenter = Math.hypot(ghost.x - centerTileX, ghost.y - centerTileY);
 
-  if ((ghost.lastTileX !== tileX || ghost.lastTileY !== tileY) && distToCenter <= Math.max(3.5, ghost.speed * 1.5)) {
+  if ((ghost.lastTileX !== tileX || ghost.lastTileY !== tileY) && distToCenter <= Math.max(4.0, ghost.speed * 1.5)) {
     ghost.lastTileX = tileX;
     ghost.lastTileY = tileY;
 
     // Reached intersection, evaluate best next direction
     const possibleDirs: Direction[] = ['UP', 'LEFT', 'DOWN', 'RIGHT'];
     const validDirs: Direction[] = [];
+    const isEaten = ghost.mode === 'EATEN';
 
     for (const d of possibleDirs) {
       // Ghost cannot immediately reverse direction
@@ -526,7 +524,6 @@ export function updateGhost(
       const nextTileX = tileX + offset.dx;
       const nextTileY = tileY + offset.dy;
 
-      const isEaten = ghost.mode === 'EATEN';
       if (!isWallOrGate(nextTileX, nextTileY, maze, true, isEaten)) {
         validDirs.push(d);
       }
@@ -534,7 +531,6 @@ export function updateGhost(
 
     if (validDirs.length > 0) {
       if (ghost.mode === 'FRIGHTENED') {
-        // Pick random valid direction
         const randIdx = Math.floor(Math.random() * validDirs.length);
         ghost.dir = validDirs[randIdx];
       } else {
@@ -559,16 +555,28 @@ export function updateGhost(
     }
   }
 
-  // Move ghost in dir
+  // Move ghost in dir with wall avoidance
   const currentSpeed = ghost.mode === 'EATEN' ? 3.8 : ghost.mode === 'FRIGHTENED' ? 1.05 : ghost.speed;
   const offset = DIR_OFFSETS[ghost.dir];
-  ghost.x += offset.dx * currentSpeed;
-  ghost.y += offset.dy * currentSpeed;
+  const nextTileX = tileX + offset.dx;
+  const nextTileY = tileY + offset.dy;
+  const isEaten = ghost.mode === 'EATEN';
+  const isNextWall = isWallOrGate(nextTileX, nextTileY, maze, true, isEaten);
 
-  if (ghost.dir === 'LEFT' || ghost.dir === 'RIGHT') {
-    ghost.y = centerTileY;
-  } else if (ghost.dir === 'UP' || ghost.dir === 'DOWN') {
+  if (isNextWall) {
+    // Clamp to center and force direction change
     ghost.x = centerTileX;
+    ghost.y = centerTileY;
+    ghost.lastTileX = -1;
+    ghost.lastTileY = -1;
+  } else {
+    ghost.x += offset.dx * currentSpeed;
+    ghost.y += offset.dy * currentSpeed;
+    if (ghost.dir === 'LEFT' || ghost.dir === 'RIGHT') {
+      ghost.y = centerTileY;
+    } else if (ghost.dir === 'UP' || ghost.dir === 'DOWN') {
+      ghost.x = centerTileX;
+    }
   }
 
   // Tunnel wrap
@@ -638,4 +646,28 @@ export function checkGhostCollisions(
   }
 
   return { pacmanDied: false };
+}
+
+export function updateParticlesAndScores(
+  floatingScores: FloatingScore[],
+  particles: Particle[]
+) {
+  for (let i = floatingScores.length - 1; i >= 0; i--) {
+    const s = floatingScores[i];
+    s.y -= 0.5;
+    s.opacity -= 0.02;
+    if (s.opacity <= 0) {
+      floatingScores.splice(i, 1);
+    }
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life++;
+    if (p.life >= p.maxLife) {
+      particles.splice(i, 1);
+    }
+  }
 }
