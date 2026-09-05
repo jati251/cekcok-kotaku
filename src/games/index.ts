@@ -22,3 +22,5 @@ export { ZumaGame } from './zuma-deluxe';
 export { BejeweledGame } from './bejeweled';
 export { PinballGame } from './pinball';
 export { ChessGame } from './chess';
+export { JudolSlotGame } from './judol-slot';
+export { PokerGame } from './poker';

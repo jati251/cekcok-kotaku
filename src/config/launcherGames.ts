@@ -600,6 +600,46 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Turn Clock & Move Timers, sound effects for move, capture, check, and victory fanfare',
     ],
   },
+  {
+    id: 'judol-slot',
+    title: 'Judol Simulator: Kakek Zeus 88',
+    tagline: 'Satirical Slot Machine Simulator — Petir Merah x500, Tumble Cascades, Free Spins, and Anti-Judol Awareness!',
+    genre: 'Satirical Slot Casino Sim',
+    category: 'casino',
+    status: 'playable',
+    releaseYear: '2024',
+    accentColor: '#eab308',
+    description:
+      'Parodi simulator mesin slot populer bertema Kakek Zeus! Rasakan sensasi tumble cascades, petir pengganda x100 hingga x500, dan putaran gratis (Free Spins) — 100% MENGGUNAKAN UANG MAINAN VIRTUAL. Dilengkapi pesan edukasi anti-judol: "Kemenangan di judol itu ilusi algoritma, jangan pernah main judi online sungguhan!"',
+    features: [
+      '100% Uang Mainan Virtual & Edukasi Anti-Judol (Zero real money, zero deposit)',
+      '6x5 Tumble Grid dengan sistem pembayaran pay-anywhere (8+ simbol sejenis meledak)',
+      'Petir Pengganda Kakek Zeus (x2 hingga x500) yang melipatgandakan total kemenangan runtuhan',
+      'Free Spins Mode (15 Putaran Gratis) saat mendapatkan 4+ Scatter dengan akumulasi multiplier',
+      'Fitur Beli Spin & Pola Gacor Generator parodi untuk hiburan tanpa risiko',
+      'Efek suara petir menggelegar, suara koin tumpah, dan selebrasi kemenangan bombastis',
+    ],
+  },
+  {
+    id: 'poker',
+    title: "Texas Hold'em Poker Pro",
+    tagline: 'Classic casino poker tournament — hole cards, flop, turn, river, AI bluffs, and chip betting strategy',
+    genre: "Texas Hold'em Card Game",
+    category: 'casino',
+    status: 'playable',
+    releaseYear: '2003',
+    accentColor: '#10b981',
+    description:
+      "Pull up a chair at the high-stakes green felt poker table! Play classic Texas Hold'em against 3 smart AI bots. Manage your chip stack, read the table through Flop, Turn, and River betting rounds, make tactical Calls, Raises, Bluffs, and All-Ins, and showdown with Royal Flushes, Straights, and Full Houses.",
+    features: [
+      "Standard Texas Hold'em Poker rules with 2 hole cards and 5 community cards",
+      'Automatic Hand Strength Evaluator (High Card to Royal Flush) with best-5-card calculation',
+      'Full Betting Rounds: Pre-Flop, Flop, Turn, and River with Check, Call, Raise, Fold, and All-In',
+      'Three AI Opponents with distinct playstyles (Conservative, Aggressive, and Balanced Bluffer)',
+      'Interactive Chip Betting Slider, pot calculations, and chip stack persistence',
+      'Crisp high-resolution card animations, dealer button rotation, and tactile casino audio',
+    ],
+  },
 ];
 
 

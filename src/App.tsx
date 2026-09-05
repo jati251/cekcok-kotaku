@@ -105,6 +105,12 @@ const PinballGame = lazy(() =>
 const ChessGame = lazy(() =>
   import('./games/chess').then((m) => ({ default: m.ChessGame }))
 );
+const JudolSlotGame = lazy(() =>
+  import('./games/judol-slot').then((m) => ({ default: m.JudolSlotGame }))
+);
+const PokerGame = lazy(() =>
+  import('./games/poker').then((m) => ({ default: m.PokerGame }))
+);
 
 // Full Settings Page
 const SettingsPage = lazy(() =>
@@ -138,6 +144,10 @@ export const App: React.FC = () => {
         return <PinballGame />;
       case 'chess':
         return <ChessGame />;
+      case 'judol-slot':
+        return <JudolSlotGame onBack={() => useLauncherStore.getState().setActiveTab('launcher')} />;
+      case 'poker':
+        return <PokerGame onBack={() => useLauncherStore.getState().setActiveTab('launcher')} />;
       case 'cityville':
         return <CityVilleGame />;
       case 'tetris':

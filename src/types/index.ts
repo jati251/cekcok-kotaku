@@ -36,6 +36,8 @@ export type ActiveGameTab =
   | 'bejeweled'
   | 'pinball'
   | 'chess'
+  | 'judol-slot'
+  | 'poker'
   | 'settings';
 
 export type LauncherSortOrder =
@@ -51,7 +53,7 @@ export interface LauncherGame {
   title: string;
   tagline: string;
   genre: string;
-  category: 'strategy' | 'tycoon' | 'farming' | 'rpg' | 'simulation' | 'casual' | 'arcade' | 'action' | 'puzzle' | 'sports' | 'racing';
+  category: 'strategy' | 'tycoon' | 'farming' | 'rpg' | 'simulation' | 'casual' | 'arcade' | 'action' | 'puzzle' | 'sports' | 'racing' | 'casino';
   status: 'playable' | 'in_development' | 'coming_soon';
   releaseYear: string;
   description: string;

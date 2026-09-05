@@ -134,6 +134,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'bejeweled': 'bejeweled',
       'pinball': 'pinball',
       'chess': 'chess',
+      'judol-slot': 'judol-slot',
+      'poker': 'poker',
     };
 
     const titles: Record<string, string> = {
@@ -168,6 +170,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'bejeweled': 'Bejeweled 3',
       'pinball': 'Retro Space Pinball',
       'chess': 'Chess Master 3D',
+      'judol-slot': 'Judol Simulator: Kakek Zeus 88',
+      'poker': "Texas Hold'em Poker Pro",
     };
 
     const title = titles[gameId] || gameId;
