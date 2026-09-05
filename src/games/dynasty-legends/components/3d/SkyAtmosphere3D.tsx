@@ -90,16 +90,59 @@ export const SkyAtmosphere3D: React.FC<SkyAtmosphere3DProps> = ({ scenario }) =>
         />
       </mesh>
 
-      {/* 3. Radiant Three Kingdoms Celestial Sun */}
+      {/* 3. Radiant Three Kingdoms Celestial Sun with Golden Corona */}
       <group position={sunPos}>
-        {/* Soft Glowing Sun */}
+        {/* Glowing Sun Core */}
         <mesh>
-          <sphereGeometry args={[18, 24, 24]} />
+          <sphereGeometry args={[16, 24, 24]} />
           <meshBasicMaterial color={sunColor} fog={false} />
+        </mesh>
+        {/* Radiant Solar Corona Flare Ring */}
+        <mesh rotation={[0, 0, 0]}>
+          <ringGeometry args={[14, 45, 32]} />
+          <meshBasicMaterial
+            color={sunColor}
+            transparent
+            opacity={0.45}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            fog={false}
+          />
+        </mesh>
+        {/* Outer Atmospheric Aura */}
+        <mesh rotation={[0, 0, 0]}>
+          <ringGeometry args={[35, 85, 32]} />
+          <meshBasicMaterial
+            color={isFire ? '#f97316' : '#fef08a'}
+            transparent
+            opacity={0.2}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            fog={false}
+          />
         </mesh>
       </group>
 
-      {/* 4. Atmospheric Floating Motes (Embers / Dust / Snowflakes) */}
+      {/* 4. Horizon Battle Cloud Wisps */}
+      {[-120, -40, 40, 120].map((angleDeg, i) => {
+        const rad = (angleDeg * Math.PI) / 180;
+        const cx = Math.sin(rad) * 360;
+        const cz = Math.cos(rad) * 360;
+        return (
+          <mesh key={`cloud_${i}`} position={[cx, 65 + (i % 2) * 15, cz]} rotation={[0, -rad, 0]}>
+            <planeGeometry args={[140, 35]} />
+            <meshBasicMaterial
+              color={isFire ? '#7c2d12' : isSnow ? '#e2e8f0' : '#f8fafc'}
+              transparent
+              opacity={0.3}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+        );
+      })}
+
+      {/* 5. Atmospheric Floating Motes (Embers / Dust / Snowflakes) */}
       <AtmosphericMotes3D theme={theme} />
     </group>
   );

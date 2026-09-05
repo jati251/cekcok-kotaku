@@ -194,24 +194,39 @@ const DynastyCanvas3DComponent: React.FC<DynastyCanvas3DProps> = ({
         className="w-full h-full"
       >
         <color attach="background" args={[skyColor]} />
-        <fog attach="fog" args={[skyColor, 75, 420]} />
+        <fog attach="fog" args={[skyColor, 110, 560]} />
 
-        <hemisphereLight args={[skyColor, '#4d7c0f', 1.25]} />
-        <ambientLight intensity={1.1} />
+        {/* Cinematic Dynasty Warriors 5 Lighting Architecture */}
+        {/* 1. Soft atmospheric skylight fill & earth bounce */}
+        <hemisphereLight
+          args={[skyColor, isSnow ? '#cbd5e1' : isFire ? '#451a03' : '#6b7280', 0.48]}
+        />
+        {/* 2. Low ambient to preserve deep rich contrast on textures */}
+        <ambientLight intensity={0.38} color={isFire ? '#fbcfe8' : '#ffffff'} />
+
+        {/* 3. Golden Celestial Sun Keylight with 2048 High-Res Soft Shadows */}
         <directionalLight
-          position={[world.player.position.x + 35, 65, world.player.position.z + 35]}
-          intensity={1.6}
+          position={[world.player.position.x + 45, 80, world.player.position.z + 40]}
+          intensity={2.3}
+          color={isFire ? '#fed7aa' : isSnow ? '#fef08a' : '#fffbeb'}
           castShadow
-          shadow-bias={-0.0004}
-          shadow-normalBias={0.04}
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-          shadow-camera-left={-75}
-          shadow-camera-right={75}
-          shadow-camera-top={75}
-          shadow-camera-bottom={-75}
+          shadow-bias={-0.0003}
+          shadow-normalBias={0.035}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-left={-85}
+          shadow-camera-right={85}
+          shadow-camera-top={85}
+          shadow-camera-bottom={-85}
           shadow-camera-near={0.5}
-          shadow-camera-far={200}
+          shadow-camera-far={220}
+        />
+
+        {/* 4. Warm Heroic Rim Light (Creates heroic warrior edge highlights) */}
+        <directionalLight
+          position={[world.player.position.x - 40, 45, world.player.position.z - 40]}
+          intensity={0.7}
+          color={isFire ? '#f97316' : '#fde047'}
         />
 
         <DynastyGameSimulation

@@ -6,6 +6,7 @@ import type { HeroState3D } from '../../engine/dynasty3dEngine';
 import { proceduralTextures } from './textures/proceduralTextures';
 import { HeroWeapons3D } from './HeroWeapons3D';
 import { HeroHead3D } from './HeroHead3D';
+import { HeroArmor3D } from './HeroArmor3D';
 
 interface Hero3DProps {
   player: HeroState3D;
@@ -326,49 +327,13 @@ export const Hero3D: React.FC<Hero3DProps> = ({ player }) => {
 
       {/* Hero Body Group */}
       <group ref={bodyRef} position={[0, 0.9, 0]}>
-        {/* Torso / Heavy Steel Breastplate with Dragon Relief */}
-        <mesh position={[0, 0.38, 0]} castShadow>
-          <boxGeometry args={[0.52, 0.58, 0.34]} />
-          <meshStandardMaterial map={armorTex} color={heroColorConfig.armor} metalness={0.7} roughness={0.3} />
-        </mesh>
-        {/* Chest Dragon / Lion Gold Medallion */}
-        <mesh position={[0, 0.44, 0.18]}>
-          <cylinderGeometry args={[0.12, 0.12, 0.04, 12]} />
-          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.9} roughness={0.15} />
-        </mesh>
-
-        {/* Waist Armor & Heavy Lion-Head Belt */}
-        <mesh position={[0, 0.1, 0]}>
-          <boxGeometry args={[0.48, 0.16, 0.32]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.8} />
-        </mesh>
-        <mesh position={[0, 0.1, 0.17]}>
-          <boxGeometry args={[0.18, 0.15, 0.06]} />
-          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.9} roughness={0.2} />
-        </mesh>
-
-        {/* Segmented Hip Armor Faulds (Tassets) - Left & Right (NO DRESS/CONE SKIRT!) */}
-        <mesh position={[-0.22, -0.12, 0]} rotation={[0, 0, -0.15]} castShadow>
-          <boxGeometry args={[0.14, 0.36, 0.28]} />
-          <meshStandardMaterial color={heroColorConfig.robe} roughness={0.6} />
-        </mesh>
-        <mesh position={[-0.24, -0.1, 0]} rotation={[0, 0, -0.15]}>
-          <boxGeometry args={[0.12, 0.3, 0.29]} />
-          <meshStandardMaterial color={heroColorConfig.armor} metalness={0.7} roughness={0.3} />
-        </mesh>
-        <mesh position={[0.22, -0.12, 0]} rotation={[0, 0, 0.15]} castShadow>
-          <boxGeometry args={[0.14, 0.36, 0.28]} />
-          <meshStandardMaterial color={heroColorConfig.robe} roughness={0.6} />
-        </mesh>
-        <mesh position={[0.24, -0.1, 0]} rotation={[0, 0, 0.15]}>
-          <boxGeometry args={[0.12, 0.3, 0.29]} />
-          <meshStandardMaterial color={heroColorConfig.armor} metalness={0.7} roughness={0.3} />
-        </mesh>
-        {/* Center Front Silk Sash Pendant */}
-        <mesh position={[0, -0.15, 0.16]}>
-          <planeGeometry args={[0.18, 0.42]} />
-          <meshStandardMaterial color={heroColorConfig.robe} side={THREE.DoubleSide} roughness={0.7} />
-        </mesh>
+        {/* Authentic Han Imperial Armor, Dragon Pauldron, & Layered Battle Cape */}
+        <HeroArmor3D
+          heroType={player.heroType}
+          heroColorConfig={heroColorConfig}
+          armorTex={armorTex}
+          capeRef={capeRef}
+        />
 
         <HeroHead3D
           headRef={headRef}
@@ -377,38 +342,6 @@ export const Hero3D: React.FC<Hero3DProps> = ({ player }) => {
           heroType={player.heroType}
           heroColorConfig={heroColorConfig}
         />
-
-        {/* Tiered Winged Shoulder Pauldrons */}
-        <group position={[-0.36, 0.58, 0]} rotation={[0, 0, -0.35]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.25, 0.2, 0.36]} />
-            <meshStandardMaterial color={heroColorConfig.trim} metalness={0.85} roughness={0.2} />
-          </mesh>
-          <mesh position={[0, -0.1, 0]}>
-            <boxGeometry args={[0.22, 0.14, 0.32]} />
-            <meshStandardMaterial color={heroColorConfig.armor} metalness={0.8} />
-          </mesh>
-        </group>
-        <group position={[0.36, 0.58, 0]} rotation={[0, 0, 0.35]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.25, 0.2, 0.36]} />
-            <meshStandardMaterial color={heroColorConfig.trim} metalness={0.85} roughness={0.2} />
-          </mesh>
-          <mesh position={[0, -0.1, 0]}>
-            <boxGeometry args={[0.22, 0.14, 0.32]} />
-            <meshStandardMaterial color={heroColorConfig.armor} metalness={0.8} />
-          </mesh>
-        </group>
-
-        {/* Dynamic Flowing Cape with Gold Trim */}
-        <mesh ref={capeRef} position={[0, 0.2, -0.22]} rotation={[0.18, 0, 0]}>
-          <planeGeometry args={[0.7, 1.15]} />
-          <meshStandardMaterial
-            color={heroColorConfig.cape}
-            roughness={0.85}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
 
         {/* Left Arm & Armored Bracer */}
         <group ref={leftArmRef} position={[0.36, 0.45, 0]}>
@@ -440,35 +373,59 @@ export const Hero3D: React.FC<Hero3DProps> = ({ player }) => {
         </group>
       </group>
 
-      {/* Left Leg & Armored Greave */}
+      {/* Left Leg & Armored Greave with Golden Knee Guard */}
       <group ref={leftLegRef} position={[0.18, 0.45, 0]}>
+        {/* Thigh */}
         <mesh position={[0, -0.22, 0]}>
           <cylinderGeometry args={[0.09, 0.075, 0.5, 8]} />
           <meshStandardMaterial color={heroColorConfig.robe} roughness={0.6} />
         </mesh>
-        <mesh position={[0, -0.22, 0.03]}>
+        {/* Golden Knee Cop (Poleyn) */}
+        <mesh position={[0, -0.06, 0.06]}>
+          <cylinderGeometry args={[0.075, 0.075, 0.06, 12]} />
+          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.92} roughness={0.18} />
+        </mesh>
+        {/* Iron Shin Guard (Greave) */}
+        <mesh position={[0, -0.24, 0.03]}>
           <boxGeometry args={[0.13, 0.28, 0.08]} />
           <meshStandardMaterial color={heroColorConfig.armor} metalness={0.8} />
         </mesh>
+        {/* Black Leather Combat Boot with Brass Toe Cap */}
         <mesh position={[0, -0.46, 0.06]}>
           <boxGeometry args={[0.14, 0.12, 0.24]} />
-          <meshStandardMaterial color="#1e293b" metalness={0.6} />
+          <meshStandardMaterial color="#0f172a" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, -0.45, 0.16]}>
+          <cylinderGeometry args={[0.065, 0.07, 0.08, 8]} />
+          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.9} />
         </mesh>
       </group>
 
-      {/* Right Leg & Armored Greave */}
+      {/* Right Leg & Armored Greave with Golden Knee Guard */}
       <group ref={rightLegRef} position={[-0.18, 0.45, 0]}>
+        {/* Thigh */}
         <mesh position={[0, -0.22, 0]}>
           <cylinderGeometry args={[0.09, 0.075, 0.5, 8]} />
           <meshStandardMaterial color={heroColorConfig.robe} roughness={0.6} />
         </mesh>
-        <mesh position={[0, -0.22, 0.03]}>
+        {/* Golden Knee Cop (Poleyn) */}
+        <mesh position={[0, -0.06, 0.06]}>
+          <cylinderGeometry args={[0.075, 0.075, 0.06, 12]} />
+          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.92} roughness={0.18} />
+        </mesh>
+        {/* Iron Shin Guard (Greave) */}
+        <mesh position={[0, -0.24, 0.03]}>
           <boxGeometry args={[0.13, 0.28, 0.08]} />
           <meshStandardMaterial color={heroColorConfig.armor} metalness={0.8} />
         </mesh>
+        {/* Black Leather Combat Boot with Brass Toe Cap */}
         <mesh position={[0, -0.46, 0.06]}>
           <boxGeometry args={[0.14, 0.12, 0.24]} />
-          <meshStandardMaterial color="#1e293b" metalness={0.6} />
+          <meshStandardMaterial color="#0f172a" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, -0.45, 0.16]}>
+          <cylinderGeometry args={[0.065, 0.07, 0.08, 8]} />
+          <meshStandardMaterial color={heroColorConfig.trim} metalness={0.9} />
         </mesh>
       </group>
 

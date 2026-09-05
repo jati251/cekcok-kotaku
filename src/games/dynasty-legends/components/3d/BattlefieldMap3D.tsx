@@ -240,17 +240,29 @@ export const BattlefieldMap3D: React.FC<BattlefieldMap3DProps> = ({ scenario }) 
         <meshStandardMaterial map={terrainTex} color="#ffffff" roughness={0.88} metalness={0.02} />
       </mesh>
 
-      {/* Highway Road */}
-      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} receiveShadow>
-        <planeGeometry args={[14, 520]} />
-        <meshStandardMaterial
-          map={roadTex}
-          roughness={0.92}
-          polygonOffset
-          polygonOffsetFactor={-1}
-          polygonOffsetUnits={-1}
-        />
-      </mesh>
+      {/* Highway Road (Authentic packed battle dirt with wheel ruts) */}
+      <group position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
+        <mesh receiveShadow>
+          <planeGeometry args={[14, 520]} />
+          <meshStandardMaterial
+            map={roadTex}
+            roughness={0.92}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
+        </mesh>
+        {/* Left Blended Dirt Shoulder */}
+        <mesh position={[-7.5, 0, 0.005]}>
+          <planeGeometry args={[2.0, 520]} />
+          <meshStandardMaterial color="#6b543c" transparent opacity={0.6} roughness={0.98} />
+        </mesh>
+        {/* Right Blended Dirt Shoulder */}
+        <mesh position={[7.5, 0, 0.005]}>
+          <planeGeometry args={[2.0, 520]} />
+          <meshStandardMaterial color="#6b543c" transparent opacity={0.6} roughness={0.98} />
+        </mesh>
+      </group>
 
       <TerrainWaterRiver3D isSnow={isSnow} />
       <StoneTimberBridge3D position={[-25, 0, -28]} rotationY={Math.PI / 4} />

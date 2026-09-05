@@ -79,16 +79,16 @@ export class TerrainTextureManager {
     }
     ctx.putImageData(imgData, 0, 0);
 
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 400; i++) {
       const x = Math.random() * size;
       const y = Math.random() * size;
-      ctx.fillStyle = i % 5 === 0 ? '#fef08a' : '#a89478';
+      ctx.fillStyle = i % 4 === 0 ? '#15803d' : i % 3 === 0 ? '#4d7c0f' : '#854d0e';
       ctx.beginPath();
-      ctx.arc(x, y, 1.2 + Math.random() * 1.5, 0, Math.PI * 2);
+      ctx.arc(x, y, 0.8 + Math.random() * 1.2, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    const tex = this.finalizeTexture(canvas, 16, 16);
+    const tex = this.finalizeTexture(canvas, 48, 48);
     this.cache.set(key, tex);
     return tex;
   }
@@ -107,39 +107,121 @@ export class TerrainTextureManager {
     const isSnow = theme === MapTheme.HULAO_SNOW;
     const isFire = theme === MapTheme.CHIBI_FIRE;
 
-    const baseRoad = isSnow ? '#94a3b8' : isFire ? '#451a03' : '#c8ad8d';
-    const rutDark = isSnow ? '#64748b' : isFire ? '#291003' : '#9f8263';
-    const edgeDirt = isSnow ? '#cbd5e1' : isFire ? '#78350f' : '#b39472';
+    const baseRoad = isSnow ? '#64748b' : isFire ? '#451a03' : '#a88a68';
+    const rutDark = isSnow ? '#475569' : isFire ? '#291003' : '#785b3b';
+    const edgeDirt = isSnow ? '#94a3b8' : isFire ? '#78350f' : '#6b543c';
 
+    // Base packed dirt gradient
     ctx.fillStyle = baseRoad;
     ctx.fillRect(0, 0, size, size);
 
     const grad = ctx.createLinearGradient(0, 0, size, 0);
     grad.addColorStop(0.0, edgeDirt);
-    grad.addColorStop(0.18, rutDark);
-    grad.addColorStop(0.35, baseRoad);
-    grad.addColorStop(0.5, '#d9c2a7');
-    grad.addColorStop(0.65, baseRoad);
-    grad.addColorStop(0.82, rutDark);
+    grad.addColorStop(0.08, 'rgba(0,0,0,0.15)');
+    grad.addColorStop(0.24, rutDark);
+    grad.addColorStop(0.38, baseRoad);
+    grad.addColorStop(0.5, '#bfa685');
+    grad.addColorStop(0.62, baseRoad);
+    grad.addColorStop(0.76, rutDark);
+    grad.addColorStop(0.92, 'rgba(0,0,0,0.15)');
     grad.addColorStop(1.0, edgeDirt);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, size, size);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.12)';
-    ctx.fillRect(size * 0.2, 0, size * 0.1, size);
-    ctx.fillRect(size * 0.7, 0, size * 0.1, size);
+    // Parallel wheel ruts along road axis (Y direction)
+    const rutWidth = size * 0.08;
+    const leftRutX = size * 0.22;
+    const rightRutX = size * 0.7;
 
-    for (let p = 0; p < 280; p++) {
-      const px = Math.random() * size;
-      const py = Math.random() * size;
-      const rad = 1.5 + Math.random() * 3.5;
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(leftRutX, 0, rutWidth, size);
+    ctx.fillRect(rightRutX, 0, rutWidth, size);
+
+    // Fine tread marks inside ruts
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.lineWidth = 1.5;
+    for (let y = 0; y < size; y += 8) {
       ctx.beginPath();
-      ctx.ellipse(px, py, rad * 0.8, rad * 1.4, (Math.random() - 0.5) * 0.5, 0, Math.PI * 2);
+      ctx.moveTo(leftRutX, y);
+      ctx.lineTo(leftRutX + rutWidth, y + 4);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(rightRutX, y);
+      ctx.lineTo(rightRutX + rutWidth, y + 4);
+      ctx.stroke();
+    }
+
+    // Fine road gravel & soil grain
+    const imgData = ctx.getImageData(0, 0, size, size);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const grain = (Math.random() - 0.5) * 28;
+      d[i] = Math.min(255, Math.max(0, d[i] + grain));
+      d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + grain));
+      d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + grain));
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const tex = this.finalizeTexture(canvas, 1, 40);
+    this.cache.set(key, tex);
+    return tex;
+  }
+
+  getWaterTexture(isSnow = false): THREE.CanvasTexture {
+    const key = `water_river_${isSnow ? 'snow' : 'normal'}`;
+    if (this.cache.has(key)) return this.cache.get(key)!;
+
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    const deepWater = isSnow ? '#0284c7' : '#0369a1';
+    const shallowWater = isSnow ? '#38bdf8' : '#0ea5e9';
+    const waveHighlight = isSnow ? '#e0f2fe' : '#bae6fd';
+
+    const riverGrad = ctx.createLinearGradient(0, 0, size, 0);
+    riverGrad.addColorStop(0, shallowWater);
+    riverGrad.addColorStop(0.5, deepWater);
+    riverGrad.addColorStop(1, shallowWater);
+    ctx.fillStyle = riverGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    // Flowing water wave caustics along river stream
+    for (let y = 0; y < size; y += 6) {
+      const waveShift = Math.sin(y * 0.08) * 18;
+      ctx.strokeStyle = waveHighlight;
+      ctx.globalAlpha = 0.12 + Math.sin(y * 0.15) * 0.08;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(
+        size * 0.33 + waveShift,
+        y - 4,
+        size * 0.66 - waveShift,
+        y + 4,
+        size,
+        y
+      );
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Water sparkle glints
+    for (let i = 0; i < 260; i++) {
+      const sx = Math.random() * size;
+      const sy = Math.random() * size;
+      const sw = 1.2 + Math.random() * 2.5;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, sw, sw * 0.35, Math.PI / 4, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    const tex = this.finalizeTexture(canvas, 1, 16);
+    const tex = this.finalizeTexture(canvas, 3, 24);
     this.cache.set(key, tex);
     return tex;
   }

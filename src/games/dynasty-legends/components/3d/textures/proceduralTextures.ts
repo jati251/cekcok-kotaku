@@ -23,6 +23,10 @@ class ProceduralTextureManager {
     return this.terrain.getMountainRockTexture(theme);
   }
 
+  getWaterTexture(isSnow?: boolean): THREE.CanvasTexture {
+    return this.terrain.getWaterTexture(isSnow);
+  }
+
   getTreeBarkTexture(): THREE.CanvasTexture {
     return this.terrain.getTreeBarkTexture();
   }

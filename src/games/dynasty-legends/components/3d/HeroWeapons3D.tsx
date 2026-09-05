@@ -13,32 +13,59 @@ export const HeroWeapons3D: React.FC<HeroWeapons3DProps> = ({ heroType, woodTex 
       {/* Heavy Weapon Pole / Shaft */}
       <mesh position={[0, 0.75, 0]} rotation={[Math.PI * 0.08, 0, 0]}>
         <cylinderGeometry args={[0.035, 0.035, 2.5, 8]} />
-        <meshStandardMaterial map={woodTex} color="#451a03" roughness={0.8} />
+        <meshStandardMaterial map={woodTex} color="#3b1d11" roughness={0.8} />
+      </mesh>
+      {/* Bronze Counterweight Butt Spike */}
+      <mesh position={[0, -0.48, -0.1]} rotation={[Math.PI * 0.08, 0, 0]}>
+        <coneGeometry args={[0.06, 0.28, 6]} />
+        <meshStandardMaterial color="#d97706" metalness={0.9} roughness={0.2} />
       </mesh>
 
       {/* Authentic Dynasty Warriors 5 Weapon Models */}
       {heroType === HeroType.GUAN_YU && (
-        // Green Dragon Crescent Blade (Guandao)
+        // Legendary Green Dragon Crescent Blade (Yanyuedao)
         <group position={[0, 1.85, 0]} rotation={[0, -0.4, 0.12]}>
           {/* Golden Dragon Head Socket (Long Kou) */}
-          <mesh position={[0, 0.1, 0]}>
-            <boxGeometry args={[0.12, 0.22, 0.1]} />
-            <meshStandardMaterial color="#eab308" metalness={0.9} roughness={0.25} />
+          <mesh position={[0, 0.12, 0]}>
+            <boxGeometry args={[0.14, 0.26, 0.12]} />
+            <meshStandardMaterial color="#eab308" metalness={0.95} roughness={0.15} />
           </mesh>
-          {/* Main Forged Steel Crescent Blade */}
-          <mesh position={[0.1, 0.7, 0]} rotation={[0, 0, 0.1]}>
-            <boxGeometry args={[0.16, 1.1, 0.025]} />
-            <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.15} />
+          {/* Dragon Snout & Fangs */}
+          <mesh position={[0.06, 0.22, 0]}>
+            <boxGeometry args={[0.08, 0.12, 0.1]} />
+            <meshStandardMaterial color="#ca8a04" metalness={0.9} />
           </mesh>
-          {/* Jade Green Dragon Spine Inlay */}
-          <mesh position={[0.04, 0.68, 0]} rotation={[0, 0, 0.1]}>
-            <boxGeometry args={[0.06, 1.05, 0.03]} />
-            <meshStandardMaterial color="#15803d" metalness={0.7} roughness={0.3} />
+          {/* Main Forged Steel Crescent Blade with Curve */}
+          <mesh position={[0.12, 0.75, 0]} rotation={[0, 0, 0.08]}>
+            <boxGeometry args={[0.22, 1.25, 0.028]} />
+            <meshStandardMaterial
+              color="#e2e8f0"
+              metalness={0.98}
+              roughness={0.1}
+              emissive="#22c55e"
+              emissiveIntensity={0.2}
+            />
           </mesh>
-          {/* Flowing Red Silk Tassel */}
-          <mesh position={[-0.06, 0.05, 0]}>
-            <coneGeometry args={[0.07, 0.4, 6]} />
-            <meshStandardMaterial color="#b91c1c" roughness={0.8} />
+          {/* Back Barb / Dragon Crest Spike */}
+          <mesh position={[-0.04, 0.95, 0]} rotation={[0, 0, -0.6]}>
+            <boxGeometry args={[0.08, 0.35, 0.025]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.95} />
+          </mesh>
+          {/* Jade Green Dragon Inlaid Spine */}
+          <mesh position={[0.06, 0.72, 0]} rotation={[0, 0, 0.08]}>
+            <boxGeometry args={[0.08, 1.15, 0.035]} />
+            <meshStandardMaterial
+              color="#15803d"
+              metalness={0.8}
+              roughness={0.2}
+              emissive="#16a34a"
+              emissiveIntensity={0.3}
+            />
+          </mesh>
+          {/* Flowing Red Silk Horsehair Tassel */}
+          <mesh position={[-0.07, 0.06, 0]}>
+            <coneGeometry args={[0.08, 0.45, 8]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.85} />
           </mesh>
         </group>
       )}

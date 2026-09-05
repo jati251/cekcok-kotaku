@@ -15,12 +15,13 @@ export const MountainPine3D: React.FC<{
   isSnow?: boolean;
 }> = ({ position, scale = 1, rotationY = 0, isSnow }) => {
   const foliageColor = isSnow ? '#334155' : '#14532d';
+  const foliageAccent = isSnow ? '#475569' : '#166534';
   const trunkColor = '#3e2723';
   const barkTex = useMemo(() => proceduralTextures.getTreeBarkTexture(), []);
 
   return (
     <group position={position} scale={[scale, scale, scale]} rotation={[0, rotationY, 0]}>
-      {/* Gnarled Twisted Trunk with Natural Lean */}
+      {/* Gnarled Twisted Trunk with Natural Lean & Real Bark Texture */}
       <mesh position={[0, 2.2, 0]} rotation={[0.08, 0, 0.12]} castShadow>
         <cylinderGeometry args={[0.3, 0.65, 4.4, 7]} />
         <meshStandardMaterial map={barkTex} color={trunkColor} roughness={0.92} />
@@ -33,29 +34,29 @@ export const MountainPine3D: React.FC<{
       {/* Spreading Horizontal Boughs */}
       <mesh position={[-0.8, 3.8, 0.4]} rotation={[0.4, 0.6, -0.5]} castShadow>
         <cylinderGeometry args={[0.1, 0.18, 2.2, 5]} />
-        <meshStandardMaterial color={trunkColor} roughness={0.9} />
+        <meshStandardMaterial map={barkTex} color={trunkColor} roughness={0.9} />
       </mesh>
       <mesh position={[1.0, 4.4, -0.3]} rotation={[-0.3, -0.5, 0.6]} castShadow>
         <cylinderGeometry args={[0.09, 0.16, 2.0, 5]} />
-        <meshStandardMaterial color={trunkColor} roughness={0.9} />
+        <meshStandardMaterial map={barkTex} color={trunkColor} roughness={0.9} />
       </mesh>
 
-      {/* Tiered Authentic Asian Pine Needle Pads (Broad horizontal tiered cones) */}
+      {/* Layered Authentic Asian Pine Needle Pads (Faceted for crisp shading) */}
       <mesh position={[-1.2, 4.2, 0.6]} rotation={[0.05, 0.4, -0.08]} castShadow>
-        <coneGeometry args={[1.6, 0.65, 7]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.88} />
+        <coneGeometry args={[1.7, 0.7, 8]} />
+        <meshStandardMaterial color={foliageColor} roughness={0.9} flatShading />
       </mesh>
       <mesh position={[1.4, 4.8, -0.5]} rotation={[-0.06, -0.5, 0.1]} castShadow>
-        <coneGeometry args={[1.8, 0.7, 7]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.88} />
+        <coneGeometry args={[1.9, 0.75, 8]} />
+        <meshStandardMaterial color={foliageAccent} roughness={0.9} flatShading />
       </mesh>
       <mesh position={[0.5, 6.2, 0]} rotation={[0.04, 0.8, -0.05]} castShadow>
-        <coneGeometry args={[2.1, 0.85, 7]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.88} />
+        <coneGeometry args={[2.2, 0.85, 8]} />
+        <meshStandardMaterial color={foliageColor} roughness={0.9} flatShading />
       </mesh>
       <mesh position={[0.2, 7.3, 0.1]} rotation={[0, 0.2, 0]} castShadow>
-        <coneGeometry args={[1.5, 0.95, 7]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.88} />
+        <coneGeometry args={[1.6, 0.95, 8]} />
+        <meshStandardMaterial color={foliageAccent} roughness={0.9} flatShading />
       </mesh>
     </group>
   );
@@ -70,50 +71,51 @@ export const GnarledCanopyTree3D: React.FC<{
 }> = ({ position, scale = 1, rotationY = 0, theme }) => {
   const isFire = theme === MapTheme.CHIBI_FIRE;
   const isSnow = theme === MapTheme.HULAO_SNOW;
+  const barkTex = useMemo(() => proceduralTextures.getTreeBarkTexture(), []);
 
   // Autumn scorched ochre for Chibi, Frost slate for Hulao, Emerald/Amber for Central Plains
-  const foliage1 = isSnow ? '#64748b' : isFire ? '#78350f' : '#166534';
+  const foliage1 = isSnow ? '#64748b' : isFire ? '#78350f' : '#14532d';
   const foliage2 = isSnow ? '#94a3b8' : isFire ? '#b45309' : '#15803d';
-  const foliage3 = isSnow ? '#cbd5e1' : isFire ? '#d97706' : '#4d7c0f';
+  const foliage3 = isSnow ? '#cbd5e1' : isFire ? '#d97706' : '#3f6212';
 
   return (
     <group position={position} scale={[scale, scale, scale]} rotation={[0, rotationY, 0]}>
-      {/* Stout Gnarled Trunk with Buttress Roots */}
+      {/* Stout Gnarled Trunk with Buttress Roots & Real Bark Texture */}
       <mesh position={[0, 2.0, 0]} castShadow>
         <cylinderGeometry args={[0.35, 0.75, 4.0, 8]} />
-        <meshStandardMaterial color="#2d1a0e" roughness={0.95} />
+        <meshStandardMaterial map={barkTex} color="#3b1d11" roughness={0.94} />
       </mesh>
 
       {/* 3 Main Arching Timber Branches */}
       <mesh position={[-0.7, 4.0, 0]} rotation={[0, 0, 0.6]} castShadow>
         <cylinderGeometry args={[0.16, 0.28, 2.4, 6]} />
-        <meshStandardMaterial color="#2d1a0e" roughness={0.95} />
+        <meshStandardMaterial map={barkTex} color="#3b1d11" roughness={0.94} />
       </mesh>
       <mesh position={[0.7, 4.2, 0.3]} rotation={[-0.2, 0, -0.6]} castShadow>
         <cylinderGeometry args={[0.15, 0.26, 2.6, 6]} />
-        <meshStandardMaterial color="#2d1a0e" roughness={0.95} />
+        <meshStandardMaterial map={barkTex} color="#3b1d11" roughness={0.94} />
       </mesh>
       <mesh position={[0, 4.4, -0.8]} rotation={[0.6, 0, 0]} castShadow>
         <cylinderGeometry args={[0.14, 0.25, 2.2, 6]} />
-        <meshStandardMaterial color="#2d1a0e" roughness={0.95} />
+        <meshStandardMaterial map={barkTex} color="#3b1d11" roughness={0.94} />
       </mesh>
 
-      {/* Volumetric Layered Leaf Domes */}
+      {/* Volumetric Layered Faceted Foliage Domes (Crisp shading & no smooth balloon balls) */}
       <mesh position={[-1.4, 5.0, 0]} castShadow>
-        <dodecahedronGeometry args={[1.8, 1]} />
-        <meshStandardMaterial color={foliage1} roughness={0.88} />
+        <dodecahedronGeometry args={[1.9, 0]} />
+        <meshStandardMaterial color={foliage1} roughness={0.88} flatShading />
       </mesh>
       <mesh position={[1.5, 5.2, 0.4]} castShadow>
-        <dodecahedronGeometry args={[1.9, 1]} />
-        <meshStandardMaterial color={foliage2} roughness={0.88} />
+        <dodecahedronGeometry args={[2.0, 0]} />
+        <meshStandardMaterial color={foliage2} roughness={0.88} flatShading />
       </mesh>
       <mesh position={[0, 5.4, -1.3]} castShadow>
-        <dodecahedronGeometry args={[1.7, 1]} />
-        <meshStandardMaterial color={foliage1} roughness={0.88} />
+        <dodecahedronGeometry args={[1.8, 0]} />
+        <meshStandardMaterial color={foliage1} roughness={0.88} flatShading />
       </mesh>
       <mesh position={[0, 6.6, 0.2]} castShadow>
-        <dodecahedronGeometry args={[2.2, 1]} />
-        <meshStandardMaterial color={foliage3} roughness={0.85} />
+        <dodecahedronGeometry args={[2.3, 0]} />
+        <meshStandardMaterial color={foliage3} roughness={0.85} flatShading />
       </mesh>
     </group>
   );
