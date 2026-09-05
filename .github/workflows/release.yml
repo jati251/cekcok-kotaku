@@ -1,0 +1,152 @@
+name: Release
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build & Release (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            updater_platform: darwin-aarch64
+            # Tauri v2 emits a dedicated `.app.tar.gz` updater archive on macOS
+            updater_glob: '*.app.tar.gz'
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            updater_platform: windows-x86_64
+            # Tauri v2 on Windows signs the NSIS installer itself (`-setup.exe` + `.sig`)
+            updater_glob: '*-setup.exe'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web Frontend
+        run: pnpm run build
+
+      - name: Build Tauri Desktop App
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+        run: pnpm tauri build
+
+      - name: Upload Artifacts & Publish Updater Manifest (MinIO S3)
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+          UPDATER_PLATFORM: ${{ matrix.updater_platform }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          BUNDLE_DIR="src-tauri/target/release/bundle"
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          UPDATER_GLOB="${{ matrix.updater_glob }}"
+
+          echo "🚀 Uploading ${{ matrix.os }} artifacts for CekcokKotaku v${VERSION} to ${MINIO_ENDPOINT}..."
+
+          # Upload installers for manual downloads (dmg on macOS, exe/msi on Windows).
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            DMG_FILE=$(find "$BUNDLE_DIR/dmg" -name "*.dmg" 2>/dev/null | head -n 1)
+            if [ -n "$DMG_FILE" ] && [ -f "$DMG_FILE" ]; then
+              DMG_NAME=$(basename "$DMG_FILE")
+              aws s3 cp "$DMG_FILE" "s3://cekcok-releases/$DMG_NAME" --endpoint-url "$MINIO_ENDPOINT"
+              aws s3 cp "$DMG_FILE" "s3://cekcok-releases/CekcokKotaku-macos.dmg" --endpoint-url "$MINIO_ENDPOINT"
+              aws s3 cp "$DMG_FILE" "s3://cekcok-releases/CekcokKotaku.dmg" --endpoint-url "$MINIO_ENDPOINT"
+            fi
+          else
+            EXE_FILE=$(find "$BUNDLE_DIR/nsis" -name "*.exe" 2>/dev/null | head -n 1)
+            if [ -n "$EXE_FILE" ] && [ -f "$EXE_FILE" ]; then
+              EXE_NAME=$(basename "$EXE_FILE")
+              aws s3 cp "$EXE_FILE" "s3://cekcok-releases/$EXE_NAME" --endpoint-url "$MINIO_ENDPOINT"
+              aws s3 cp "$EXE_FILE" "s3://cekcok-releases/CekcokKotaku-windows.exe" --endpoint-url "$MINIO_ENDPOINT"
+              aws s3 cp "$EXE_FILE" "s3://cekcok-releases/CekcokKotaku-setup.exe" --endpoint-url "$MINIO_ENDPOINT"
+            fi
+          fi
+
+          # Locate updater artifact and its minisign signature
+          UPDATER_FILE=$(find "$BUNDLE_DIR" -name "$UPDATER_GLOB" 2>/dev/null | head -n 1)
+          UPDATER_SIG="${UPDATER_FILE}.sig"
+          if [ -z "$UPDATER_FILE" ] || [ ! -f "$UPDATER_FILE" ] || [ ! -f "$UPDATER_SIG" ]; then
+            echo "::error::Updater artifact not found (glob=$UPDATER_GLOB under $BUNDLE_DIR). Ensure bundle.createUpdaterArtifacts is enabled and signing env vars are set."
+            exit 1
+          fi
+          UPDATER_NAME=$(basename "$UPDATER_FILE")
+          SIG_CONTENT=$(cat "$UPDATER_SIG")
+
+          echo "Uploading updater artifact $UPDATER_NAME + signature..."
+          aws s3 cp "$UPDATER_FILE" "s3://cekcok-releases/$UPDATER_NAME" --endpoint-url "$MINIO_ENDPOINT"
+          aws s3 cp "$UPDATER_SIG" "s3://cekcok-releases/${UPDATER_NAME}.sig" --endpoint-url "$MINIO_ENDPOINT"
+
+          # Merge this platform's entry into the shared manifest
+          aws s3 cp "s3://cekcok-releases/kotaku-latest.json" kotaku-latest.json --endpoint-url "$MINIO_ENDPOINT" 2>/dev/null || echo "{}" > kotaku-latest.json
+
+          export SIG_CONTENT
+          node -e "
+            const fs = require('fs');
+            let data = {};
+            try { data = JSON.parse(fs.readFileSync('kotaku-latest.json', 'utf8')); } catch (e) {}
+            data.version = '$VERSION';
+            data.notes = 'CekcokKotaku v$VERSION update.';
+            data.pub_date = '$PUB_DATE';
+            data.platforms = data.platforms || {};
+            data.platforms[process.env.UPDATER_PLATFORM] = {
+              signature: process.env.SIG_CONTENT,
+              url: 'https://releases.cekcok.my.id/cekcok-releases/$UPDATER_NAME'
+            };
+            fs.writeFileSync('kotaku-latest.json', JSON.stringify(data, null, 2));
+          "
+
+          aws s3 cp kotaku-latest.json "s3://cekcok-releases/kotaku-latest.json" --endpoint-url "$MINIO_ENDPOINT"
+          echo "Published ${UPDATER_PLATFORM} entry for v$VERSION."
+
+  verify-manifest:
+    name: Verify published updater manifest
+    needs: release
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert all platforms present in kotaku-latest.json
+        shell: bash
+        run: |
+          curl -sS https://releases.cekcok.my.id/cekcok-releases/kotaku-latest.json -o manifest.json
+          node -e "
+            const m = JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'));
+            const need = ['darwin-aarch64', 'windows-x86_64'];
+            const missing = need.filter((p) => !(m.platforms && m.platforms[p]));
+            if (missing.length > 0) {
+              console.error('MISSING platform entries in published manifest:', missing.join(', '));
+              console.error('Present platforms:', Object.keys(m.platforms || {}).join(', ') || '(none)');
+              process.exit(1);
+            }
+            console.log('OK - all platform entries present:', Object.keys(m.platforms).join(', '));
+          "

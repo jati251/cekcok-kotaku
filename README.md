@@ -103,5 +103,26 @@ pnpm tauri build
 
 ---
 
+## 🚢 Deployment to MinIO S3 & Auto-Updater
+
+Cekcok Kotaku supports automated deployment of release artifacts (installers + auto-updater bundles) to a self-hosted MinIO object storage mirror at `https://releases.cekcok.my.id/cekcok-releases/`.
+
+### 1. Automated CI/CD (GitHub Actions)
+Triggered by pushing a version tag (e.g. `v0.1.0`) or via manual `workflow_dispatch`:
+- Builds macOS (`aarch64`) DMG + `.app.tar.gz` updater archive.
+- Builds Windows (`x64`) NSIS installer + `-setup.exe` signed updater artifact.
+- Signs artifacts using `TAURI_SIGNING_PRIVATE_KEY` (Minisign).
+- Uploads to MinIO bucket `s3://cekcok-releases/`.
+- Publishes/merges the multi-platform updater manifest at `https://releases.cekcok.my.id/cekcok-releases/kotaku-latest.json`.
+
+### 2. Local Deployment (`mc`)
+You can build, sign, and deploy directly from your local machine using the MinIO Client:
+```bash
+# Build, sign, and upload to MinIO in one command
+pnpm deploy
+```
+
+---
+
 ## 📜 License
 MIT © [Jati Suryo](https://github.com/jati251)

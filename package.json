@@ -1,5 +1,5 @@
 {
-  "name": "tauri-app",
+  "name": "cekcok-kotaku",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "deploy": "bash ./scripts/deploy-minio.sh",
     "prepare": "husky"
   },
   "dependencies": {
@@ -16,6 +17,8 @@
     "@react-three/postprocessing": "^3.1.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "@types/three": "^0.185.4",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^13.1.1",
