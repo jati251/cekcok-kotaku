@@ -81,6 +81,7 @@ interface MobaState {
   incrementMatchDuration: (dt: number) => void;
   recordKill: (isPlayerTeamKill: boolean) => void;
   endMatch: (isVictory: boolean) => void;
+  resetToLobby: () => void;
 }
 
 const INITIAL_PLAYER_TELEMETRY: PlayerTelemetry = {
@@ -347,5 +348,18 @@ export const useMobaStore = create<MobaState>((set, get) => ({
   endMatch: (isVictory) => {
     mobaAudio.playAnnouncer(isVictory ? 'victory' : 'defeat');
     set({ matchState: isVictory ? 'victory' : 'defeat' });
+  },
+
+  resetToLobby: () => {
+    set({
+      matchState: 'hero_select',
+      matchDuration: 0,
+      blueScore: 0,
+      redScore: 0,
+      isShopOpen: false,
+      isScoreboardOpen: false,
+      activeBanners: [],
+      playerTelemetry: { ...INITIAL_PLAYER_TELEMETRY },
+    });
   },
 }));

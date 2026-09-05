@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ActiveGameTab } from '../types';
+import type { ActiveGameTab, LauncherSortOrder } from '../types';
 import { soundManager } from '../utils/audio';
 
 interface LauncherState {
@@ -12,6 +12,7 @@ interface LauncherState {
   commanderName: string;
   rankTitle: string;
   launcherLayoutMode: 'studio' | 'grid';
+  sortOrder: LauncherSortOrder;
 
   // Game Loading Screen State
   isLoadingGame: boolean;
@@ -23,6 +24,7 @@ interface LauncherState {
   setActiveTab: (tab: ActiveGameTab) => void;
   setSelectedGameId: (gameId: string) => void;
   setLauncherLayoutMode: (mode: 'studio' | 'grid') => void;
+  setSortOrder: (order: LauncherSortOrder) => void;
   openSettings: () => void;
   closeSettings: () => void;
   setSfxVolume: (volume: number) => void;
@@ -42,6 +44,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   commanderName: 'Commander Jati',
   rankTitle: 'Brigadier General',
   launcherLayoutMode: 'studio',
+  sortOrder: 'default',
 
   isLoadingGame: false,
   loadingProgress: 0,
@@ -61,6 +64,11 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   setLauncherLayoutMode: (mode) => {
     soundManager.playClick();
     set({ launcherLayoutMode: mode });
+  },
+
+  setSortOrder: (order) => {
+    soundManager.playClick();
+    set({ sortOrder: order });
   },
 
   openSettings: () => {
@@ -118,6 +126,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'cartown': 'cartown',
       'super-kart': 'super-kart',
       'mobile-legends': 'mobile-legends',
+      'pacman': 'pacman',
+      'mortal-kombat': 'mortal-kombat',
     };
 
     const titles: Record<string, string> = {
@@ -144,6 +154,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'cartown': 'Car Town',
       'super-kart': 'Super Kart 3D',
       'mobile-legends': 'Mobile Legends: Bang Bang 3D',
+      'pacman': 'Pac-Man Classic',
+      'mortal-kombat': 'Mortal Kombat Classic',
     };
 
     const title = titles[gameId] || gameId;

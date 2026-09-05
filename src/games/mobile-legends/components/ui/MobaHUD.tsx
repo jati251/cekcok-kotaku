@@ -43,7 +43,10 @@ export const MobaHUD: React.FC = () => {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <button
-              onClick={exitToLauncher}
+              onClick={() => {
+                useMobaStore.getState().resetToLobby();
+                exitToLauncher();
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 text-slate-300 hover:text-white text-xs font-bold transition shadow-lg backdrop-blur-md"
             >
               <ArrowLeft size={14} /> Exit

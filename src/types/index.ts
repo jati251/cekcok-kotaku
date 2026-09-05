@@ -27,7 +27,17 @@ export type ActiveGameTab =
   | 'nightclub-city'
   | 'cartown'
   | 'super-kart'
-  | 'mobile-legends';
+  | 'mobile-legends'
+  | 'pacman'
+  | 'mortal-kombat';
+
+export type LauncherSortOrder =
+  | 'default'
+  | 'title-asc'
+  | 'title-desc'
+  | 'year-desc'
+  | 'year-asc'
+  | 'playable';
 
 export interface LauncherGame {
   id: string;
@@ -41,3 +51,4 @@ export interface LauncherGame {
   features: string[];
   accentColor: string;
 }
+

@@ -10,11 +10,13 @@ import {
   Play,
   Trophy,
   Flame,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useLauncherStore } from '@/stores/launcherStore';
 import { LAUNCHER_GAMES } from '@/config/launcherGames';
-import type { LauncherGame } from '@/types';
+import type { LauncherGame, LauncherSortOrder } from '@/types';
 import { soundManager } from '@/utils/audio';
+import { sortLauncherGames, SORT_OPTIONS } from '../utils/sortGames';
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   strategy: Swords,
@@ -36,12 +38,12 @@ export const LauncherSidebar: React.FC<LauncherSidebarProps> = ({
   selectedGame,
   onSelectGame,
 }) => {
-  const { launchGame } = useLauncherStore();
+  const { launchGame, sortOrder, setSortOrder } = useLauncherStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const filteredGames = useMemo(() => {
-    return LAUNCHER_GAMES.filter((game) => {
+    const matched = LAUNCHER_GAMES.filter((game) => {
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.genre.toLowerCase().includes(searchQuery.toLowerCase());
@@ -51,7 +53,9 @@ export const LauncherSidebar: React.FC<LauncherSidebarProps> = ({
       if (activeFilter !== 'all') return game.category === activeFilter;
       return true;
     });
-  }, [searchQuery, activeFilter]);
+
+    return sortLauncherGames(matched, sortOrder);
+  }, [searchQuery, activeFilter, sortOrder]);
 
   const handleGameClick = (game: LauncherGame) => {
     soundManager.playClick();
@@ -118,7 +122,29 @@ export const LauncherSidebar: React.FC<LauncherSidebarProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Sort Order Selector Bar */}
+        <div className="flex items-center justify-between pt-1 border-t border-slate-900 px-0.5">
+          <span className="font-mono text-[10px] text-slate-500 font-bold">
+            {filteredGames.length} CARTRIDGES
+          </span>
+          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 rounded-lg px-2 py-1">
+            <ArrowUpDown className="w-3 h-3 text-indigo-400 shrink-0" />
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as LauncherSortOrder)}
+              className="bg-transparent text-[10px] font-bold text-slate-300 focus:text-white outline-none cursor-pointer pr-1"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id} className="bg-slate-950 text-slate-200 font-medium">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
+
 
       {/* Game List with Console-grade styling */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">

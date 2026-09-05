@@ -444,5 +444,49 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Dual controls: Desktop (Right-click / WASD, QWER) & On-Screen Mobile MOBA controls',
     ],
   },
+  {
+    id: 'pacman',
+    title: 'Pac-Man Classic',
+    tagline: 'The iconic 1980 arcade maze chaser with authentic 4-ghost AI, energizers, fruit bonuses, and waka-waka SFX',
+    genre: 'Classic Arcade / Maze Action',
+    category: 'arcade',
+    status: 'playable',
+    releaseYear: '1980',
+    accentColor: '#facc15',
+    description:
+      'Chomp through the legendary arcade maze! Outsmart the 4 distinct ghost AI personalities (Blinky the chaser, Pinky the ambusher, Inky the flanker, and Clyde the coward). Grab pulsating Power Pellets to turn the tables, gobble blue ghosts for multiplier score streaks, harvest fruit bonuses, and chase the ultimate high score.',
+    features: [
+      'Iconic 28x36 arcade maze layout with warp side-tunnels and ghost house gate',
+      '4 Authentic Ghost Personalities: Blinky (Shadow), Pinky (Speedy), Inky (Bashful), and Clyde (Pokey)',
+      'Dual Ghost Modes: Scatter & Chase behavior cycles plus Frightened flashing panic when energized',
+      'Power Pellets & Ghost-Eating Combo multipliers: 200, 400, 800, and 1600 bonus points',
+      'Bonus Fruit Progression: Cherries, Strawberry, Orange, Apple, Melon, Galaxian, Bell, and Key',
+      'Procedural Web Audio API sound synthesizer with authentic waka-waka, siren drone, and death whistle',
+      'Retro arcade CRT scanline toggle, responsive controls (Arrow/WASD + Touch D-Pad), and local High Score tracking',
+    ],
+  },
+  {
+    id: 'mortal-kombat',
+    title: 'Mortal Kombat Classic',
+    tagline: 'The brutal 1992 arcade fighting tournament — iconic kombatants, special moves, and visceral Fatalities',
+    genre: '2D Fighting Arcade',
+    category: 'action',
+    status: 'playable',
+    releaseYear: '1992',
+    accentColor: '#dc2626',
+    description:
+      'Enter the tournament to save Earthrealm! Choose your warrior among Scorpion, Sub-Zero, Raiden, Liu Kang, Sonya Blade, and Johnny Cage. Master special projectiles, teleport attacks, high/low punches and kicks, round-based tournament matches, and unleash the legendary FINISH HIM Fatalities with announcer voiceovers.',
+    features: [
+      'Six Iconic Kombatants: Scorpion, Sub-Zero, Raiden, Liu Kang, Sonya Blade, and Johnny Cage',
+      'Special Moves Kit: Scorpion Spear ("GET OVER HERE!"), Sub-Zero Ice Freeze, Raiden Torpedo, and Liu Kang Bicycle Kick',
+      'Visceral Fatality System: Trigger finishing moves during "FINISH HIM!" with screen dimming and blood splatter',
+      'Gothic Arcade Arenas: The Pit (moonlit bridge), Goro\'s Lair (dungeon torchlight), and Shang Tsung Throne Room',
+      'Procedural Web Audio Announcer: "ROUND 1... FIGHT!", "EXCELLENT!", "FATALITY!", and "FLAWLESS VICTORY"',
+      'Dual Combat Modes: Arcade Tower (vs Adaptive AI with 3 difficulties) and 2-Player Local Versus',
+      'Full arcade keyboard layout + on-screen arcade fight stick & action buttons with CRT scanlines',
+    ],
+  },
 ];
+
+
 

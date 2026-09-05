@@ -54,10 +54,13 @@ export const NightclubCityGame: React.FC = () => {
     collectTip,
   } = useNightclubStore();
 
-  // Sync audio with launcher store
+  // Sync audio with launcher store & stop music beat on unmount
   useEffect(() => {
     nightclubAudio.setMuted(isMuted);
     nightclubAudio.setVolume(sfxVolume);
+    return () => {
+      nightclubAudio.stopClubBeat();
+    };
   }, [isMuted, sfxVolume]);
 
   // Simulation tick loop (every 1 second)

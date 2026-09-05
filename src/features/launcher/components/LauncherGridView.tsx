@@ -1,22 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Play, Info } from 'lucide-react';
+import { Search, X, Play, Info, ArrowUpDown } from 'lucide-react';
 import { useLauncherStore } from '@/stores/launcherStore';
 import { LAUNCHER_GAMES } from '@/config/launcherGames';
-import type { LauncherGame } from '@/types';
+import type { LauncherGame, LauncherSortOrder } from '@/types';
 import { soundManager } from '@/utils/audio';
 import { motion } from 'framer-motion';
+import { sortLauncherGames, SORT_OPTIONS } from '../utils/sortGames';
 
 interface LauncherGridViewProps {
   onSelectGame: (game: LauncherGame) => void;
 }
 
 export const LauncherGridView: React.FC<LauncherGridViewProps> = ({ onSelectGame }) => {
-  const { launchGame } = useLauncherStore();
+  const { launchGame, sortOrder, setSortOrder } = useLauncherStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   const filteredGames = useMemo(() => {
-    return LAUNCHER_GAMES.filter((game) => {
+    const matched = LAUNCHER_GAMES.filter((game) => {
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.genre.toLowerCase().includes(searchQuery.toLowerCase());
@@ -26,7 +27,9 @@ export const LauncherGridView: React.FC<LauncherGridViewProps> = ({ onSelectGame
       if (activeCategory !== 'all') return game.category === activeCategory;
       return true;
     });
-  }, [searchQuery, activeCategory]);
+
+    return sortLauncherGames(matched, sortOrder);
+  }, [searchQuery, activeCategory, sortOrder]);
 
   const handleLaunch = (e: React.MouseEvent, gameId: string) => {
     e.stopPropagation();
@@ -99,6 +102,22 @@ export const LauncherGridView: React.FC<LauncherGridViewProps> = ({ onSelectGame
                 {cat}
               </button>
             ))}
+          </div>
+
+          {/* Sort Order Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            <ArrowUpDown className="w-3.5 h-3.5 text-indigo-400 ml-1.5 shrink-0" />
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as LauncherSortOrder)}
+              className="bg-transparent text-[11px] font-bold text-slate-300 focus:text-white outline-none cursor-pointer py-1 pr-2"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id} className="bg-slate-950 text-slate-200 font-medium">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
