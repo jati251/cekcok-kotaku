@@ -128,6 +128,12 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'mobile-legends': 'mobile-legends',
       'pacman': 'pacman',
       'mortal-kombat': 'mortal-kombat',
+      'flappy-bird': 'flappy-bird',
+      'angry-birds': 'angry-birds',
+      'zuma-deluxe': 'zuma-deluxe',
+      'bejeweled': 'bejeweled',
+      'pinball': 'pinball',
+      'chess': 'chess',
     };
 
     const titles: Record<string, string> = {
@@ -156,6 +162,12 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'mobile-legends': 'Mobile Legends: Bang Bang 3D',
       'pacman': 'Pac-Man Classic',
       'mortal-kombat': 'Mortal Kombat Classic',
+      'flappy-bird': 'Flappy Bird Classic',
+      'angry-birds': 'Angry Birds Arcade',
+      'zuma-deluxe': 'Zuma Deluxe',
+      'bejeweled': 'Bejeweled 3',
+      'pinball': 'Retro Space Pinball',
+      'chess': 'Chess Master 3D',
     };
 
     const title = titles[gameId] || gameId;

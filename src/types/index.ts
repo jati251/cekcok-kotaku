@@ -29,7 +29,14 @@ export type ActiveGameTab =
   | 'super-kart'
   | 'mobile-legends'
   | 'pacman'
-  | 'mortal-kombat';
+  | 'mortal-kombat'
+  | 'flappy-bird'
+  | 'angry-birds'
+  | 'zuma-deluxe'
+  | 'bejeweled'
+  | 'pinball'
+  | 'chess'
+  | 'settings';
 
 export type LauncherSortOrder =
   | 'default'

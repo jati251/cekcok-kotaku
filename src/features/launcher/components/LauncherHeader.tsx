@@ -32,7 +32,6 @@ export const LauncherHeader: React.FC = () => {
   const {
     commanderName,
     rankTitle,
-    openSettings,
     launcherLayoutMode,
     setLauncherLayoutMode,
     isMuted,
@@ -186,7 +185,7 @@ export const LauncherHeader: React.FC = () => {
         <button
           onClick={() => {
             soundManager.playClick();
-            openSettings();
+            useLauncherStore.getState().setActiveTab('settings');
           }}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer shadow-md active:scale-95"
         >

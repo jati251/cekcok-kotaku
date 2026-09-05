@@ -172,6 +172,18 @@ export const SettingsModal: React.FC = () => {
               Reset Save
             </Button>
           </div>
+
+          <div className="pt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => {
+                closeSettings();
+                useLauncherStore.getState().setActiveTab('settings');
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-md flex items-center justify-center gap-2"
+            >
+              <span>Open Full Station Settings</span>
+            </button>
+          </div>
         </div>
       </div>
     </Modal>

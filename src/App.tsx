@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useLauncherStore } from './stores/launcherStore';
 import {
   LauncherHeader,
@@ -6,33 +6,110 @@ import {
   SettingsModal,
   GameLoadingScreen,
 } from './features/launcher';
-import {
-  EmpiresAndAlliesGame,
-  CityVilleGame,
-  TetrisGame,
-  DynastyLegendsGame,
-  RubikGame,
-  SkyRaid,
-  SpaceBlast,
-  MotoRush,
-  CrazyWheels,
-  MiniGolf,
-  BumperBrawl,
-  SnowboardRush,
-  BalloonFrenzy,
-  FeedingFrenzy,
-  PizzaFrenzy,
-  SaloonShowdown,
-  Insaniquarium,
-  EightBallPool,
-  NinjaSagaGame,
-  NightclubCityGame,
-  CarTownGame,
-  SuperKartGame,
-  MobileLegendsGame,
-  PacmanGame,
-  MortalKombatGame,
-} from './games';
+
+// Dynamic Code-Split Lazy Game Components (Bundle Optimization)
+const EmpiresAndAlliesGame = lazy(() =>
+  import('./games/empires-and-allies/EmpiresAndAlliesGame').then((m) => ({
+    default: m.EmpiresAndAlliesGame,
+  }))
+);
+const CityVilleGame = lazy(() =>
+  import('./games/cityville/CityVilleGame').then((m) => ({ default: m.CityVilleGame }))
+);
+const TetrisGame = lazy(() =>
+  import('./games/tetris').then((m) => ({ default: m.TetrisGame }))
+);
+const DynastyLegendsGame = lazy(() =>
+  import('./games/dynasty-legends').then((m) => ({ default: m.DynastyLegendsGame }))
+);
+const RubikGame = lazy(() =>
+  import('./games/rubik-cube').then((m) => ({ default: m.RubikGame }))
+);
+const SkyRaid = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.SkyRaid }))
+);
+const SpaceBlast = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.SpaceBlast }))
+);
+const MotoRush = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.MotoRush }))
+);
+const CrazyWheels = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.CrazyWheels }))
+);
+const MiniGolf = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.MiniGolf }))
+);
+const BumperBrawl = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.BumperBrawl }))
+);
+const SnowboardRush = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.SnowboardRush }))
+);
+const BalloonFrenzy = lazy(() =>
+  import('./games/arcade-2d').then((m) => ({ default: m.BalloonFrenzy }))
+);
+const FeedingFrenzy = lazy(() =>
+  import('./games/feeding-frenzy/FeedingFrenzy').then((m) => ({ default: m.FeedingFrenzy }))
+);
+const PizzaFrenzy = lazy(() =>
+  import('./games/pizza-frenzy/PizzaFrenzy').then((m) => ({ default: m.PizzaFrenzy }))
+);
+const SaloonShowdown = lazy(() =>
+  import('./games/saloon-showdown/SaloonShowdown').then((m) => ({ default: m.SaloonShowdown }))
+);
+const Insaniquarium = lazy(() =>
+  import('./games/insaniquarium/Insaniquarium').then((m) => ({ default: m.Insaniquarium }))
+);
+const EightBallPool = lazy(() =>
+  import('./games/eight-ball-pool/EightBallPool').then((m) => ({ default: m.EightBallPool }))
+);
+const NinjaSagaGame = lazy(() =>
+  import('./games/ninja-saga/NinjaSagaGame').then((m) => ({ default: m.NinjaSagaGame }))
+);
+const NightclubCityGame = lazy(() =>
+  import('./games/nightclub-city/NightclubCityGame').then((m) => ({ default: m.NightclubCityGame }))
+);
+const CarTownGame = lazy(() =>
+  import('./games/cartown/CarTownGame').then((m) => ({ default: m.CarTownGame }))
+);
+const SuperKartGame = lazy(() =>
+  import('./games/super-kart').then((m) => ({ default: m.SuperKartGame }))
+);
+const MobileLegendsGame = lazy(() =>
+  import('./games/mobile-legends').then((m) => ({ default: m.MobileLegendsGame }))
+);
+const PacmanGame = lazy(() =>
+  import('./games/pacman').then((m) => ({ default: m.PacmanGame }))
+);
+const MortalKombatGame = lazy(() =>
+  import('./games/mortal-kombat').then((m) => ({ default: m.MortalKombatGame }))
+);
+
+// 6 New Games
+const FlappyBirdGame = lazy(() =>
+  import('./games/flappy-bird').then((m) => ({ default: m.FlappyBirdGame }))
+);
+const AngryBirdsGame = lazy(() =>
+  import('./games/angry-birds').then((m) => ({ default: m.AngryBirdsGame }))
+);
+const ZumaGame = lazy(() =>
+  import('./games/zuma-deluxe').then((m) => ({ default: m.ZumaGame }))
+);
+const BejeweledGame = lazy(() =>
+  import('./games/bejeweled').then((m) => ({ default: m.BejeweledGame }))
+);
+const PinballGame = lazy(() =>
+  import('./games/pinball').then((m) => ({ default: m.PinballGame }))
+);
+const ChessGame = lazy(() =>
+  import('./games/chess').then((m) => ({ default: m.ChessGame }))
+);
+
+// Full Settings Page
+const SettingsPage = lazy(() =>
+  import('./features/settings').then((m) => ({ default: m.SettingsPage }))
+);
 
 export const App: React.FC = () => {
   const { activeTab } = useLauncherStore();
@@ -47,6 +124,20 @@ export const App: React.FC = () => {
             <SettingsModal />
           </div>
         );
+      case 'settings':
+        return <SettingsPage />;
+      case 'flappy-bird':
+        return <FlappyBirdGame />;
+      case 'angry-birds':
+        return <AngryBirdsGame />;
+      case 'zuma-deluxe':
+        return <ZumaGame />;
+      case 'bejeweled':
+        return <BejeweledGame />;
+      case 'pinball':
+        return <PinballGame />;
+      case 'chess':
+        return <ChessGame />;
       case 'cityville':
         return <CityVilleGame />;
       case 'tetris':
@@ -106,7 +197,18 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col font-sans">
       <GameLoadingScreen />
-      {renderContent()}
+      <Suspense
+        fallback={
+          <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-300">
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-xs font-mono font-bold tracking-widest uppercase text-indigo-400">
+              Loading Module...
+            </p>
+          </div>
+        }
+      >
+        {renderContent()}
+      </Suspense>
     </div>
   );
 };

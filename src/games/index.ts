@@ -16,4 +16,9 @@ export * from './super-kart';
 export { MobileLegendsGame } from './mobile-legends';
 export { PacmanGame } from './pacman';
 export { MortalKombatGame } from './mortal-kombat';
-
+export { FlappyBirdGame } from './flappy-bird';
+export { AngryBirdsGame } from './angry-birds';
+export { ZumaGame } from './zuma-deluxe';
+export { BejeweledGame } from './bejeweled';
+export { PinballGame } from './pinball';
+export { ChessGame } from './chess';

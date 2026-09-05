@@ -1,0 +1,1 @@
+export { AngryBirdsGame } from './AngryBirdsGame';

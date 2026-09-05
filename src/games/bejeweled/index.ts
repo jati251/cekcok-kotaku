@@ -1,0 +1,1 @@
+export { BejeweledGame } from './BejeweledGame';
