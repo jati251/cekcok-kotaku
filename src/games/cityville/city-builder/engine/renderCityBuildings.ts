@@ -433,7 +433,11 @@ function drawBadge(
   const w = 72;
   const h = 18;
   ctx.beginPath();
-  ctx.roundRect(x - w / 2, y - h / 2, w, h, 4);
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x - w / 2, y - h / 2, w, h, 4);
+  } else {
+    ctx.rect(x - w / 2, y - h / 2, w, h);
+  }
   ctx.fill();
 
   ctx.strokeStyle = borderColor;

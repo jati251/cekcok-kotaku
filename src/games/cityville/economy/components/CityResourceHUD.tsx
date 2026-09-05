@@ -73,7 +73,7 @@ export const CityResourceHUD: React.FC = () => {
   };
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-30 flex flex-wrap items-center justify-between px-3 py-1.5 bg-neutral-950/95 border-b-2 border-amber-500/40 text-neutral-100 shadow-2xl font-pixel text-[9px] select-none gap-2">
+    <header className="absolute top-9 left-0 right-0 z-30 flex flex-wrap items-center justify-between px-3 py-1.5 bg-neutral-950/95 border-b-2 border-amber-500/40 text-neutral-100 shadow-2xl font-pixel text-[9px] select-none gap-2">
       {/* Left: Mayor Emblem & Level */}
       <div className="flex items-center gap-2">
         <div className="relative flex items-center justify-center w-8 h-8 rounded bg-gradient-to-br from-amber-500 to-amber-700 text-neutral-950 font-black text-xs border-2 border-amber-300 shadow">

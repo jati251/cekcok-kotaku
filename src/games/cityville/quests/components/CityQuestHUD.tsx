@@ -29,7 +29,7 @@ export const CityQuestHUD: React.FC = () => {
   return (
     <>
       {/* Active Quests Left Panel */}
-      <div className="absolute top-12 left-3 z-20 w-64 space-y-2 pointer-events-none font-arcade">
+      <div className="absolute top-24 left-3 z-20 w-64 space-y-2 pointer-events-none font-arcade">
         {quests.slice(0, 2).map((q) => (
           <div
             key={q.id}
