@@ -211,7 +211,7 @@ export const App: React.FC = () => {
     }
 
     return (
-      <ArcadeScreenWrapper gameId={selectedGameId}>
+      <ArcadeScreenWrapper gameId={selectedGameId || activeTab}>
         {renderGame()}
       </ArcadeScreenWrapper>
     );
