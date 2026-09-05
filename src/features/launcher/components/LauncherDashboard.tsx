@@ -65,7 +65,7 @@ export const LauncherDashboard: React.FC = () => {
             <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-amber-400 font-pixel text-[9px]">
               ESC
             </span>
-            <span>KEMBALI KE ARCADE</span>
+            <span>BACK TO DECK</span>
           </div>
           <span className="text-neutral-700">|</span>
           <div className="flex items-center gap-1.5 text-cyan-400 font-bold">

@@ -159,15 +159,15 @@ export const LauncherGameDetail: React.FC<LauncherGameDetailProps> = ({ game }) 
           {/* Controls Graphic Hint */}
           <div className="flex items-center gap-4 text-[11px]">
             <span className="text-amber-400 font-bold flex items-center gap-1.5">
-              <span>🕹️</span> [W,A,S,D / PANAH] KONTROL
+              <span>🕹️</span> [W,A,S,D / ARROWS] MOVE
             </span>
             <span className="text-neutral-600">•</span>
             <span className="text-cyan-400 font-bold flex items-center gap-1.5">
-              <span>🔴</span> [SPASI / J] AKSI
+              <span>🔴</span> [SPACE / J] ACTION
             </span>
             <span className="text-neutral-600">•</span>
             <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-              <span>⚪</span> [ESC] KEMBALI
+              <span>⚪</span> [ESC] RETURN
             </span>
           </div>
 

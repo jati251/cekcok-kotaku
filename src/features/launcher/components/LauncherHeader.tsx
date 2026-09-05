@@ -5,6 +5,8 @@ import {
   CloudDownload,
   Dices,
   Settings,
+  Tv,
+  LayoutGrid,
 } from 'lucide-react';
 import { useLauncherStore } from '@/stores/launcherStore';
 import { LAUNCHER_GAMES } from '@/config/launcherGames';
@@ -13,7 +15,13 @@ import { RetroUpdater } from './RetroUpdater';
 
 export const LauncherHeader: React.FC = () => {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
-  const { isMuted, toggleMute, setSelectedGameId } = useLauncherStore();
+  const {
+    isMuted,
+    toggleMute,
+    setSelectedGameId,
+    launcherLayoutMode,
+    setLauncherLayoutMode,
+  } = useLauncherStore();
 
   const handleRandomPick = () => {
     soundManager.playHarvest();
@@ -58,13 +66,48 @@ export const LauncherHeader: React.FC = () => {
           </div>
         </div>
 
+        {/* Center: View Switcher (Cabinet CRT vs Gallery Grid) */}
+        <div className="flex items-center gap-1 bg-neutral-950/90 border-2 border-neutral-800 p-1 rounded-xl shadow-inner font-arcade">
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              setLauncherLayoutMode('studio');
+            }}
+            title="Cabinet Monitor & Cartridge Rack"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
+              launcherLayoutMode === 'studio'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-neutral-950 border border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-850'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>CABINET</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              setLauncherLayoutMode('grid');
+            }}
+            title="Arcade Cover Gallery"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
+              launcherLayoutMode === 'grid'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-neutral-950 border border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-850'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>GALLERY</span>
+          </button>
+        </div>
+
         {/* Right: Arcade Console Control Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 font-arcade">
           {/* Random Game Button */}
           <button
             onClick={handleRandomPick}
-            title="Pilih Game Acak"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-purple-800 to-indigo-950 hover:from-purple-700 hover:to-indigo-900 border-2 border-purple-500/50 hover:border-purple-400 text-purple-200 hover:text-white font-arcade text-xs tracking-wider shadow-md hover:shadow-purple-500/30 transition cursor-pointer active:translate-y-0.5"
+            title="Surprise Me (Pick Random Game)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-purple-800 to-indigo-950 hover:from-purple-700 hover:to-indigo-900 border-2 border-purple-500/50 hover:border-purple-400 text-purple-200 hover:text-white text-xs tracking-wider shadow-md hover:shadow-purple-500/30 transition cursor-pointer active:translate-y-0.5"
           >
             <Dices className="w-3.5 h-3.5 text-purple-300" />
             <span className="hidden sm:inline">RANDOM</span>
@@ -76,8 +119,8 @@ export const LauncherHeader: React.FC = () => {
               soundManager.playClick();
               setUpdateModalOpen(true);
             }}
-            title="Cek Pembaruan Versi"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-cyan-900 to-slate-950 hover:from-cyan-800 hover:to-slate-900 border-2 border-cyan-500/50 hover:border-cyan-400 text-cyan-200 hover:text-white font-arcade text-xs tracking-wider shadow-md hover:shadow-cyan-500/30 transition cursor-pointer active:translate-y-0.5"
+            title="Check System Updates"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-cyan-900 to-slate-950 hover:from-cyan-800 hover:to-slate-900 border-2 border-cyan-500/50 hover:border-cyan-400 text-cyan-200 hover:text-white text-xs tracking-wider shadow-md hover:shadow-cyan-500/30 transition cursor-pointer active:translate-y-0.5"
           >
             <CloudDownload className="w-3.5 h-3.5 text-cyan-300" />
             <span className="hidden sm:inline">UPDATER</span>
@@ -89,7 +132,7 @@ export const LauncherHeader: React.FC = () => {
               soundManager.playClick();
               toggleMute();
             }}
-            title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
             className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer shadow-sm active:translate-y-0.5"
           >
             {isMuted ? (
@@ -105,8 +148,8 @@ export const LauncherHeader: React.FC = () => {
               soundManager.playClick();
               useLauncherStore.getState().setActiveTab('settings');
             }}
-            title="Pengaturan Sistem"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-b from-neutral-800 to-neutral-950 hover:from-neutral-700 hover:to-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white font-arcade text-xs tracking-wider transition cursor-pointer shadow-sm active:translate-y-0.5"
+            title="System Settings"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-b from-neutral-800 to-neutral-950 hover:from-neutral-700 hover:to-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs tracking-wider transition cursor-pointer shadow-sm active:translate-y-0.5"
           >
             <Settings className="w-3.5 h-3.5 text-neutral-400" />
             <span className="hidden md:inline">SETUP</span>

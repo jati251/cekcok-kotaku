@@ -46,7 +46,7 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
         setUpdateInfo(info);
         if (!info.available) {
           // Up to date! Show a toast and auto-close after 3.5 seconds
-          setToastMessage('Sistem Sudah Versi Terbaru (v0.1.0)');
+          setToastMessage('System is Up to Date (v0.1.0)');
           soundManager.playClick();
           const timer = setTimeout(() => {
             if (isMounted) onClose();
@@ -58,7 +58,7 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
       })
       .catch((err) => {
         if (!isMounted) return;
-        setErrorMessage(err instanceof Error ? err.message : 'Gagal menghubungi server pembaruan.');
+        setErrorMessage(err instanceof Error ? err.message : 'Failed to reach update server.');
         soundManager.playClick();
       })
       .finally(() => {
@@ -84,7 +84,7 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
       setIsSuccess(true);
       soundManager.playVictory();
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Gagal mengunduh berkas pembaruan.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to download update package.');
       soundManager.playClick();
     } finally {
       setDownloadProgress(null);
@@ -102,18 +102,18 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
           <div className="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
             <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest">
-            SISTEM SUDAH TERBARU
+          <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest font-pixel text-[11px]">
+            SYSTEM IS UP TO DATE
           </h3>
-          <p className="text-xs text-neutral-300 mt-1 font-sans">
-            Versi saat ini <span className="text-emerald-300 font-mono font-bold">v0.1.0</span> telah tersinkronisasi dengan server rilis MinIO.
+          <p className="text-xs text-neutral-300 mt-1.5 font-sans">
+            Current version <span className="text-emerald-300 font-mono font-bold">v0.1.0</span> is synchronized with the MinIO release server.
           </p>
           <div className="mt-4 pt-3 border-t border-neutral-800 flex justify-center">
             <button
               onClick={onClose}
               className="px-5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold uppercase tracking-wider transition border border-neutral-700 cursor-pointer"
             >
-              Tutup [ESC]
+              CLOSE [ESC]
             </button>
           </div>
         </div>
@@ -127,7 +127,7 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
           <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
               <CloudDownload className="w-5 h-5 text-amber-400" />
-              <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest">
+              <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest font-pixel text-[10px]">
                 ARCADE AUTO-UPDATER
               </h3>
             </div>
@@ -144,14 +144,14 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
             {isChecking ? (
               <div className="flex flex-col items-center justify-center py-6 gap-3">
                 <RefreshCw className="w-8 h-8 text-amber-400 animate-spin" />
-                <p className="text-xs text-neutral-300">Menghubungi server rilis MinIO...</p>
+                <p className="text-xs text-neutral-300">Connecting to MinIO release server...</p>
                 <span className="text-[10px] text-neutral-500">Checking releases.cekcok.my.id</span>
               </div>
             ) : errorMessage ? (
               <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/60 flex items-start gap-3 text-red-200 text-xs">
                 <AlertCircle className="w-5 h-5 shrink-0 text-red-400 mt-0.5" />
                 <div>
-                  <p className="font-bold text-red-300 uppercase">Gagal Memeriksa Pembaruan</p>
+                  <p className="font-bold text-red-300 uppercase">Update Check Failed</p>
                   <p className="text-red-300/80 text-[11px] mt-1 font-sans">{errorMessage}</p>
                 </div>
               </div>
@@ -160,17 +160,17 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
                 <div className="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Pembaruan Berhasil Diunduh!
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider font-pixel text-[11px]">
+                  Update Installed Successfully!
                 </h4>
                 <p className="text-xs text-neutral-400 font-sans">
-                  Versi baru telah dipasang. Mulai ulang aplikasi sekarang untuk menerapkan pembaruan.
+                  The latest version is installed. Restart the application now to apply updates.
                 </p>
                 <button
                   onClick={() => relaunchApp()}
-                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/30 cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-neutral-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/30 cursor-pointer font-arcade"
                 >
-                  RESTART APLIKASI SEKARANG
+                  RESTART APPLICATION NOW
                 </button>
               </div>
             ) : updateInfo && updateInfo.available ? (
@@ -179,10 +179,10 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-amber-400 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
-                      VERSI BARU: v{updateInfo.version}
+                      NEW VERSION: v{updateInfo.version}
                     </span>
                     <span className="text-[10px] text-neutral-400">
-                      Saat ini: v{updateInfo.currentVersion}
+                      Current: v{updateInfo.currentVersion}
                     </span>
                   </div>
                   {updateInfo.body && (
@@ -195,7 +195,7 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
                 {downloadProgress !== null ? (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs text-neutral-400">
-                      <span>Mengunduh paket instalasi...</span>
+                      <span>Downloading update package...</span>
                       <span className="text-amber-400 font-bold">{downloadProgress}%</span>
                     </div>
                     <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden border border-neutral-700">
@@ -208,9 +208,9 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
                 ) : (
                   <button
                     onClick={handleDownload}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-neutral-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-neutral-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20 cursor-pointer font-arcade"
                   >
-                    UNDUH & PASANG PEMBARUAN
+                    DOWNLOAD & INSTALL UPDATE
                   </button>
                 )}
               </div>
@@ -221,9 +221,9 @@ export const RetroUpdater: React.FC<RetroUpdaterProps> = ({ isOpen, onClose }) =
           <div className="pt-2 border-t border-neutral-800 flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold uppercase tracking-wider transition border border-neutral-800 cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold uppercase tracking-wider transition border border-neutral-800 cursor-pointer font-arcade"
             >
-              Tutup
+              Close
             </button>
           </div>
         </div>
