@@ -6,3 +6,4 @@ export * from './components/LauncherGridView';
 export * from './components/GameCard';
 export * from './components/SettingsModal';
 export * from './components/GameLoadingScreen';
+export * from './components/RetroUpdater';
