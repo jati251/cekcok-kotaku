@@ -36,16 +36,16 @@ export const CityNewspaper: React.FC = () => {
         <div className="flex-1 mx-4 overflow-hidden relative">
           <div className="whitespace-nowrap animate-marquee flex items-center gap-8 text-neutral-200">
             <span className="text-amber-300 font-bold">
-              ★ METROPOLIS CHRONICLE ★
+              ★ CEKCOKVILLE HERALD ★
             </span>
             <span>
-              MAYOR APPROVAL AT {approvalRating}%! CITIZENS REJOICE OVER NEW DEVELOPMENTS!
+              MAYOR APPROVAL AT {approvalRating}%! CITIZEN DRAMAS RESOLVED PEACEFULLY!
             </span>
             <span className="text-emerald-400">
               POPULATION: {population.toLocaleString()} CITIZENS ENJOYING URBAN PARKS!
             </span>
             <span className="text-cyan-300">
-              COMMERCE REPORT: {businessCount} LOCAL BUSINESSES THRIVING!
+              COMMERCE REPORT: {businessCount} LOCAL STORES THRIVING!
             </span>
             <span className="text-yellow-300">
               AGRICULTURE: {farmCount} HARVEST PLOTS ACTIVE IN SUBURBS!
@@ -57,12 +57,12 @@ export const CityNewspaper: React.FC = () => {
         </div>
 
         <div className="hidden sm:flex items-center gap-2 text-[8px] font-mono text-neutral-400 flex-shrink-0">
-          <span className="text-emerald-400 font-bold">● SIM 60FPS</span>
-          <span>EDITION #95</span>
+          <span className="text-emerald-400 font-bold">● CEKCOK SIM '95</span>
+          <span>BOOTLEG EDITION</span>
         </div>
       </footer>
 
-      {/* Retro Newspaper Modal: The Daily Pixel Gazette */}
+      {/* Retro Newspaper Modal: The Daily Cekcok Gazette */}
       {isNewspaperOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-2xl bg-[#faf6ea] text-[#1c1917] border-4 border-[#78350f] shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-sm p-6 overflow-y-auto max-h-[88vh] font-serif">
@@ -82,10 +82,10 @@ export const CityNewspaper: React.FC = () => {
                 <span>PRICE: 10 CENTS</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight font-serif uppercase">
-                The Daily Metropolis
+                The Daily Cekcok Gazette
               </h1>
               <p className="text-[10px] tracking-widest uppercase italic text-[#78350f] mt-0.5">
-                "Honesty, Industry, and Prosperity for Every Citizen"
+                "Honesty, Industry, and Less Town Drama for Every Citizen"
               </p>
             </div>
 
@@ -95,7 +95,7 @@ export const CityNewspaper: React.FC = () => {
                 SPECIAL MAYORAL REPORT
               </span>
               <h2 className="text-2xl font-black leading-tight tracking-tight uppercase">
-                Metropolis Booms Under Visionary Mayor: Population Hits {population}!
+                CekcokVille Booms Under Visionary Mayor: Population Hits {population}!
               </h2>
               <p className="text-xs text-[#44403c] italic mt-1">
                 By Charles Montgomery, Senior City Correspondent

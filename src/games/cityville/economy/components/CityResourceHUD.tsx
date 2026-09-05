@@ -85,7 +85,7 @@ export const CityResourceHUD: React.FC = () => {
 
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-amber-300 tracking-wider">
-            METROPOLIS '95
+            CEKCOKVILLE 2000
           </span>
           <div className="flex items-center gap-1.5 mt-0.5">
             <div className="w-16 h-1.5 bg-neutral-900 rounded overflow-hidden border border-neutral-700">
