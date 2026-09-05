@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Gamepad2,
-  Settings,
   Volume2,
   VolumeX,
   CloudDownload,
   Dices,
+  Settings,
 } from 'lucide-react';
 import { useLauncherStore } from '@/stores/launcherStore';
 import { LAUNCHER_GAMES } from '@/config/launcherGames';
@@ -25,51 +24,63 @@ export const LauncherHeader: React.FC = () => {
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 py-2.5 bg-neutral-950/95 border-b border-amber-500/20 shrink-0 select-none z-20 shadow-md font-mono">
-        {/* Brand & System Status */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-red-600 text-neutral-950 font-black shadow-md ring-1 ring-amber-400/40">
-            <Gamepad2 className="w-4 h-4 text-neutral-950 stroke-[2.5]" />
+      {/* Authentic Retro Arcade Top Marquee */}
+      <header className="relative flex items-center justify-between px-5 py-2.5 bg-gradient-to-r from-neutral-950 via-indigo-950/80 to-neutral-950 border-b-2 border-amber-500/40 shrink-0 select-none z-20 shadow-[0_4px_25px_rgba(0,0,0,0.8)]">
+        {/* Neon Marquee Glow Line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-red-500 via-amber-400 via-cyan-400 to-fuchsia-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+
+        {/* Left: Arcade Marquee Title & LED Status */}
+        <div className="flex items-center gap-3.5">
+          {/* Glowing Arcade Icon Badge */}
+          <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-b from-amber-400 via-red-500 to-purple-700 p-0.5 shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-300">
+            <div className="w-full h-full bg-neutral-950 rounded-[6px] flex items-center justify-center text-lg">
+              🕹️
+            </div>
           </div>
+
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black tracking-wider uppercase text-amber-400">
-                CEKCOK RETRO ARCADE
+              <h1 className="font-pixel text-xs tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                CEKCOK ARCADE
               </h1>
-              <span className="px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/30 text-[9px] text-amber-300 font-bold uppercase tracking-wider">
-                CORE v2.5
+              <span className="px-1.5 py-0.5 rounded bg-red-950/80 border border-red-500/60 font-pixel text-[8px] text-red-400 tracking-widest uppercase animate-pulse shadow-sm">
+                INSERT COIN
               </span>
             </div>
-            <p className="text-[10px] text-neutral-400 flex items-center gap-1.5 leading-tight">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{LAUNCHER_GAMES.length} CARTRIDGES INSERTED • READY TO PLAY</span>
-            </p>
+            <div className="flex items-center gap-2 mt-0.5 font-arcade text-xs text-neutral-400">
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] animate-ping" />
+                CREDIT: {LAUNCHER_GAMES.length}
+              </span>
+              <span className="text-neutral-600">•</span>
+              <span className="text-cyan-300 tracking-wider">ALL CARTRIDGES MOUNTED</span>
+            </div>
           </div>
         </div>
 
-        {/* Quick Actions Header */}
+        {/* Right: Arcade Console Control Buttons */}
         <div className="flex items-center gap-2">
-          {/* Random Game Picker */}
+          {/* Random Game Button */}
           <button
             onClick={handleRandomPick}
-            title="Pilih Game Acak (Surprise Me)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-amber-500/50 text-neutral-300 hover:text-amber-300 text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm"
+            title="Pilih Game Acak"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-purple-800 to-indigo-950 hover:from-purple-700 hover:to-indigo-900 border-2 border-purple-500/50 hover:border-purple-400 text-purple-200 hover:text-white font-arcade text-xs tracking-wider shadow-md hover:shadow-purple-500/30 transition cursor-pointer active:translate-y-0.5"
           >
-            <Dices className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">ACAK</span>
+            <Dices className="w-3.5 h-3.5 text-purple-300" />
+            <span className="hidden sm:inline">RANDOM</span>
           </button>
 
-          {/* Updater Button */}
+          {/* MinIO Update Checker Button */}
           <button
             onClick={() => {
               soundManager.playClick();
               setUpdateModalOpen(true);
             }}
             title="Cek Pembaruan Versi"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-cyan-500/50 text-neutral-300 hover:text-cyan-300 text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-cyan-900 to-slate-950 hover:from-cyan-800 hover:to-slate-900 border-2 border-cyan-500/50 hover:border-cyan-400 text-cyan-200 hover:text-white font-arcade text-xs tracking-wider shadow-md hover:shadow-cyan-500/30 transition cursor-pointer active:translate-y-0.5"
           >
-            <CloudDownload className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">UPDATE</span>
+            <CloudDownload className="w-3.5 h-3.5 text-cyan-300" />
+            <span className="hidden sm:inline">UPDATER</span>
           </button>
 
           {/* Audio Mute Toggle */}
@@ -79,10 +90,10 @@ export const LauncherHeader: React.FC = () => {
               toggleMute();
             }}
             title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
-            className="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white transition cursor-pointer shadow-sm"
+            className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer shadow-sm active:translate-y-0.5"
           >
             {isMuted ? (
-              <VolumeX className="w-4 h-4 text-red-400" />
+              <VolumeX className="w-4 h-4 text-rose-400" />
             ) : (
               <Volume2 className="w-4 h-4 text-emerald-400" />
             )}
@@ -95,15 +106,15 @@ export const LauncherHeader: React.FC = () => {
               useLauncherStore.getState().setActiveTab('settings');
             }}
             title="Pengaturan Sistem"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-b from-neutral-800 to-neutral-950 hover:from-neutral-700 hover:to-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white font-arcade text-xs tracking-wider transition cursor-pointer shadow-sm active:translate-y-0.5"
           >
             <Settings className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden md:inline">SETTING</span>
+            <span className="hidden md:inline">SETUP</span>
           </button>
         </div>
       </header>
 
-      {/* Dedicated Portal-Based Retro Updater (Fixes floating/stuck modal bug) */}
+      {/* Portal-Based Retro Updater */}
       <RetroUpdater
         isOpen={updateModalOpen}
         onClose={() => setUpdateModalOpen(false)}
