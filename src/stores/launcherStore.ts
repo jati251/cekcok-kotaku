@@ -20,6 +20,12 @@ interface LauncherState {
   loadingTitle: string;
   loadingSubtitle: string;
 
+  // Dynamic Screen Resolution & CRT Filter
+  screenMode: 'fit' | '16:9' | '4:3' | 'fill' | 'native';
+  enableCrtFilter: boolean;
+  setScreenMode: (mode: 'fit' | '16:9' | '4:3' | 'fill' | 'native') => void;
+  toggleCrtFilter: () => void;
+
   // Actions
   setActiveTab: (tab: ActiveGameTab) => void;
   setSelectedGameId: (gameId: string) => void;
@@ -45,6 +51,18 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   rankTitle: 'Brigadier General',
   launcherLayoutMode: 'studio',
   sortOrder: 'default',
+  screenMode: 'fit',
+  enableCrtFilter: false,
+
+  setScreenMode: (mode) => {
+    soundManager.playClick();
+    set({ screenMode: mode });
+  },
+
+  toggleCrtFilter: () => {
+    soundManager.playClick();
+    set((state) => ({ enableCrtFilter: !state.enableCrtFilter }));
+  },
 
   isLoadingGame: false,
   loadingProgress: 0,
@@ -138,68 +156,15 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'poker': 'poker',
     };
 
-    const titles: Record<string, string> = {
-      'empires-and-allies': 'Empires & Allies',
-      'cityville': 'CityVille',
-      'tetris-classic': 'Tetris Classic',
-      'dynasty-legends': 'Dynasty Legends 2: Warriors 3D',
-      'rubik-cube': "Rubik's Cube 3D",
-      'sky-raid': 'Sky Raid',
-      'space-blast': 'Space Blast',
-      'moto-rush': 'Moto Rush',
-      'crazy-wheels': 'Crazy Wheels',
-      'mini-golf': 'Mini Golf',
-      'bumper-brawl': 'Bumper Brawl',
-      'snowboard-rush': 'Snowboard Rush',
-      'balloon-frenzy': 'Balloon Frenzy',
-      'feeding-frenzy': 'Feeding Frenzy',
-      'pizza-frenzy': 'Pizza Frenzy',
-      'saloon-showdown': 'Saloon Showdown',
-      'insaniquarium': 'Insaniquarium Deluxe',
-      'eight-ball-pool': '8 Ball Pool',
-      'ninja-saga': 'Ninja Saga',
-      'nightclub-city': 'Nightclub City',
-      'cartown': 'Car Town',
-      'super-kart': 'Super Kart 3D',
-      'mobile-legends': 'Mobile Legends: Bang Bang 3D',
-      'pacman': 'Pac-Man Classic',
-      'mortal-kombat': 'Mortal Kombat Classic',
-      'flappy-bird': 'Flappy Bird Classic',
-      'angry-birds': 'Angry Birds Arcade',
-      'zuma-deluxe': 'Zuma Deluxe',
-      'bejeweled': 'Bejeweled 3',
-      'pinball': 'Retro Space Pinball',
-      'chess': 'Chess Master 3D',
-      'judol-slot': 'Judol Simulator: Kakek Zeus 88',
-      'poker': "Texas Hold'em Poker Pro",
-    };
-
-    const title = titles[gameId] || gameId;
     const targetTab = tabMap[gameId];
     if (!targetTab) return;
 
+    soundManager.playHarvest();
     set({
-      isLoadingGame: true,
-      loadingProgress: 15,
-      loadingTitle: title,
-      loadingSubtitle: 'Initializing...',
+      isLoadingGame: false,
+      activeTab: targetTab,
+      selectedGameId: gameId,
     });
-
-    setTimeout(() => set({ loadingProgress: 50, loadingSubtitle: 'Loading assets...' }), 400);
-    setTimeout(() => set({ loadingProgress: 85, loadingSubtitle: 'Almost ready...' }), 800);
-
-    setTimeout(() => {
-      set({ loadingProgress: 100, loadingSubtitle: 'Ready' });
-      soundManager.playVictory();
-
-      setTimeout(() => {
-        set({
-          isLoadingGame: false,
-          activeTab: targetTab,
-          selectedGameId: gameId,
-        });
-      }, 300);
-    }, 1200);
   },
 
   exitToLauncher: () => {

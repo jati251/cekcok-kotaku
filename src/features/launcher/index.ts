@@ -7,3 +7,5 @@ export * from './components/GameCard';
 export * from './components/SettingsModal';
 export * from './components/GameLoadingScreen';
 export * from './components/RetroUpdater';
+export * from './components/ArcadeGameLoader';
+export * from './components/ArcadeScreenWrapper';

@@ -4,7 +4,8 @@ import {
   LauncherHeader,
   LauncherDashboard,
   SettingsModal,
-  GameLoadingScreen,
+  ArcadeGameLoader,
+  ArcadeScreenWrapper,
 } from './features/launcher';
 
 // Dynamic Code-Split Lazy Game Components (Bundle Optimization)
@@ -118,20 +119,10 @@ const SettingsPage = lazy(() =>
 );
 
 export const App: React.FC = () => {
-  const { activeTab } = useLauncherStore();
+  const { activeTab, selectedGameId } = useLauncherStore();
 
-  const renderContent = () => {
+  const renderGame = () => {
     switch (activeTab) {
-      case 'launcher':
-        return (
-          <div className="flex flex-col w-full h-full">
-            <LauncherHeader />
-            <LauncherDashboard />
-            <SettingsModal />
-          </div>
-        );
-      case 'settings':
-        return <SettingsPage />;
       case 'flappy-bird':
         return <FlappyBirdGame />;
       case 'angry-birds':
@@ -204,19 +195,31 @@ export const App: React.FC = () => {
     }
   };
 
+  const renderContent = () => {
+    if (activeTab === 'launcher') {
+      return (
+        <div className="flex flex-col w-full h-full">
+          <LauncherHeader />
+          <LauncherDashboard />
+          <SettingsModal />
+        </div>
+      );
+    }
+
+    if (activeTab === 'settings') {
+      return <SettingsPage />;
+    }
+
+    return (
+      <ArcadeScreenWrapper gameId={selectedGameId}>
+        {renderGame()}
+      </ArcadeScreenWrapper>
+    );
+  };
+
   return (
     <div className="relative w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col font-sans">
-      <GameLoadingScreen />
-      <Suspense
-        fallback={
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-300">
-            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-xs font-mono font-bold tracking-widest uppercase text-indigo-400">
-              Loading Module...
-            </p>
-          </div>
-        }
-      >
+      <Suspense fallback={<ArcadeGameLoader />}>
         {renderContent()}
       </Suspense>
     </div>

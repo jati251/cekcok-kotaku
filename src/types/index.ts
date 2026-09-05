@@ -59,5 +59,7 @@ export interface LauncherGame {
   description: string;
   features: string[];
   accentColor: string;
+  aspectRatio?: '16:9' | '4:3' | 'tall' | 'fill';
+  baseResolution?: { width: number; height: number };
 }
 
