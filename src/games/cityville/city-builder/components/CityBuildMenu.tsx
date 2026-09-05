@@ -1,4 +1,4 @@
-// CityVille Build Menu: Residences, Businesses, Community, Farms, Roads, Decorations
+// CityVille Build Menu: Residences, Businesses, Community, Farms, Roads, Decorations with Retro Arcade Styling
 
 import React, { useState } from 'react';
 import {
@@ -17,7 +17,7 @@ import { useCityStore } from '../stores/cityStore';
 import { useCityEconomyStore } from '../../economy/stores/cityEconomyStore';
 import { CITY_BUILDINGS_CATALOG } from '../../config/buildings';
 import type { CityBuildingType } from '../../types';
-import { Button } from '@/components/ui/Button';
+import { cityAudio } from '../../audio/cityAudio';
 
 export const CityBuildMenu: React.FC = () => {
   const { buildMode, openBuildMenu, closeBuildMenu } = useCityStore();
@@ -30,55 +30,70 @@ export const CityBuildMenu: React.FC = () => {
     activeTab === 'all' ? true : b.category === activeTab
   );
 
+  const handleTabChange = (tabId: CityBuildingType | 'all') => {
+    cityAudio.playClick();
+    setActiveTab(tabId);
+  };
+
+  const handleSelectBuilding = (buildingId: string) => {
+    cityAudio.playClick();
+    openBuildMenu(buildingId);
+  };
+
+  const handleClose = () => {
+    cityAudio.playClick();
+    closeBuildMenu();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+    <div className="absolute inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 font-arcade select-none">
+      <div className="relative w-full max-w-4xl rounded bg-neutral-950 border-2 border-amber-500/80 shadow-[0_0_35px_rgba(245,158,11,0.25)] overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800">
+        <div className="flex items-center justify-between px-5 py-3 bg-neutral-900 border-b-2 border-neutral-800">
           <div>
-            <h3 className="text-base font-bold text-slate-100 tracking-wide">
-              City Construction Catalog
+            <h3 className="text-xs font-pixel font-bold text-amber-300 tracking-wider">
+              CONSTRUCTION CATALOG '95
             </h3>
-            <p className="text-xs text-slate-400">
-              Select structures to zone residential housing, businesses, and community halls
+            <p className="text-[9px] text-neutral-400 mt-0.5">
+              Select structures to build residential housing, businesses, and community halls
             </p>
           </div>
           <button
-            onClick={closeBuildMenu}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
+            onClick={handleClose}
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex items-center gap-2 px-6 py-3 bg-slate-900/60 border-b border-slate-800 overflow-x-auto">
+        <div className="flex items-center gap-1.5 px-4 py-2 bg-neutral-950 border-b border-neutral-800 overflow-x-auto text-[9px] font-pixel">
           {[
-            { id: 'all', label: 'All', icon: <Sparkles className="w-3.5 h-3.5" /> },
-            { id: 'residential', label: 'Residences', icon: <Home className="w-3.5 h-3.5" /> },
-            { id: 'business', label: 'Businesses', icon: <Store className="w-3.5 h-3.5" /> },
-            { id: 'community', label: 'Community', icon: <Landmark className="w-3.5 h-3.5" /> },
-            { id: 'farming', label: 'Farming', icon: <Trees className="w-3.5 h-3.5" /> },
-            { id: 'road', label: 'Roads', icon: <Maximize2 className="w-3.5 h-3.5" /> },
-            { id: 'decoration', label: 'Decorations', icon: <Sparkles className="w-3.5 h-3.5" /> },
+            { id: 'all', label: 'ALL', icon: <Sparkles className="w-3 h-3" /> },
+            { id: 'residential', label: 'HOMES', icon: <Home className="w-3 h-3" /> },
+            { id: 'business', label: 'SHOPS', icon: <Store className="w-3 h-3" /> },
+            { id: 'community', label: 'CIVIC', icon: <Landmark className="w-3 h-3" /> },
+            { id: 'farming', label: 'FARMS', icon: <Trees className="w-3 h-3" /> },
+            { id: 'road', label: 'ROADS', icon: <Maximize2 className="w-3 h-3" /> },
+            { id: 'decoration', label: 'PARKS', icon: <Sparkles className="w-3 h-3" /> },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as CityBuildingType | 'all')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              onClick={() => handleTabChange(tab.id as CityBuildingType | 'all')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded transition cursor-pointer border ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-amber-500 text-neutral-950 font-bold border-amber-300 shadow'
+                  : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Buildings Grid */}
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto">
           {filteredBuildings.map((def) => {
             const isLocked = level < def.requiredLevel;
             const canAfford = coins >= def.costCoins;
@@ -86,59 +101,61 @@ export const CityBuildMenu: React.FC = () => {
             return (
               <div
                 key={def.id}
-                className="flex flex-col justify-between p-4 rounded-xl bg-slate-850 border border-slate-700/80 hover:border-indigo-500/50 shadow-md transition"
+                className="flex flex-col justify-between p-3 rounded bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/50 transition shadow-sm"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-mono font-bold text-indigo-400">
+                    <span className="text-[8px] uppercase font-pixel text-cyan-400">
                       {def.width}x{def.height} • {def.category}
                     </span>
-                    <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1">
-                      <Coins className="w-3 h-3" />
+                    <span className="text-[9px] font-pixel text-amber-300 flex items-center gap-1 font-bold">
+                      <Coins className="w-3 h-3 text-amber-400" />
                       {def.costCoins}
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-bold text-slate-100 mt-1.5">{def.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  <h4 className="text-[11px] font-bold text-neutral-100 mt-1">{def.name}</h4>
+                  <p className="text-[9px] text-neutral-400 mt-0.5 leading-tight font-sans">
                     {def.description}
                   </p>
 
                   {/* Badges */}
-                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-mono">
+                  <div className="mt-2.5 flex flex-wrap gap-1 text-[8px] font-pixel">
                     {def.populationYield && (
-                      <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
-                        <Users className="w-3 h-3" />+{def.populationYield} Citizens
+                      <span className="px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 flex items-center gap-0.5">
+                        <Users className="w-2.5 h-2.5" />+{def.populationYield} POP
                       </span>
                     )}
                     {def.populationCapBonus && (
-                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                        <Landmark className="w-3 h-3" />+{def.populationCapBonus} Cap
+                      <span className="px-1.5 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-300 flex items-center gap-0.5">
+                        <Landmark className="w-2.5 h-2.5" />+{def.populationCapBonus} CAP
                       </span>
                     )}
                     {def.goodsCost && (
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                        <Package className="w-3 h-3" />Needs {def.goodsCost} Goods
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center gap-0.5">
+                        <Package className="w-2.5 h-2.5" />NEED {def.goodsCost}
                       </span>
                     )}
                     {def.revenueCoins && (
-                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                        <Coins className="w-3 h-3" />+{def.revenueCoins} Profit
+                      <span className="px-1.5 py-0.5 rounded bg-yellow-950 border border-yellow-800 text-yellow-300 flex items-center gap-0.5">
+                        <Coins className="w-2.5 h-2.5" />+{def.revenueCoins} COINS
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800">
-                  <Button
-                    variant={isLocked || !canAfford ? 'secondary' : 'tactical'}
-                    size="sm"
+                <div className="mt-3 pt-2 border-t border-neutral-800">
+                  <button
                     disabled={isLocked || !canAfford}
-                    onClick={() => openBuildMenu(def.id)}
-                    className="w-full font-bold uppercase text-xs"
+                    onClick={() => handleSelectBuilding(def.id)}
+                    className={`w-full py-1.5 rounded font-pixel text-[8px] uppercase tracking-wider transition cursor-pointer border flex items-center justify-center gap-1 shadow ${
+                      isLocked || !canAfford
+                        ? 'bg-neutral-800 border-neutral-700 text-neutral-500 cursor-not-allowed'
+                        : 'bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold border-amber-300'
+                    }`}
                   >
-                    {isLocked ? `Unlocks at LVL ${def.requiredLevel}` : 'Place Building'}
-                  </Button>
+                    {isLocked ? `UNLOCKS LV ${def.requiredLevel}` : !canAfford ? 'INSUFFICIENT COINS' : 'SELECT TO BUILD'}
+                  </button>
                 </div>
               </div>
             );

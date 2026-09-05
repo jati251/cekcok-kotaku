@@ -56,12 +56,18 @@ export interface RustPacmanTickResult {
   pacman: RustPacman;
   ghosts: RustGhost[];
   maze: number[][];
-  game_state: RustPacmanGameState;
-  ate_dot: boolean;
-  ate_energizer: boolean;
-  pacman_died: boolean;
-  eaten_ghost_id: string | null;
-  ghost_points: number;
+  game_state?: RustPacmanGameState;
+  gameState?: RustPacmanGameState;
+  ate_dot?: boolean;
+  ateDot?: boolean;
+  ate_energizer?: boolean;
+  ateEnergizer?: boolean;
+  pacman_died?: boolean;
+  pacmanDied?: boolean;
+  eaten_ghost_id?: string | null;
+  eatenGhostId?: string | null;
+  ghost_points?: number;
+  ghostPoints?: number;
 }
 
 export function isTauriEnvironment(): boolean {

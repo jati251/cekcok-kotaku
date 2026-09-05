@@ -38,25 +38,33 @@ impl Direction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RustPoint {
     pub x: f64,
     pub y: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RustPacman {
     pub x: f64,
     pub y: f64,
     pub dir: Direction,
+    #[serde(alias = "next_dir")]
     pub next_dir: Direction,
     pub speed: f64,
+    #[serde(alias = "mouth_angle")]
     pub mouth_angle: f64,
+    #[serde(alias = "mouth_dir")]
     pub mouth_dir: i32,
+    #[serde(alias = "is_dying")]
     pub is_dying: bool,
+    #[serde(alias = "death_progress")]
     pub death_progress: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RustGhost {
     pub id: String,
     pub name: String,
@@ -66,38 +74,57 @@ pub struct RustGhost {
     pub dir: Direction,
     pub speed: f64,
     pub mode: String, // "CHASE" | "SCATTER" | "FRIGHTENED" | "EATEN"
+    #[serde(alias = "frightened_timer")]
     pub frightened_timer: i32,
+    #[serde(alias = "in_house")]
     pub in_house: bool,
     pub target: RustPoint,
+    #[serde(alias = "scatter_target")]
     pub scatter_target: RustPoint,
+    #[serde(alias = "last_tile_x")]
     pub last_tile_x: i32,
+    #[serde(alias = "last_tile_y")]
     pub last_tile_y: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RustPacmanGameState {
     pub score: i32,
+    #[serde(alias = "high_score")]
     pub high_score: i32,
     pub lives: i32,
     pub level: i32,
+    #[serde(alias = "dots_remaining")]
     pub dots_remaining: i32,
+    #[serde(alias = "total_dots")]
     pub total_dots: i32,
     pub status: String,
+    #[serde(alias = "ghost_combo")]
     pub ghost_combo: i32,
+    #[serde(alias = "global_mode")]
     pub global_mode: String,
+    #[serde(alias = "mode_timer")]
     pub mode_timer: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RustPacmanTickResult {
     pub pacman: RustPacman,
     pub ghosts: Vec<RustGhost>,
     pub maze: Vec<Vec<i32>>,
+    #[serde(alias = "game_state")]
     pub game_state: RustPacmanGameState,
+    #[serde(alias = "ate_dot")]
     pub ate_dot: bool,
+    #[serde(alias = "ate_energizer")]
     pub ate_energizer: bool,
+    #[serde(alias = "pacman_died")]
     pub pacman_died: bool,
+    #[serde(alias = "eaten_ghost_id")]
     pub eaten_ghost_id: Option<String>,
+    #[serde(alias = "ghost_points")]
     pub ghost_points: i32,
 }
 

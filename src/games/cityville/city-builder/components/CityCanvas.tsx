@@ -1,7 +1,8 @@
-// CityVille 60fps Isometric Canvas Engine
+// CityVille 60fps Isometric Canvas Engine with Retro Atmosphere & Audio
 
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useCityStore } from '../stores/cityStore';
+import { useCityThemeStore } from '../../stores/cityThemeStore';
 import { useLauncherStore } from '@/stores/launcherStore';
 import {
   gridToScreen,
@@ -9,10 +10,15 @@ import {
   getCityDepthSortScore,
   checkCityCollision,
 } from '../engine/cityIsometricMath';
-import { renderCityTerrain, renderCityRoads } from '../engine/renderCityTerrain';
+import {
+  renderCitySky,
+  renderCityTerrain,
+  renderCityRoads,
+} from '../engine/renderCityTerrain';
 import {
   drawCityFootprint,
   drawCityBuilding,
+  drawFloatingTexts,
 } from '../engine/renderCityBuildings';
 import { renderCityTraffic } from '../engine/renderCityLife';
 import { useCityInteractions } from '../hooks/useCityInteractions';
@@ -24,6 +30,7 @@ export const CityCanvas: React.FC = () => {
   const animFrameIdRef = useRef<number | null>(null);
 
   const { buildings } = useCityStore();
+  const { atmosphere, floatingTexts, cleanupFloatingTexts } = useCityThemeStore();
   const { showGridLines } = useLauncherStore();
 
   const {
@@ -40,8 +47,9 @@ export const CityCanvas: React.FC = () => {
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const parent = canvas.parentElement;
+    canvas.width = parent ? parent.clientWidth : window.innerWidth;
+    canvas.height = parent ? parent.clientHeight : window.innerHeight;
   }, []);
 
   const render = useCallback(
@@ -60,20 +68,19 @@ export const CityCanvas: React.FC = () => {
       ctx.save();
       ctx.clearRect(0, 0, width, height);
 
-      // Sky Blue / Sunny Background
-      ctx.fillStyle = '#0284c7';
-      ctx.fillRect(0, 0, width, height);
+      // 1. Retro Sky (Day / Sunset / Night)
+      renderCitySky(ctx, width, height, atmosphere, timestamp);
 
       ctx.translate(originX, originY);
       ctx.scale(zoom, zoom);
 
-      // 1. Terrain Grid
-      renderCityTerrain(ctx, showGridLines);
+      // 2. Terrain Grid
+      renderCityTerrain(ctx, showGridLines, atmosphere);
 
-      // 2. Paved Avenues
-      renderCityRoads(ctx, buildings);
+      // 3. Paved Avenues
+      renderCityRoads(ctx, buildings, atmosphere);
 
-      // 3. Depth-Sort Structures
+      // 4. Depth-Sort Structures
       const sortedBuildings = [...buildings]
         .filter((b) => b.buildingTypeId !== 'city_street')
         .sort((a, b) => {
@@ -84,7 +91,7 @@ export const CityCanvas: React.FC = () => {
           return sA - sB;
         });
 
-      // 4. Render Structures
+      // 5. Render Structures
       for (const b of sortedBuildings) {
         const def = CITY_BUILDINGS_CATALOG.find((d) => d.id === b.buildingTypeId);
         if (!def) continue;
@@ -106,14 +113,18 @@ export const CityCanvas: React.FC = () => {
         }
 
         ctx.save();
-        drawCityBuilding(ctx, b, def, basePt, timestamp);
+        drawCityBuilding(ctx, b, def, basePt, timestamp, atmosphere);
         ctx.restore();
       }
 
-      // 5. Cars & Pedestrians
-      renderCityTraffic(ctx, timestamp);
+      // 6. Cars & Pedestrians
+      renderCityTraffic(ctx, timestamp, atmosphere);
 
-      // 6. Ghost Placement Cursor
+      // 7. Floating Action Texts
+      drawFloatingTexts(ctx, floatingTexts);
+      cleanupFloatingTexts();
+
+      // 8. Ghost Placement Cursor
       if (buildMode.active && buildMode.buildingTypeId && hoverGridRef.current) {
         const { gx, gy } = hoverGridRef.current;
         const def = CITY_BUILDINGS_CATALOG.find((d) => d.id === buildMode.buildingTypeId);
@@ -156,7 +167,14 @@ export const CityCanvas: React.FC = () => {
 
           const ghostPt = gridToScreen(gx + def.width / 2, gy + def.height / 2, 0, 0);
           ctx.globalAlpha = 0.6;
-          drawCityBuilding(ctx, { level: 1 } as PlacedCityBuilding, def, ghostPt, timestamp);
+          drawCityBuilding(
+            ctx,
+            { level: 1 } as PlacedCityBuilding,
+            def,
+            ghostPt,
+            timestamp,
+            atmosphere
+          );
           ctx.restore();
         }
       }
@@ -164,7 +182,17 @@ export const CityCanvas: React.FC = () => {
       ctx.restore();
       animFrameIdRef.current = requestAnimationFrame(render);
     },
-    [buildings, camera, showGridLines, selectedBuildingId, buildMode, hoverGridRef]
+    [
+      buildings,
+      camera,
+      showGridLines,
+      selectedBuildingId,
+      buildMode,
+      hoverGridRef,
+      atmosphere,
+      floatingTexts,
+      cleanupFloatingTexts,
+    ]
   );
 
   useEffect(() => {

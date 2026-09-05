@@ -1,11 +1,13 @@
-// CityVille Interactions Hook: Panning, Zooming, Raycasting, Farming & Business Actions
+// CityVille Interactions Hook: Panning, Zooming, Raycasting, Farming & Business Actions with Retro Sound & Floating FX
 
 import { useRef, useCallback } from 'react';
 import { useCityStore } from '../stores/cityStore';
 import { useFarmingStore } from '../stores/farmingStore';
+import { useCityThemeStore } from '../../stores/cityThemeStore';
 import { screenToGrid, isInsideCityGrid } from '../engine/cityIsometricMath';
 import { CITY_BUILDINGS_CATALOG } from '../../config/buildings';
 import { CITY_CROPS } from '../../config/crops';
+import { cityAudio } from '../../audio/cityAudio';
 
 export function useCityInteractions(
   canvasRef: React.RefObject<HTMLCanvasElement | null>
@@ -28,6 +30,7 @@ export function useCityInteractions(
   } = useCityStore();
 
   const { openSeedSelector } = useFarmingStore();
+  const { addFloatingText } = useCityThemeStore();
 
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, panStartX: 0, panStartY: 0 });
@@ -86,7 +89,13 @@ export function useCityInteractions(
 
       // 1. Build Mode
       if (buildMode.active && buildMode.buildingTypeId) {
-        placeBuilding(buildMode.buildingTypeId, gx, gy);
+        const def = CITY_BUILDINGS_CATALOG.find((d) => d.id === buildMode.buildingTypeId);
+        if (placeBuilding(buildMode.buildingTypeId, gx, gy)) {
+          cityAudio.playConstruct();
+          if (def) {
+            addFloatingText(`-${def.costCoins} 🪙`, gx, gy, '#f87171');
+          }
+        }
         return;
       }
 
@@ -101,7 +110,11 @@ export function useCityInteractions(
 
       // 3. Bulldoze
       if (bulldozeMode) {
-        if (clicked) bulldozeBuilding(clicked.id);
+        if (clicked) {
+          bulldozeBuilding(clicked.id);
+          cityAudio.playBulldoze();
+          addFloatingText('DEMOLISHED', clicked.gridX, clicked.gridY, '#ef4444');
+        }
         return;
       }
 
@@ -112,6 +125,7 @@ export function useCityInteractions(
         // A. Farm Plot Actions
         if (def.id === 'farm_plot') {
           if (!clicked.cropId) {
+            cityAudio.playClick();
             openSeedSelector(clicked.id);
             return;
           } else {
@@ -120,6 +134,8 @@ export function useCityInteractions(
               const elapsed = (Date.now() - clicked.plantedAt) / 1000;
               if (elapsed >= crop.growthSeconds) {
                 harvestCropOnPlot(clicked.id);
+                cityAudio.playHarvest();
+                addFloatingText(`+${crop.goodsYield} 📦`, clicked.gridX, clicked.gridY, '#4ade80');
                 return;
               }
             }
@@ -129,12 +145,17 @@ export function useCityInteractions(
         // B. Business Actions (Restock with Goods or Collect Revenue)
         if (def.category === 'business') {
           if (!clicked.isStocked) {
-            restockBusiness(clicked.id);
+            if (restockBusiness(clicked.id)) {
+              cityAudio.playClick();
+              addFloatingText(`-${def.goodsCost || 10} 📦`, clicked.gridX, clicked.gridY, '#fbbf24');
+            }
             return;
           } else if (clicked.stockedAt) {
             const elapsed = (Date.now() - clicked.stockedAt) / 1000;
             if (elapsed >= (def.businessDurationSeconds || 30)) {
               collectBusinessRevenue(clicked.id);
+              cityAudio.playCashClink();
+              addFloatingText(`+${def.revenueCoins || 50} 🪙`, clicked.gridX, clicked.gridY, '#facc15');
               return;
             }
           }
@@ -145,10 +166,13 @@ export function useCityInteractions(
           const elapsed = (Date.now() - clicked.lastHarvestAt) / 1000;
           if (elapsed >= def.rentPayout.intervalSeconds) {
             collectRent(clicked.id);
+            cityAudio.playCashClink();
+            addFloatingText(`+${def.rentPayout.amount} 🪙`, clicked.gridX, clicked.gridY, '#60a5fa');
             return;
           }
         }
 
+        cityAudio.playClick();
         selectBuilding(clicked.id);
       } else {
         selectBuilding(null);
@@ -166,6 +190,7 @@ export function useCityInteractions(
       collectBusinessRevenue,
       collectRent,
       selectBuilding,
+      addFloatingText,
     ]
   );
 

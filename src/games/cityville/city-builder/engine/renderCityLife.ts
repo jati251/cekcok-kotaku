@@ -1,13 +1,17 @@
-// CityVille Traffic & Citizens Simulation: Yellow Taxis, Delivery Vans, Pedestrians
+// CityVille Traffic & Citizens Simulation: Yellow Taxis, Delivery Vans, Citizens with Headlights
 
 import { gridToScreen } from './cityIsometricMath';
+import type { CityAtmosphere } from '../../stores/cityThemeStore';
 
 export function renderCityTraffic(
   ctx: CanvasRenderingContext2D,
-  timestamp: number
+  timestamp: number,
+  atmosphere: CityAtmosphere = 'day'
 ) {
+  const isNightOrSunset = atmosphere === 'night' || atmosphere === 'sunset';
+
   // 1. Yellow Taxicab driving down East-West Ave
-  const taxiCycle = (timestamp / 6000) % 1;
+  const taxiCycle = (timestamp / 5000) % 1;
   const p1 = gridToScreen(7, 9, 0, 0);
   const p2 = gridToScreen(14, 9, 0, 0);
 
@@ -16,26 +20,37 @@ export function renderCityTraffic(
 
   ctx.save();
   // Taxi Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath();
-  ctx.ellipse(tx, ty + 2, 8, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(tx, ty + 2, 9, 5, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Headlight beam at night
+  if (isNightOrSunset) {
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.25)';
+    ctx.beginPath();
+    ctx.moveTo(tx + 6, ty - 2);
+    ctx.lineTo(tx + 22, ty - 8);
+    ctx.lineTo(tx + 22, ty + 4);
+    ctx.closePath();
+    ctx.fill();
+  }
 
   // Yellow Taxi Body
   ctx.fillStyle = '#eab308';
-  ctx.fillRect(tx - 6, ty - 6, 12, 6);
+  ctx.fillRect(tx - 7, ty - 6, 14, 7);
 
   // Black-white checkered stripe
   ctx.fillStyle = '#0f172a';
-  ctx.fillRect(tx - 6, ty - 3, 12, 1.5);
+  ctx.fillRect(tx - 7, ty - 3, 14, 1.5);
 
-  // Roof Cab Light
+  // Roof Cab Light (glowing)
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(tx - 2, ty - 8, 4, 2);
+  ctx.fillRect(tx - 2, ty - 9, 4, 3);
   ctx.restore();
 
   // 2. Green Goods Delivery Truck driving North-South
-  const truckCycle = ((timestamp + 3000) / 8000) % 1;
+  const truckCycle = ((timestamp + 2500) / 7000) % 1;
   const tStart = gridToScreen(6, 10, 0, 0);
   const tEnd = gridToScreen(6, 13, 0, 0);
 
@@ -43,32 +58,45 @@ export function renderCityTraffic(
   const vy = tStart.y + (tEnd.y - tStart.y) * truckCycle;
 
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath();
-  ctx.ellipse(vx, vy + 2, 10, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(vx, vy + 2, 11, 6, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Headlight beam at night
+  if (isNightOrSunset) {
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.25)';
+    ctx.beginPath();
+    ctx.moveTo(vx - 2, vy + 4);
+    ctx.lineTo(vx - 8, vy + 20);
+    ctx.lineTo(vx + 6, vy + 20);
+    ctx.closePath();
+    ctx.fill();
+  }
 
   // Green Box Truck Body
   ctx.fillStyle = '#16a34a';
-  ctx.fillRect(vx - 7, vy - 8, 14, 8);
+  ctx.fillRect(vx - 8, vy - 9, 16, 9);
+  ctx.fillStyle = '#15803d';
+  ctx.fillRect(vx - 8, vy - 9, 4, 9); // Cab
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 5px monospace';
+  ctx.font = 'bold 6px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('GOODS', vx, vy - 3);
+  ctx.fillText('GOODS', vx + 1, vy - 3);
   ctx.restore();
 
   // 3. Strolling Pedestrian Citizens
-  const walkBob = Math.sin(timestamp / 180) * 1.5;
+  const walkBob = Math.sin(timestamp / 160) * 1.5;
   const ped1 = gridToScreen(8.5, 9.3, 0, 0);
 
   ctx.save();
   ctx.fillStyle = '#3b82f6';
   ctx.beginPath();
-  ctx.arc(ped1.x, ped1.y - 6 + walkBob, 2.5, 0, Math.PI * 2);
+  ctx.arc(ped1.x, ped1.y - 7 + walkBob, 2.5, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(ped1.x - 1.5, ped1.y - 3 + walkBob, 3, 5);
+  ctx.fillRect(ped1.x - 1.5, ped1.y - 4 + walkBob, 3, 5);
   ctx.restore();
 }
