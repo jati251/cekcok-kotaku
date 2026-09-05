@@ -22,6 +22,29 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
   const healthbarRef = useRef<THREE.Group>(null);
   const healthFillRef = useRef<THREE.Mesh>(null);
 
+  const isBoss = enemy.type === 'BOSS';
+  const isCaptain = enemy.type === 'CAPTAIN';
+  const isShield = enemy.type === 'SHIELD';
+  const isArcher = enemy.type === 'ARCHER';
+  const isSorcerer = enemy.type === 'SORCERER';
+
+  const mainColor = isBoss
+    ? '#dc2626'
+    : isCaptain
+    ? '#f59e0b'
+    : isSorcerer
+    ? '#8b5cf6'
+    : isShield
+    ? '#64748b'
+    : isArcher
+    ? '#10b981'
+    : '#eab308'; // Yellow Turban / Rebel Grunt
+
+  // All React hooks must be invoked at top-level unconditionally
+  const strawHatTex = useMemo(() => proceduralTextures.getStrawHatTexture(), []);
+  const woodTex = useMemo(() => proceduralTextures.getWoodTexture(), []);
+  const armorTex = useMemo(() => proceduralTextures.getWarriorArmorTexture(mainColor), [mainColor]);
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     const dt = Math.min(delta, 0.05);
@@ -75,6 +98,7 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
       bodyRef.current.rotation.x = -0.38;
       bodyRef.current.position.z = -0.15;
     } else if (bodyRef.current) {
+      // Smooth reset orientation from stagger
       bodyRef.current.rotation.x = 0;
       bodyRef.current.rotation.z = 0;
       bodyRef.current.position.z = 0;
@@ -152,15 +176,9 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
     }
   });
 
-  const isBoss = enemy.type === 'BOSS';
-  const isCaptain = enemy.type === 'CAPTAIN';
-  const isShield = enemy.type === 'SHIELD';
-  const isArcher = enemy.type === 'ARCHER';
-  const isSorcerer = enemy.type === 'SORCERER';
-
-  // Completely skip rendering if dead and already fully dissolved
+  // Completely skip rendering if dead and already fully dissolved (post-hook)
   if (enemy.isDead && (enemy.deathTimer || 0) >= 0.95) {
-    return null;
+    return <group ref={groupRef} visible={false} />;
   }
 
   const baseScale = isBoss ? 1.6 : isCaptain ? 1.25 : 1.0;
@@ -170,23 +188,8 @@ const EnemyUnit3D: React.FC<{ enemy: EnemyEntity3D }> = ({ enemy }) => {
     : 1;
   const scale = baseScale * fade;
 
-  const mainColor = isBoss
-    ? '#dc2626'
-    : isCaptain
-    ? '#f59e0b'
-    : isSorcerer
-    ? '#8b5cf6'
-    : isShield
-    ? '#64748b'
-    : isArcher
-    ? '#10b981'
-    : '#eab308'; // Yellow Turban / Rebel Grunt
-
   const isHitFlash = enemy.hitFlashTimer > 0;
   const renderColor = isHitFlash ? '#ffffff' : mainColor;
-  const strawHatTex = useMemo(() => proceduralTextures.getStrawHatTexture(), []);
-  const woodTex = useMemo(() => proceduralTextures.getWoodTexture(), []);
-  const armorTex = useMemo(() => proceduralTextures.getWarriorArmorTexture(mainColor), [mainColor]);
 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]}>
@@ -416,6 +419,9 @@ export const EnemyHorde3D: React.FC<EnemyHorde3DProps> = ({ enemies, playerPos }
   return (
     <group>
       {enemies.map((enemy) => {
+        // Skip rendering if fully dead and dissolved
+        if (enemy.isDead && (enemy.deathTimer || 0) >= 1.0) return null;
+
         // Distance Culling: Skip rendering units further than 75m to save CPU & GPU draw calls
         if (playerPos) {
           const dx = enemy.position.x - playerPos.x;
