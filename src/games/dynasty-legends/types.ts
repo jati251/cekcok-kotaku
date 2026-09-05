@@ -73,6 +73,8 @@ export interface MobileInputState {
   isAttacking: boolean;
   isMusou: boolean;
   active: boolean;
+  isCharge?: boolean;
+  isDashing?: boolean;
 }
 
 export interface Entity {
@@ -269,3 +271,18 @@ export interface Item {
 }
 
 export type ComboRank = 'D' | 'C' | 'B' | 'A' | 'S' | 'SS' | 'SSS';
+
+export interface DebugStats {
+  fps: number;
+  playerPos: { x: number; y: number; z: number };
+  playerRot: number;
+  camYaw: number;
+  camPitch: number;
+  camZoom: number;
+  totalEnemies: number;
+  nearbyEnemies: number;
+  totalAllies: number;
+  totalDrops: number;
+  totalVFX: number;
+}
+

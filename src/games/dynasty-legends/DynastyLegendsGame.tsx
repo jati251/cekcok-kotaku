@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { GameCanvas } from './components/GameCanvas';
+import { DynastyCanvas3D } from './components/3d/DynastyCanvas3D';
 import { GameHUD, MinimapData } from './components/GameHUD';
 import { MenuOverlay } from './components/MenuOverlay';
 import { MobileControls } from './components/MobileControls';
@@ -185,7 +185,7 @@ export const DynastyLegendsGame: React.FC = () => {
         </button>
       </div>
 
-      <GameCanvas
+      <DynastyCanvas3D
         status={status}
         selectedHero={selectedHero}
         selectedDifficulty={selectedDifficulty}

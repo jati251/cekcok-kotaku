@@ -420,7 +420,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             </span>
             <span className="font-mono text-slate-400">
               {Math.ceil(health)} / {maxHealth}
-              <span className="text-slate-500 text-[10px] ml-2">[SHIFT: DASH]</span>
+              <span className="text-slate-400 text-[10px] ml-2 hidden sm:inline">[WASD: Move | Drag/Q,E: Orbit Cam | C: Reset Cam | Click/J: Attack | R-Click/K: Charge | Space: Musou]</span>
             </span>
           </div>
           <div className="h-4 w-full bg-slate-900 rounded-md border border-slate-700 overflow-hidden shadow-inner">

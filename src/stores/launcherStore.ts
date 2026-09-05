@@ -124,7 +124,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'empires-and-allies': 'Empires & Allies',
       'cityville': 'CityVille',
       'tetris-classic': 'Tetris Classic',
-      'dynasty-legends': 'Dynasty Legends: AI Warlords',
+      'dynasty-legends': 'Dynasty Legends 2: Warriors 3D',
       'rubik-cube': "Rubik's Cube 3D",
       'sky-raid': 'Sky Raid',
       'space-blast': 'Space Blast',

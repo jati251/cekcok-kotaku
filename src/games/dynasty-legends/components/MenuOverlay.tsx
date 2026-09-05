@@ -181,16 +181,19 @@ export const MenuOverlay: React.FC<MenuOverlayProps> = ({
               <Sword className="w-12 h-12" />
             </motion.div>
             <div className="space-y-2">
+              <div className="inline-block px-3 py-1 rounded-full bg-red-600/30 border border-red-500/50 text-red-300 text-[11px] font-bold tracking-widest uppercase mb-1">
+                Full 3D Engine · 1 vs 1,000 Musou Action
+              </div>
               <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 tracking-tight">
-                DYNASTY LEGENDS
+                DYNASTY LEGENDS 2
               </h1>
               <p className="text-base sm:text-lg text-slate-300 font-medium">
-                Warlords of the Three Kingdoms · Linear Story Campaign
+                Warriors 3D · Three Kingdoms Hack-and-Slash Action
               </p>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Experience the historical chronicle chapter by chapter. Unlock battles, capture fortress
-              outposts, and duel supreme commanders in high-octane Musou combat!
+              Command iconic Three Kingdoms warriors in full 3D! Unleash brutal light & heavy combo chains,
+              launch hundreds of enemy soldiers into the air, capture tactical garrisons, and trigger cinematic True Musou devastation!
             </p>
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <motion.button
