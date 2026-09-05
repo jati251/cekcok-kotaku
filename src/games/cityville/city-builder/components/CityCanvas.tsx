@@ -177,7 +177,7 @@ export const CityCanvas: React.FC = () => {
             ctx.globalAlpha = 0.6;
             drawCityBuilding(
               ctx,
-              { level: 1 } as PlacedCityBuilding,
+              { level: 1, gridX: gx, gridY: gy } as PlacedCityBuilding,
               def,
               ghostPt,
               timestamp,

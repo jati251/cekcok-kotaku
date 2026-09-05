@@ -1,4 +1,5 @@
-// CekcokVille / CityVille Rich Retro Isometric Structures Renderer: Homes, Bakeries, City Hall, Farms & Parks
+// CekcokVille 2000 Rich Retro Isometric Structures Renderer
+// Grounded Foundation Plinths, Handcrafted Architecture, Zero Floating Gaps
 
 import {
   gridToScreen,
@@ -7,6 +8,9 @@ import { CITY_CROPS } from '../../config/crops';
 import type { PlacedCityBuilding, CityBuildingDefinition } from '../../types';
 import type { CityAtmosphere, FloatingTextItem } from '../../stores/cityThemeStore';
 
+/**
+ * Draws the ground diamond footprint for selection or ghost preview.
+ */
 export function drawCityFootprint(
   ctx: CanvasRenderingContext2D,
   gx: number,
@@ -27,873 +31,1174 @@ export function drawCityFootprint(
   ctx.closePath();
 }
 
+/**
+ * Main building dispatcher.
+ * Mathematically roots every structure to the exact ground tile vertices.
+ */
 export function drawCityBuilding(
   ctx: CanvasRenderingContext2D,
   b: PlacedCityBuilding,
   def: CityBuildingDefinition,
-  basePt: { x: number; y: number },
+  _basePt: { x: number; y: number },
   timestamp: number,
   atmosphere: CityAtmosphere = 'day'
 ) {
-  // 1. Soft Isometric Shadow
-  ctx.save();
-  ctx.fillStyle = atmosphere === 'night' ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.35)';
-  ctx.beginPath();
-  ctx.ellipse(
-    basePt.x + 8,
-    basePt.y + 6,
-    def.width * 22,
-    def.height * 11,
-    0,
-    0,
-    Math.PI * 2
-  );
-  ctx.fill();
-  ctx.restore();
+  const gx = b.gridX ?? 0;
+  const gy = b.gridY ?? 0;
+  const w = def.width || 1;
+  const h = def.height || 1;
 
-  // Route to specialized handcrafted isometric renderers:
+  // 4 Exact Ground Vertices
+  const pTop = gridToScreen(gx, gy, 0, 0);
+  const pRight = gridToScreen(gx + w, gy, 0, 0);
+  const pBottom = gridToScreen(gx + w, gy + h, 0, 0);
+  const pLeft = gridToScreen(gx, gy + h, 0, 0);
+
+  // Status bubble center anchor (above building peak)
+  const anchorX = pBottom.x;
+  let anchorY = pTop.y - 20;
+
+  // Route to specialized grounded isometric renderers:
   if (def.id === 'farm_plot') {
-    drawFarmPlot(ctx, b, basePt, timestamp, atmosphere);
+    anchorY = drawFarmPlot(ctx, b, pTop, pRight, pBottom, pLeft, timestamp, atmosphere);
   } else if (def.id === 'city_hall') {
-    drawGrandCityHall(ctx, b, basePt, timestamp, atmosphere);
+    anchorY = drawGrandCityHall(ctx, b, pTop, pRight, pBottom, pLeft, timestamp, atmosphere);
   } else if (def.category === 'business' || def.id === 'corner_bakery') {
-    drawCornerBakery(ctx, b, def, basePt, timestamp, atmosphere);
+    anchorY = drawCornerBakery(ctx, b, def, pTop, pRight, pBottom, pLeft, timestamp, atmosphere);
   } else if (def.category === 'residential' || def.id === 'cozy_cottage') {
-    drawCozyCottage(ctx, b, def, basePt, timestamp, atmosphere);
+    anchorY = drawCozyCottage(ctx, b, def, pTop, pRight, pBottom, pLeft, timestamp, atmosphere);
   } else {
-    drawCivicBuilding(ctx, b, def, basePt, timestamp, atmosphere);
+    anchorY = drawCivicBuilding(ctx, b, def, pTop, pRight, pBottom, pLeft, timestamp, atmosphere);
   }
 
-  // Floating Status Indicators (Goods Needed, Rent Ready, Produce Ripe)
-  drawStatusBubble(ctx, b, def, basePt, timestamp);
+  // Floating Status Indicators (Harvest, Restock, Rent Ready)
+  drawStatusBubble(ctx, b, def, { x: anchorX, y: anchorY }, timestamp);
 }
 
-// -----------------------------------------------------------------------------
-// 1. Handcrafted Cozy Cottage (Residential Home)
-// -----------------------------------------------------------------------------
+// =============================================================================
+// HELPER: Solid Ground Foundation Plinth (The Anti-Floating Anchor)
+// =============================================================================
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface FoundationPlinth {
+  pTopT: Point;
+  pRightT: Point;
+  pBottomT: Point;
+  pLeftT: Point;
+}
+
+function drawFoundationPlinth(
+  ctx: CanvasRenderingContext2D,
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
+  plinthH = 4,
+  atmosphere: CityAtmosphere = 'day'
+): FoundationPlinth {
+  const isNight = atmosphere === 'night';
+
+  // 1. Crisp ground contact shadow (ambient occlusion on grass)
+  ctx.save();
+  ctx.strokeStyle = isNight ? 'rgba(0, 0, 0, 0.6)' : 'rgba(15, 23, 42, 0.45)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(pLeft.x, pLeft.y);
+  ctx.lineTo(pBottom.x, pBottom.y);
+  ctx.lineTo(pRight.x, pRight.y);
+  ctx.stroke();
+
+  // 2. Plinth top points
+  const pTopT = { x: pTop.x, y: pTop.y - plinthH };
+  const pRightT = { x: pRight.x, y: pRight.y - plinthH };
+  const pBottomT = { x: pBottom.x, y: pBottom.y - plinthH };
+  const pLeftT = { x: pLeft.x, y: pLeft.y - plinthH };
+
+  // 3. Plinth Left Face (Dark stone)
+  ctx.fillStyle = isNight ? '#1e293b' : '#334155';
+  ctx.beginPath();
+  ctx.moveTo(pLeft.x, pLeft.y);
+  ctx.lineTo(pBottom.x, pBottom.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pLeftT.x, pLeftT.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = isNight ? '#0f172a' : '#1e293b';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 4. Plinth Right Face (Medium stone)
+  ctx.fillStyle = isNight ? '#334155' : '#64748b';
+  ctx.beginPath();
+  ctx.moveTo(pBottom.x, pBottom.y);
+  ctx.lineTo(pRight.x, pRight.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = isNight ? '#1e293b' : '#475569';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 5. Plinth Top Surface (Paved slate / curb)
+  ctx.fillStyle = isNight ? '#475569' : '#94a3b8';
+  ctx.beginPath();
+  ctx.moveTo(pTopT.x, pTopT.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pLeftT.x, pLeftT.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = isNight ? '#334155' : '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.restore();
+
+  return { pTopT, pRightT, pBottomT, pLeftT };
+}
+
+// =============================================================================
+// 1. Handcrafted Cozy Cottage (Grounded Gabled Residential)
+// =============================================================================
 function drawCozyCottage(
   ctx: CanvasRenderingContext2D,
   _b: PlacedCityBuilding,
   def: CityBuildingDefinition,
-  basePt: { x: number; y: number },
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
   timestamp: number,
   atmosphere: CityAtmosphere
-) {
+): number {
   const isNight = atmosphere === 'night';
   const isSunset = atmosphere === 'sunset';
 
-  const w = 48;
-  const wallH = 40;
+  // 1. Draw solid foundation plinth touching ground vertices
+  const { pTopT, pRightT, pBottomT, pLeftT } = drawFoundationPlinth(
+    ctx,
+    pTop,
+    pRight,
+    pBottom,
+    pLeft,
+    4,
+    atmosphere
+  );
 
-  // Colors
-  const wallLeft = isNight ? '#1e3a8a' : isSunset ? '#2563eb' : def.accentColor || '#0284c7';
-  const wallRight = isNight ? '#2563eb' : isSunset ? '#60a5fa' : def.color || '#38bdf8';
-  const roofColor = isNight ? '#78350f' : isSunset ? '#c2410c' : '#ea580c'; // Terracotta tiles
+  const wallH = 44;
+  const wallLeftColor = isNight ? '#1e3a8a' : isSunset ? '#2563eb' : def.accentColor || '#0284c7';
+  const wallRightColor = isNight ? '#2563eb' : isSunset ? '#60a5fa' : def.color || '#38bdf8';
+  const roofColor = isNight ? '#78350f' : isSunset ? '#c2410c' : '#ea580c';
   const roofShade = isNight ? '#451a03' : isSunset ? '#9a3412' : '#b45309';
 
   ctx.save();
 
+  // Wall Top Points
+  const wLeft = { x: pLeftT.x, y: pLeftT.y - wallH };
+  const wBottom = { x: pBottomT.x, y: pBottomT.y - wallH };
+  const wRight = { x: pRightT.x, y: pRightT.y - wallH };
+
   // A. Left Wall (Weatherboard siding)
-  ctx.fillStyle = wallLeft;
+  ctx.fillStyle = wallLeftColor;
   ctx.beginPath();
-  ctx.moveTo(basePt.x - w, basePt.y - 12);
-  ctx.lineTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 12);
+  ctx.moveTo(pLeftT.x, pLeftT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
   ctx.closePath();
   ctx.fill();
 
-  // Horizontal siding grooves
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+  // Siding plank lines
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
   ctx.lineWidth = 1;
-  for (let y = 8; y < wallH; y += 7) {
+  for (let s = 1; s <= 6; s++) {
+    const frac = s / 7;
     ctx.beginPath();
-    ctx.moveTo(basePt.x - w, basePt.y - wallH - 12 + y);
-    ctx.lineTo(basePt.x, basePt.y - wallH + 4 + y);
+    ctx.moveTo(pLeftT.x, pLeftT.y - wallH * frac);
+    ctx.lineTo(pBottomT.x, pBottomT.y - wallH * frac);
     ctx.stroke();
   }
 
-  // B. Right Wall
-  ctx.fillStyle = wallRight;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x + w, basePt.y - 12);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 12);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.closePath();
-  ctx.fill();
+  // Left Window with Flowerbox & Shutters
+  const winLx = (pLeftT.x + pBottomT.x) / 2;
+  const winLy = (pLeftT.y + pBottomT.y) / 2 - wallH * 0.5;
 
-  for (let y = 8; y < wallH; y += 7) {
+  // Navy Shutters
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(winLx - 11, winLy - 9, 3, 13);
+  ctx.fillRect(winLx + 8, winLy - 9, 3, 13);
+
+  // White window frame
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(winLx - 8, winLy - 10, 16, 14);
+
+  // Lit glass panes
+  ctx.fillStyle = isNight ? '#fef08a' : isSunset ? '#fed7aa' : '#bae6fd';
+  ctx.fillRect(winLx - 6, winLy - 8, 12, 10);
+
+  // Muntin cross
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(winLx - 1, winLy - 8, 1.5, 10);
+  ctx.fillRect(winLx - 6, winLy - 3, 12, 1.5);
+
+  // Flower Box with blooming flowers
+  ctx.fillStyle = '#78350f';
+  ctx.fillRect(winLx - 9, winLy + 3, 18, 4);
+  const flowerColors = ['#f43f5e', '#fbbf24', '#ec4899', '#f97316'];
+  for (let f = 0; f < 4; f++) {
+    ctx.fillStyle = flowerColors[f];
     ctx.beginPath();
-    ctx.moveTo(basePt.x, basePt.y - wallH + 4 + y);
-    ctx.lineTo(basePt.x + w, basePt.y - wallH - 12 + y);
-    ctx.stroke();
-  }
-
-  // C. Triangular Gable & Pitched Roof Overhang
-  const peakY = basePt.y - wallH - 32;
-
-  // Left roof slope
-  ctx.fillStyle = roofShade;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, peakY);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 6);
-  ctx.lineTo(basePt.x - w - 4, basePt.y - wallH - 10);
-  ctx.lineTo(basePt.x - 4, peakY - 4);
-  ctx.closePath();
-  ctx.fill();
-
-  // Right sunlit roof slope (Terracotta tiles)
-  ctx.fillStyle = roofColor;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, peakY);
-  ctx.lineTo(basePt.x + w + 4, basePt.y - wallH - 10);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 6);
-  ctx.closePath();
-  ctx.fill();
-
-  // Roof ridge tile line
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, peakY);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 6);
-  ctx.stroke();
-
-  // Roof tile texture lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.lineWidth = 1;
-  for (let r = 1; r <= 3; r++) {
-    const frac = r / 4;
-    ctx.beginPath();
-    ctx.moveTo(basePt.x * (1 - frac) + (basePt.x + w + 4) * frac, peakY * (1 - frac) + (basePt.y - wallH - 10) * frac);
-    ctx.lineTo(basePt.x, basePt.y - wallH + 6 - (1 - frac) * 12);
-    ctx.stroke();
-  }
-
-  // D. Brick Chimney with Billowing Smoke
-  const chimX = basePt.x - 22;
-  const chimY = peakY - 6;
-  ctx.fillStyle = '#991b1b'; // Red brick
-  ctx.fillRect(chimX, chimY, 10, 20);
-  ctx.strokeStyle = '#450a0a';
-  ctx.strokeRect(chimX, chimY, 10, 20);
-  ctx.fillStyle = '#b91c1c';
-  ctx.fillRect(chimX - 1, chimY, 12, 4); // Rim
-
-  // Billowing smoke puffs
-  for (let p = 0; p < 3; p++) {
-    const cycle = ((timestamp / 900 + p * 0.6) % 2) / 2;
-    const smkX = chimX + 5 + Math.sin(cycle * Math.PI * 2 + p) * 8;
-    const smkY = chimY - cycle * 36;
-    const smkR = 3.5 + cycle * 6;
-    const alpha = (1 - cycle) * 0.55;
-
-    ctx.fillStyle = `rgba(241, 245, 249, ${alpha})`;
-    ctx.beginPath();
-    ctx.arc(smkX, smkY, smkR, 0, Math.PI * 2);
+    ctx.arc(winLx - 6 + f * 4, winLy + 3, 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // E. Front Porch & Door
-  const doorX = basePt.x + 14;
-  const doorY = basePt.y - 14;
-  ctx.fillStyle = '#78350f'; // Dark wood porch deck
+  // B. Right Wall (Entry & Front Porch)
+  ctx.fillStyle = wallRightColor;
   ctx.beginPath();
-  ctx.moveTo(doorX - 10, doorY + 6);
-  ctx.lineTo(doorX + 10, doorY + 2);
-  ctx.lineTo(doorX + 14, doorY + 8);
-  ctx.lineTo(doorX - 6, doorY + 12);
+  ctx.moveTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
   ctx.closePath();
   ctx.fill();
 
-  // Front Door
-  ctx.fillStyle = '#451a03';
-  ctx.fillRect(doorX - 4, doorY - 14, 8, 16);
-  ctx.strokeStyle = '#fef08a';
+  // Horizontal siding on right wall
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(doorX - 4, doorY - 14, 8, 16);
+  for (let s = 1; s <= 6; s++) {
+    const frac = s / 7;
+    ctx.beginPath();
+    ctx.moveTo(pBottomT.x, pBottomT.y - wallH * frac);
+    ctx.lineTo(pRightT.x, pRightT.y - wallH * frac);
+    ctx.stroke();
+  }
 
-  // Brass doorknob
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(doorX + 1, doorY - 6, 2, 2);
+  // Front Porch Doorway
+  const doorX = (pBottomT.x + pRightT.x) / 2 - 4;
+  const doorY = (pBottomT.y + pRightT.y) / 2 - 2;
 
-  // Porch light / lantern
-  ctx.fillStyle = isNight ? '#fef08a' : '#cbd5e1';
-  ctx.fillRect(doorX + 6, doorY - 12, 3, 5);
-
-  // F. Windows with Shutters and Flower Boxes
-  const winY = basePt.y - wallH * 0.5;
-  const winColor = isNight ? '#fef08a' : '#bfdbfe';
-
-  // Left Window
-  const lx = basePt.x - 26;
-  ctx.fillStyle = winColor;
-  ctx.fillRect(lx, winY - 4, 12, 14);
-  ctx.strokeStyle = '#1e293b';
-  ctx.strokeRect(lx, winY - 4, 12, 14);
-
-  // Window mullions
-  ctx.beginPath();
-  ctx.moveTo(lx + 6, winY - 4);
-  ctx.lineTo(lx + 6, winY + 10);
-  ctx.moveTo(lx, winY + 3);
-  ctx.lineTo(lx + 12, winY + 3);
-  ctx.stroke();
-
-  // Green Shutters
-  ctx.fillStyle = '#15803d';
-  ctx.fillRect(lx - 4, winY - 4, 4, 14);
-  ctx.fillRect(lx + 12, winY - 4, 4, 14);
-
-  // Flower planter box with red blossoms
+  // Door Frame & Wooden Door
+  ctx.fillStyle = '#451a03';
+  ctx.fillRect(doorX - 6, doorY - 24, 12, 24);
   ctx.fillStyle = '#78350f';
-  ctx.fillRect(lx - 2, winY + 10, 16, 4);
-  ctx.fillStyle = '#ef4444'; // Red flowers
-  ctx.fillRect(lx, winY + 8, 3, 3);
-  ctx.fillRect(lx + 5, winY + 7, 3, 3);
-  ctx.fillRect(lx + 10, winY + 8, 3, 3);
+  ctx.fillRect(doorX - 4.5, doorY - 22, 9, 21);
 
-  // Shrub bush on lawn
-  ctx.fillStyle = '#16a34a';
+  // Brass knob
+  ctx.fillStyle = '#fbbf24';
   ctx.beginPath();
-  ctx.arc(basePt.x - w + 6, basePt.y - 4, 7, 0, Math.PI * 2);
-  ctx.arc(basePt.x - w + 14, basePt.y - 2, 6, 0, Math.PI * 2);
+  ctx.arc(doorX + 2, doorY - 11, 1.5, 0, Math.PI * 2);
   ctx.fill();
 
+  // Porch lantern light
+  ctx.fillStyle = isNight ? '#fbbf24' : '#fef08a';
+  ctx.fillRect(doorX - 9, doorY - 19, 3, 4);
+
+  // Porch step touching the plinth
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillRect(doorX - 8, doorY, 16, 2.5);
+
+  // Right upper window
+  const winRx = doorX + 13;
+  const winRy = doorY - 14;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(winRx - 5, winRy - 6, 10, 11);
+  ctx.fillStyle = isNight ? '#fef08a' : '#e0f2fe';
+  ctx.fillRect(winRx - 3.5, winRy - 4.5, 7, 8);
+
+  // C. Pitched Gabled Terracotta Roof
+  // Peak rises above the center of the left wall
+  const peakLeftX = (wLeft.x + wBottom.x) / 2;
+  const peakLeftY = (wLeft.y + wBottom.y) / 2 - 26;
+
+  // Back peak rises above back wall
+  const peakBackX = (pTopT.x - 0 + wRight.x - 0) / 2;
+  const peakBackY = (pTopT.y - wallH + wRight.y) / 2 - 26;
+
+  // Left Gable Triangle
+  ctx.fillStyle = roofShade;
+  ctx.beginPath();
+  ctx.moveTo(wLeft.x, wLeft.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(peakLeftX, peakLeftY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#292524';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Front-Right Roof Slope (Facing Viewer)
+  ctx.fillStyle = roofColor;
+  ctx.beginPath();
+  ctx.moveTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(peakBackX, peakBackY);
+  ctx.lineTo(peakLeftX, peakLeftY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Terracotta Tile Ridges
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.lineWidth = 1.2;
+  for (let r = 1; r <= 5; r++) {
+    const frac = r / 6;
+    ctx.beginPath();
+    ctx.moveTo(
+      wBottom.x + (peakLeftX - wBottom.x) * frac,
+      wBottom.y + (peakLeftY - wBottom.y) * frac
+    );
+    ctx.lineTo(
+      wRight.x + (peakBackX - wRight.x) * frac,
+      wRight.y + (peakBackY - wRight.y) * frac
+    );
+    ctx.stroke();
+  }
+
+  // D. Red Brick Chimney & Animated Smoke
+  const chimX = peakLeftX - 6;
+  const chimY = peakLeftY + 4;
+  ctx.fillStyle = '#991b1b';
+  ctx.fillRect(chimX - 4, chimY - 18, 8, 18);
+  ctx.fillStyle = '#450a0a';
+  ctx.fillRect(chimX - 5, chimY - 20, 10, 3); // Chimney stone cap
+
+  // Billowing Smoke Puffs
+  for (let s = 0; s < 3; s++) {
+    const smokePhase = ((timestamp / 1000 + s * 0.7) % 2.1) / 2.1;
+    const sx = chimX + Math.sin(timestamp / 350 + s) * 5;
+    const sy = chimY - 22 - smokePhase * 24;
+    const sRadius = 2.5 + smokePhase * 4.5;
+    const sAlpha = Math.max(0, (1 - smokePhase) * 0.45);
+
+    ctx.fillStyle = `rgba(226, 232, 240, ${sAlpha})`;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.restore();
+
+  return peakLeftY - 14;
 }
 
-// -----------------------------------------------------------------------------
-// 2. Handcrafted Corner Bakery / General Store
-// -----------------------------------------------------------------------------
+// =============================================================================
+// 2. Handcrafted Corner Bakery (Grounded 2-Story Commercial)
+// =============================================================================
 function drawCornerBakery(
   ctx: CanvasRenderingContext2D,
   _b: PlacedCityBuilding,
   _def: CityBuildingDefinition,
-  basePt: { x: number; y: number },
-  timestamp: number,
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
+  _timestamp: number,
   atmosphere: CityAtmosphere
-) {
+): number {
   const isNight = atmosphere === 'night';
   const isSunset = atmosphere === 'sunset';
 
-  const w = 50;
-  const wallH = 54;
+  // 1. Draw solid foundation plinth
+  const { pTopT, pRightT, pBottomT, pLeftT } = drawFoundationPlinth(
+    ctx,
+    pTop,
+    pRight,
+    pBottom,
+    pLeft,
+    4,
+    atmosphere
+  );
 
-  const brickLeft = isNight ? '#450a0a' : isSunset ? '#7f1d1d' : '#991b1b';
-  const brickRight = isNight ? '#7f1d1d' : isSunset ? '#b91c1c' : '#dc2626';
+  const wallH = 52;
+  const brickLeft = isNight ? '#7f1d1d' : isSunset ? '#991b1b' : '#b91c1c';
+  const brickRight = isNight ? '#991b1b' : isSunset ? '#b91c1c' : '#dc2626';
 
   ctx.save();
 
-  // A. Left Brick Wall
+  // Wall Top Points
+  const wLeft = { x: pLeftT.x, y: pLeftT.y - wallH };
+  const wBottom = { x: pBottomT.x, y: pBottomT.y - wallH };
+  const wRight = { x: pRightT.x, y: pRightT.y - wallH };
+  const wTop = { x: pTopT.x, y: pTopT.y - wallH };
+
+  // A. Left Wall (Red Brick with Large Bread Display Window)
   ctx.fillStyle = brickLeft;
   ctx.beginPath();
-  ctx.moveTo(basePt.x - w, basePt.y - 14);
-  ctx.lineTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 14);
+  ctx.moveTo(pLeftT.x, pLeftT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
   ctx.closePath();
   ctx.fill();
 
-  // B. Right Brick Wall
-  ctx.fillStyle = brickRight;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x + w, basePt.y - 14);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 14);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.closePath();
-  ctx.fill();
-
-  // C. Flat Commercial Rooftop with Parapet Cornice
-  ctx.fillStyle = isNight ? '#1e293b' : '#334155';
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y - wallH - 24);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 14);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 14);
-  ctx.closePath();
-  ctx.fill();
-
-  // Parapet Stone Edge
-  ctx.strokeStyle = '#f8fafc';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Rooftop Exhaust Vent
-  const ventX = basePt.x + 8;
-  const ventY = basePt.y - wallH - 14;
-  ctx.fillStyle = '#64748b';
-  ctx.fillRect(ventX, ventY, 12, 10);
-  ctx.fillStyle = '#475569';
-  ctx.fillRect(ventX - 1, ventY, 14, 3);
-
-  // Exhaust steam
-  const steamBob = ((timestamp / 700) % 2) / 2;
-  ctx.fillStyle = `rgba(241, 245, 249, ${0.4 * (1 - steamBob)})`;
-  ctx.beginPath();
-  ctx.arc(ventX + 6, ventY - steamBob * 18, 4 + steamBob * 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // D. Large Bakery Shopfront Display Window
-  const winX = basePt.x - 26;
-  const winY = basePt.y - 20;
-  ctx.fillStyle = isNight ? '#fef08a' : '#fef3c7';
-  ctx.fillRect(winX, winY, 22, 16);
-  ctx.strokeStyle = '#78350f';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(winX, winY, 22, 16);
-
-  // Pastries / Bread display inside window
-  ctx.fillStyle = '#b45309'; // Golden baguettes
-  ctx.fillRect(winX + 3, winY + 8, 5, 6);
-  ctx.fillRect(winX + 9, winY + 7, 5, 7);
-  ctx.fillRect(winX + 15, winY + 9, 4, 5);
-
-  // E. Scalloped Red-and-White Fabric Awning
-  const awnY = basePt.y - 12;
-  ctx.fillStyle = '#dc2626';
-  ctx.beginPath();
-  ctx.moveTo(basePt.x - 30, awnY);
-  ctx.lineTo(basePt.x + 2, awnY + 12);
-  ctx.lineTo(basePt.x - 4, awnY + 18);
-  ctx.lineTo(basePt.x - 36, awnY + 6);
-  ctx.closePath();
-  ctx.fill();
-
-  // White Stripes on Awning
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2.5;
-  for (let s = -24; s <= 0; s += 7) {
+  // Brick texture courses
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.lineWidth = 1;
+  for (let b = 1; b <= 7; b++) {
+    const frac = b / 8;
     ctx.beginPath();
-    ctx.moveTo(basePt.x + s, awnY + (s + 30) * 0.4);
-    ctx.lineTo(basePt.x + s - 6, awnY + 6 + (s + 30) * 0.4);
+    ctx.moveTo(pLeftT.x, pLeftT.y - wallH * frac);
+    ctx.lineTo(pBottomT.x, pBottomT.y - wallH * frac);
     ctx.stroke();
   }
 
-  // F. Swinging Wooden Bakery Sign (Pretzel / Bread)
-  const signX = basePt.x + 24;
-  const signY = basePt.y - 28;
-  ctx.fillStyle = '#78350f'; // Iron bracket
-  ctx.fillRect(signX - 4, signY - 8, 12, 2);
-  ctx.fillStyle = '#fef3c7'; // Wood board
-  ctx.fillRect(signX - 2, signY - 6, 14, 10);
-  ctx.strokeStyle = '#92400e';
-  ctx.strokeRect(signX - 2, signY - 6, 14, 10);
+  // Stone Quoins (Alternating corner stones)
+  ctx.fillStyle = '#cbd5e1';
+  for (let q = 0; q < 5; q++) {
+    const qy = pBottomT.y - q * 10;
+    ctx.fillRect(pBottomT.x - 2, qy - 5, 4, 4);
+    const qyL = pLeftT.y - q * 10;
+    ctx.fillRect(pLeftT.x - 2, qyL - 5, 4, 4);
+  }
 
-  // Golden Croissant on sign
-  ctx.fillStyle = '#d97706';
+  // Large Bakery Display Window (Left Wall)
+  const dWinX = (pLeftT.x + pBottomT.x) / 2;
+  const dWinY = (pLeftT.y + pBottomT.y) / 2 - 16;
+
+  // Window Wood Frame
+  ctx.fillStyle = '#451a03';
+  ctx.fillRect(dWinX - 14, dWinY - 10, 28, 18);
+
+  // Warm Golden Illuminated Display Interior
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(dWinX - 12, dWinY - 8, 24, 14);
+
+  // Shelves with Golden Croissants & Bread Loaves
+  ctx.fillStyle = '#b45309';
+  ctx.fillRect(dWinX - 10, dWinY - 1, 20, 2); // Shelf
+  // Loaves on shelf
+  for (let l = 0; l < 3; l++) {
+    ctx.fillStyle = '#d97706';
+    ctx.beginPath();
+    ctx.ellipse(dWinX - 7 + l * 7, dWinY - 3, 3, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(dWinX - 8 + l * 7, dWinY - 4, 2, 1);
+  }
+
+  // Scalloped Red-and-White Striped Awning
+  const awnX = dWinX;
+  const awnY = dWinY - 11;
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(signX + 5, signY - 1, 3.5, 0, Math.PI * 2);
+  ctx.moveTo(awnX - 16, awnY);
+  ctx.lineTo(awnX + 16, awnY);
+  ctx.lineTo(awnX + 19, awnY + 7);
+  ctx.lineTo(awnX - 13, awnY + 7);
+  ctx.closePath();
+  ctx.fillStyle = '#ef4444';
   ctx.fill();
 
-  // G. Neon "OPEN" Sign
-  const neonPulse = (Math.sin(timestamp / 200) + 1) * 0.4 + 0.6;
-  ctx.save();
-  ctx.fillStyle = `rgba(239, 68, 68, ${neonPulse})`;
-  ctx.shadowColor = '#ef4444';
-  ctx.shadowBlur = 8;
-  ctx.font = '900 8px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('BAKERY', basePt.x + 18, basePt.y - 8);
+  // White Stripes
+  ctx.fillStyle = '#ffffff';
+  for (let s = -2; s <= 2; s += 2) {
+    ctx.beginPath();
+    ctx.moveTo(awnX + s * 6 - 2, awnY);
+    ctx.lineTo(awnX + s * 6 + 2, awnY);
+    ctx.lineTo(awnX + s * 6 + 4, awnY + 7);
+    ctx.lineTo(awnX + s * 6, awnY + 7);
+    ctx.closePath();
+    ctx.fill();
+  }
   ctx.restore();
 
-  // H. Upper Floor Residential Windows
-  const upWinY = basePt.y - wallH + 16;
-  ctx.fillStyle = isNight ? '#fef08a' : '#bfdbfe';
-  ctx.fillRect(basePt.x - 22, upWinY, 10, 12);
-  ctx.strokeRect(basePt.x - 22, upWinY, 10, 12);
-  ctx.fillRect(basePt.x + 14, upWinY - 4, 10, 12);
-  ctx.strokeRect(basePt.x + 14, upWinY - 4, 10, 12);
-
-  ctx.restore();
-}
-
-// -----------------------------------------------------------------------------
-// 3. Handcrafted Grand City Hall (3x3 Civic Palace)
-// -----------------------------------------------------------------------------
-function drawGrandCityHall(
-  ctx: CanvasRenderingContext2D,
-  _b: PlacedCityBuilding,
-  basePt: { x: number; y: number },
-  timestamp: number,
-  atmosphere: CityAtmosphere
-) {
-  const isNight = atmosphere === 'night';
-  const isSunset = atmosphere === 'sunset';
-
-  const w = 72;
-  const wallH = 68;
-
-  const stoneLeft = isNight ? '#334155' : isSunset ? '#b45309' : '#d97706';
-  const stoneRight = isNight ? '#475569' : isSunset ? '#f59e0b' : '#fbbf24';
-
-  ctx.save();
-
-  // A. Stone Plinth Base (Imperial Foundation)
-  ctx.fillStyle = '#1e293b';
+  // B. Right Wall (Bakery Entrance & Sign)
+  ctx.fillStyle = brickRight;
   ctx.beginPath();
-  ctx.moveTo(basePt.x - w - 6, basePt.y - 18);
-  ctx.lineTo(basePt.x, basePt.y + 8);
-  ctx.lineTo(basePt.x + w + 6, basePt.y - 18);
-  ctx.lineTo(basePt.x, basePt.y - 44);
+  ctx.moveTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
   ctx.closePath();
   ctx.fill();
 
-  // B. Grand Entrance Staircase
-  ctx.fillStyle = '#94a3b8';
-  for (let s = 0; s < 4; s++) {
-    const stY = basePt.y + 4 - s * 3;
+  // Brick courses on right wall
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  for (let b = 1; b <= 7; b++) {
+    const frac = b / 8;
     ctx.beginPath();
-    ctx.moveTo(basePt.x - 18 - s * 2, stY - 2);
-    ctx.lineTo(basePt.x, stY + 4);
-    ctx.lineTo(basePt.x + 18 + s * 2, stY - 2);
-    ctx.lineTo(basePt.x, stY - 8);
+    ctx.moveTo(pBottomT.x, pBottomT.y - wallH * frac);
+    ctx.lineTo(pRightT.x, pRightT.y - wallH * frac);
+    ctx.stroke();
+  }
+
+  // Shop Glass Doorway
+  const doorX = (pBottomT.x + pRightT.x) / 2 - 5;
+  const doorY = (pBottomT.y + pRightT.y) / 2 - 2;
+
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(doorX - 6, doorY - 26, 13, 26);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(doorX - 4.5, doorY - 24, 10, 23);
+
+  // Glass pane in door
+  ctx.fillStyle = isNight ? '#fef08a' : '#bae6fd';
+  ctx.fillRect(doorX - 3.5, doorY - 22, 8, 14);
+
+  // Glowing "OPEN" Sign
+  ctx.fillStyle = '#22c55e';
+  ctx.fillRect(doorX - 3, doorY - 17, 7, 4);
+
+  // Hanging Croissant Sign on Right Wall
+  const signX = doorX - 11;
+  const signY = doorY - 24;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(signX, signY, 7, 2); // Bracket
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.arc(signX + 3.5, signY + 6, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#78350f';
+  ctx.beginPath();
+  ctx.arc(signX + 3.5, signY + 6, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Second Floor Windows
+  const win2X = doorX + 11;
+  const win2Y = doorY - 34;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(win2X - 5, win2Y - 6, 10, 12);
+  ctx.fillStyle = isNight ? '#fef08a' : '#bae6fd';
+  ctx.fillRect(win2X - 3.5, win2Y - 4.5, 7, 9);
+
+  // C. Flat Commercial Parapet Roof with Cornice
+  ctx.fillStyle = isNight ? '#1e293b' : '#334155';
+  ctx.beginPath();
+  ctx.moveTo(wTop.x, wTop.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Decorative White Stone Cornice Trim
+  ctx.strokeStyle = '#f1f5f9';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // HVAC Rooftop Unit
+  const hvacX = (wTop.x + wBottom.x) / 2;
+  const hvacY = (wTop.y + wBottom.y) / 2;
+  ctx.fillStyle = '#64748b';
+  ctx.fillRect(hvacX - 7, hvacY - 7, 14, 8);
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(hvacX - 5, hvacY - 5, 10, 4);
+
+  // Glowing "BAKERY" Sign
+  ctx.fillStyle = isNight ? '#f59e0b' : '#d97706';
+  ctx.font = 'bold 8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('BAKERY', wBottom.x + 8, wBottom.y - 2);
+
+  ctx.restore();
+
+  return wTop.y - 12;
+}
+
+// =============================================================================
+// 3. Handcrafted Grand City Hall (Grounded 2x2 Classical Civic Palace)
+// =============================================================================
+function drawGrandCityHall(
+  ctx: CanvasRenderingContext2D,
+  _b: PlacedCityBuilding,
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
+  timestamp: number,
+  atmosphere: CityAtmosphere
+): number {
+  const isNight = atmosphere === 'night';
+  const isSunset = atmosphere === 'sunset';
+
+  // 1. Broad Imperial Stone Plinth (Height 6px)
+  const { pTopT, pRightT, pBottomT, pLeftT } = drawFoundationPlinth(
+    ctx,
+    pTop,
+    pRight,
+    pBottom,
+    pLeft,
+    6,
+    atmosphere
+  );
+
+  const wallH = 68;
+  const stoneLeft = isNight ? '#1e293b' : isSunset ? '#475569' : '#e2e8f0';
+  const stoneRight = isNight ? '#334155' : isSunset ? '#64748b' : '#f8fafc';
+  const columnColor = '#ffffff';
+
+  ctx.save();
+
+  // Wall Top Points
+  const wLeft = { x: pLeftT.x, y: pLeftT.y - wallH };
+  const wBottom = { x: pBottomT.x, y: pBottomT.y - wallH };
+  const wRight = { x: pRightT.x, y: pRightT.y - wallH };
+  const wTop = { x: pTopT.x, y: pTopT.y - wallH };
+
+  // A. Left Wing Wall (Classical Limestone)
+  ctx.fillStyle = stoneLeft;
+  ctx.beginPath();
+  ctx.moveTo(pLeftT.x, pLeftT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Left tall arched windows
+  for (let w = 1; w <= 3; w++) {
+    const frac = w / 4;
+    const ax = pLeftT.x + (pBottomT.x - pLeftT.x) * frac;
+    const ay = pLeftT.y + (pBottomT.y - pLeftT.y) * frac - wallH * 0.45;
+
+    ctx.fillStyle = isNight ? '#fef08a' : '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(ax, ay - 8, 4, Math.PI, 0);
+    ctx.lineTo(ax + 4, ay + 8);
+    ctx.lineTo(ax - 4, ay + 8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // B. Right Wing Wall (Facing Light)
+  ctx.fillStyle = stoneRight;
+  ctx.beginPath();
+  ctx.moveTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Right tall arched windows
+  for (let w = 1; w <= 3; w++) {
+    const frac = w / 4;
+    const ax = pBottomT.x + (pRightT.x - pBottomT.x) * frac;
+    const ay = pBottomT.y + (pRightT.y - pBottomT.y) * frac - wallH * 0.45;
+
+    ctx.fillStyle = isNight ? '#fef08a' : '#bae6fd';
+    ctx.beginPath();
+    ctx.arc(ax, ay - 8, 4, Math.PI, 0);
+    ctx.lineTo(ax + 4, ay + 8);
+    ctx.lineTo(ax - 4, ay + 8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // C. Imperial Marble Steps (At Front Corner)
+  const stepsCount = 4;
+  for (let s = 0; s < stepsCount; s++) {
+    const stepFrac = s / stepsCount;
+    const stepY = pBottom.y - s * 2;
+    ctx.fillStyle = s % 2 === 0 ? '#f1f5f9' : '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(pBottom.x - 22 * (1 - stepFrac * 0.3), stepY - 6 * (1 - stepFrac * 0.3));
+    ctx.lineTo(pBottom.x, stepY);
+    ctx.lineTo(pBottom.x + 22 * (1 - stepFrac * 0.3), stepY - 6 * (1 - stepFrac * 0.3));
+    ctx.lineTo(pBottom.x, stepY - 3);
     ctx.closePath();
     ctx.fill();
   }
 
-  // C. Main Building Walls
-  // Left wing
-  ctx.fillStyle = stoneLeft;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x - w, basePt.y - 16);
-  ctx.lineTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 16);
-  ctx.closePath();
-  ctx.fill();
-
-  // Right wing
-  ctx.fillStyle = stoneRight;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x + w, basePt.y - 16);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 16);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.closePath();
-  ctx.fill();
-
-  // D. White Classical Doric Columns & Pediment Portico
-  ctx.fillStyle = '#f8fafc';
-  for (let c = -2; c <= 2; c++) {
-    const colX = basePt.x + c * 8;
-    const colY = basePt.y - 6 - Math.abs(c) * 3;
-    ctx.fillRect(colX - 2, colY - 34, 4, 34);
-    // Column capital & base
-    ctx.fillRect(colX - 3.5, colY - 36, 7, 2.5);
-    ctx.fillRect(colX - 3.5, colY - 2, 7, 2.5);
+  // Evergreen Topiaries in Stone Urns flanking entrance
+  const urns = [
+    { x: pBottom.x - 26, y: pBottom.y - 12 },
+    { x: pBottom.x + 26, y: pBottom.y - 12 },
+  ];
+  for (const u of urns) {
+    // Stone Urn
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(u.x - 3, u.y - 4, 6, 5);
+    // Manicured Pine Topiary
+    ctx.fillStyle = '#15803d';
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y - 15);
+    ctx.lineTo(u.x + 5, u.y - 4);
+    ctx.lineTo(u.x - 5, u.y - 4);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  // Classical Triangular Pediment
-  ctx.fillStyle = '#f1f5f9';
+  // D. Grand Classical Doric Portico (Center Entrance)
+  const porticoBaseY = pBottomT.y - 4;
+  const porticoTopY = wBottom.y + 4;
+  const porticoH = porticoBaseY - porticoTopY;
+
+  // Double Arched Oak Doors
+  ctx.fillStyle = '#451a03';
+  ctx.fillRect(pBottom.x - 10, porticoBaseY - 26, 20, 26);
+  ctx.fillStyle = '#78350f';
+  ctx.fillRect(pBottom.x - 8, porticoBaseY - 24, 7.5, 23);
+  ctx.fillRect(pBottom.x + 0.5, porticoBaseY - 24, 7.5, 23);
+
+  // Gold Doorknobs
+  ctx.fillStyle = '#fbbf24';
   ctx.beginPath();
-  ctx.moveTo(basePt.x - 22, basePt.y - 42);
-  ctx.lineTo(basePt.x + 22, basePt.y - 42);
-  ctx.lineTo(basePt.x, basePt.y - 58);
+  ctx.arc(pBottom.x - 2, porticoBaseY - 12, 1.5, 0, Math.PI * 2);
+  ctx.arc(pBottom.x + 2, porticoBaseY - 12, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 4 Classical White Doric Columns
+  const colXPositions = [-18, -6, 6, 18];
+  for (const cx of colXPositions) {
+    const colX = pBottom.x + cx;
+    // Column Base
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(colX - 2.5, porticoBaseY - 3, 5, 3);
+    // Column Shaft
+    ctx.fillStyle = columnColor;
+    ctx.fillRect(colX - 2, porticoTopY + 3, 4, porticoH - 6);
+    // Capital
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(colX - 3, porticoTopY, 6, 3);
+  }
+
+  // Portico Triangular Pediment Frieze
+  const pedX = pBottom.x;
+  const pedBaseY = porticoTopY;
+  const pedPeakY = pedBaseY - 18;
+
+  ctx.fillStyle = stoneRight;
+  ctx.beginPath();
+  ctx.moveTo(pedX - 24, pedBaseY);
+  ctx.lineTo(pedX + 24, pedBaseY);
+  ctx.lineTo(pedX, pedPeakY);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  // Grand Wooden Double Doors
-  ctx.fillStyle = '#451a03';
-  ctx.fillRect(basePt.x - 6, basePt.y - 28, 12, 22);
-  ctx.strokeStyle = '#facc15'; // Brass trim
-  ctx.lineWidth = 1;
-  ctx.strokeRect(basePt.x - 6, basePt.y - 28, 12, 22);
+  // Golden City Seal inside Pediment
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.arc(pedX, pedBaseY - 6, 4, 0, Math.PI * 2);
+  ctx.fill();
 
-  // E. Grand Clock Tower Rising in Center
-  const towerW = 26;
-  const towerH = 46;
-  const towerBaseY = basePt.y - wallH - 10;
+  // E. Central Multi-Tier Clocktower
+  const towerW = 28;
+  const towerBaseY = wTop.y;
+  const towerTier1H = 26;
+  const towerTier2H = 24;
 
-  // Tower shaft
+  // Tier 1: Tower Base
   ctx.fillStyle = stoneLeft;
-  ctx.fillRect(basePt.x - towerW / 2, towerBaseY - towerH, towerW, towerH);
-  ctx.strokeStyle = '#78350f';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(basePt.x - towerW / 2, towerBaseY - towerH, towerW, towerH);
+  ctx.fillRect(pedX - towerW / 2, towerBaseY - towerTier1H, towerW, towerTier1H);
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(pedX - towerW / 2, towerBaseY - towerTier1H, towerW, towerTier1H);
+
+  // Tier 2: Clock Chamber
+  const clockBoxY = towerBaseY - towerTier1H - towerTier2H;
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(pedX - 11, clockBoxY, 22, towerTier2H);
 
   // Large Illuminated Clock Dial
-  const clockCenterY = towerBaseY - towerH + 16;
-  ctx.save();
-  ctx.fillStyle = '#fef3c7';
-  ctx.shadowColor = '#facc15';
-  ctx.shadowBlur = isNight ? 10 : 3;
+  const clockDialY = clockBoxY + towerTier2H / 2;
+  ctx.fillStyle = '#fef08a'; // Glowing yellow/ivory
   ctx.beginPath();
-  ctx.arc(basePt.x, clockCenterY, 8, 0, Math.PI * 2);
+  ctx.arc(pedX, clockDialY, 7.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = '#451a03';
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  // Ticking Clock Hands
+  const minuteAngle = (timestamp / 2000) * Math.PI * 2;
+  const hourAngle = minuteAngle / 12;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pedX, clockDialY);
+  ctx.lineTo(pedX + Math.sin(minuteAngle) * 5.5, clockDialY - Math.cos(minuteAngle) * 5.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pedX, clockDialY);
+  ctx.lineTo(pedX + Math.sin(hourAngle) * 3.5, clockDialY - Math.cos(hourAngle) * 3.5);
+  ctx.stroke();
+
+  // Tier 3: Copper Cupola Dome
+  const domeY = clockBoxY;
+  ctx.fillStyle = '#0d9488'; // Oxidized copper green
+  ctx.beginPath();
+  ctx.arc(pedX, domeY, 9, Math.PI, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#134e4a';
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  // Ticking clock hands
-  const handAngle = (timestamp / 2400) * Math.PI * 2;
-  ctx.strokeStyle = '#1e1b4b';
-  ctx.lineWidth = 1.4;
+  // Finial Spire & Waving Flag
+  const spirePeakY = domeY - 22;
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(basePt.x, clockCenterY);
-  ctx.lineTo(basePt.x + Math.cos(handAngle) * 5, clockCenterY + Math.sin(handAngle) * 5);
-  ctx.moveTo(basePt.x, clockCenterY);
-  ctx.lineTo(basePt.x - Math.sin(handAngle * 12) * 6.5, clockCenterY + Math.cos(handAngle * 12) * 6.5);
+  ctx.moveTo(pedX, domeY);
+  ctx.lineTo(pedX, spirePeakY);
   ctx.stroke();
+
+  // Waving Royal Blue & Gold Flag
+  const wave = Math.sin(timestamp / 220) * 2;
+  ctx.fillStyle = '#1d4ed8'; // Royal Blue
+  ctx.beginPath();
+  ctx.moveTo(pedX, spirePeakY + 2);
+  ctx.lineTo(pedX + 13 + wave, spirePeakY + 4);
+  ctx.lineTo(pedX, spirePeakY + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#fbbf24'; // Gold Star
+  ctx.fillRect(pedX + 4, spirePeakY + 4, 2, 2);
+
   ctx.restore();
 
-  // Copper Verdigris Dome (Green roof cupola)
-  ctx.fillStyle = '#059669'; // Emerald verdigris
-  ctx.beginPath();
-  ctx.arc(basePt.x, towerBaseY - towerH - 2, 11, Math.PI, 0);
-  ctx.fill();
-  ctx.strokeStyle = '#047857';
-  ctx.stroke();
-
-  // Golden Spire & Flagpole
-  const spireTop = towerBaseY - towerH - 16;
-  ctx.strokeStyle = '#facc15';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, towerBaseY - towerH - 2);
-  ctx.lineTo(basePt.x, spireTop);
-  ctx.stroke();
-
-  // Fluttering Blue & Gold Mayoral Flag
-  const flagWave = Math.sin(timestamp / 160) * 4;
-  ctx.fillStyle = '#3b82f6';
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, spireTop + 2);
-  ctx.lineTo(basePt.x + 14 + flagWave, spireTop + 5);
-  ctx.lineTo(basePt.x, spireTop + 9);
-  ctx.closePath();
-  ctx.fill();
-
-  // Gold star on flag
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(basePt.x + 4, spireTop + 5, 2.5, 2.5);
-
-  // F. Flanking Evergreen Topiary Cones in Stone Urns
-  ctx.fillStyle = '#15803d';
-  // Left topiary
-  ctx.beginPath();
-  ctx.moveTo(basePt.x - 34, basePt.y - 6);
-  ctx.lineTo(basePt.x - 28, basePt.y - 20);
-  ctx.lineTo(basePt.x - 22, basePt.y - 6);
-  ctx.closePath();
-  ctx.fill();
-  // Right topiary
-  ctx.beginPath();
-  ctx.moveTo(basePt.x + 22, basePt.y - 6);
-  ctx.lineTo(basePt.x + 28, basePt.y - 20);
-  ctx.lineTo(basePt.x + 34, basePt.y - 6);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
+  return spirePeakY - 14;
 }
 
-// -----------------------------------------------------------------------------
-// 4. Handcrafted Suburban Farm Plot
-// -----------------------------------------------------------------------------
+// =============================================================================
+// 4. Handcrafted Farm Plot (Grounded Tilled Agriculture)
+// =============================================================================
 function drawFarmPlot(
   ctx: CanvasRenderingContext2D,
   b: PlacedCityBuilding,
-  basePt: { x: number; y: number },
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
   timestamp: number,
   atmosphere: CityAtmosphere
-) {
+): number {
   const isNight = atmosphere === 'night';
+  const crop = b.cropId ? CITY_CROPS.find((c) => c.id === b.cropId) : null;
+
   ctx.save();
 
-  // A. Rustic Tilled Soil Furrow Bed
-  ctx.fillStyle = isNight ? '#271202' : '#5c2c07';
-  drawCityFootprint(ctx, b.gridX, b.gridY, 2, 2);
-  ctx.fill();
-
-  // Dark border
-  ctx.strokeStyle = '#381a05';
-  ctx.lineWidth = 2;
+  // 1. Raised Rustic Wooden Planter Border touching ground
+  ctx.strokeStyle = isNight ? '#292524' : '#451a03';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pTop.x, pTop.y);
+  ctx.lineTo(pRight.x, pRight.y);
+  ctx.lineTo(pBottom.x, pBottom.y);
+  ctx.lineTo(pLeft.x, pLeft.y);
+  ctx.closePath();
   ctx.stroke();
 
-  // Furrow lines (soil grooves)
-  ctx.strokeStyle = isNight ? '#1f0d02' : '#451a03';
-  ctx.lineWidth = 1.4;
-  for (let f = -2; f <= 2; f++) {
+  // Corner Wooden Posts
+  const corners = [pTop, pRight, pBottom, pLeft];
+  ctx.fillStyle = '#78350f';
+  for (const c of corners) {
+    ctx.fillRect(c.x - 2, c.y - 6, 4, 7);
+  }
+
+  // 2. Rich Dark Tilled Soil
+  ctx.fillStyle = isNight ? '#1c1917' : '#3f2512';
+  ctx.beginPath();
+  ctx.moveTo(pTop.x, pTop.y);
+  ctx.lineTo(pRight.x, pRight.y);
+  ctx.lineTo(pBottom.x, pBottom.y);
+  ctx.lineTo(pLeft.x, pLeft.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Parallel Furrow Rows
+  ctx.strokeStyle = isNight ? '#0c0a09' : '#29180c';
+  ctx.lineWidth = 1.8;
+  for (let r = 1; r <= 4; r++) {
+    const frac = r / 5;
+    const startX = pLeft.x + (pTop.x - pLeft.x) * frac;
+    const startY = pLeft.y + (pTop.y - pLeft.y) * frac;
+    const endX = pBottom.x + (pRight.x - pBottom.x) * frac;
+    const endY = pBottom.y + (pRight.y - pBottom.y) * frac;
+
     ctx.beginPath();
-    ctx.moveTo(basePt.x - 24 + f * 6, basePt.y - 6 + f * 5);
-    ctx.lineTo(basePt.x + 24 + f * 6, basePt.y - 6 + f * 5);
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
     ctx.stroke();
   }
 
-  // B. Rustic Wooden Post-and-Rail Fence
-  ctx.strokeStyle = '#92400e';
-  ctx.lineWidth = 1.5;
-  const corners = [
-    { x: basePt.x, y: basePt.y - 24 },
-    { x: basePt.x + 40, y: basePt.y - 4 },
-    { x: basePt.x, y: basePt.y + 16 },
-    { x: basePt.x - 40, y: basePt.y - 4 },
-  ];
-  for (let i = 0; i < 4; i++) {
-    const c1 = corners[i];
-    const c2 = corners[(i + 1) % 4];
-    // Fence rail
-    ctx.beginPath();
-    ctx.moveTo(c1.x, c1.y - 6);
-    ctx.lineTo(c2.x, c2.y - 6);
-    ctx.stroke();
-    // Fence posts
-    ctx.fillStyle = '#78350f';
-    ctx.fillRect(c1.x - 1.5, c1.y - 12, 3, 12);
-  }
+  // 3. Growing / Ripe Crops
+  if (crop && b.plantedAt) {
+    const elapsed = (Date.now() - b.plantedAt) / 1000;
+    const progress = Math.min(1, elapsed / crop.growthSeconds);
+    const isRipe = progress >= 1;
 
-  // C. Crops & Vegetation
-  if (b.cropId && b.plantedAt) {
-    const crop = CITY_CROPS.find((c) => c.id === b.cropId);
-    if (crop) {
-      const elapsed = (Date.now() - b.plantedAt) / 1000;
-      const progress = Math.min(1, elapsed / crop.growthSeconds);
-      const isRipe = progress >= 1;
+    for (let r = 1; r <= 3; r++) {
+      const fracR = r / 4;
+      for (let c = 1; c <= 3; c++) {
+        const fracC = c / 4;
+        const cx =
+          pTop.x +
+          (pRight.x - pTop.x) * fracR +
+          (pLeft.x - pTop.x) * fracC;
+        const cy =
+          pTop.y +
+          (pRight.y - pTop.y) * fracR +
+          (pLeft.y - pTop.y) * fracC;
 
-      const breeze = Math.sin(timestamp / 240) * 1.5;
+        if (crop.id === 'strawberries') {
+          // Green vine leaves
+          ctx.fillStyle = '#15803d';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 3.5 * progress, 0, Math.PI * 2);
+          ctx.fill();
 
-      for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-          const cx = basePt.x + i * 14 + breeze;
-          const cy = basePt.y + j * 7 - 4;
-
-          if (isRipe) {
-            if (b.cropId === 'strawberries') {
-              // Lush green bush with red strawberries
-              ctx.fillStyle = '#15803d';
-              ctx.beginPath();
-              ctx.arc(cx, cy - 2, 5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.fillStyle = '#ef4444'; // Red berries
-              ctx.fillRect(cx - 3, cy - 3, 2.5, 3);
-              ctx.fillRect(cx + 2, cy - 4, 2.5, 3);
-              ctx.fillRect(cx - 1, cy, 2.5, 3);
-            } else if (b.cropId === 'carrots') {
-              // Feathery carrot fronds with orange root
-              ctx.fillStyle = '#ea580c'; // Carrot top
-              ctx.fillRect(cx - 2, cy - 3, 4, 5);
-              ctx.fillStyle = '#22c55e'; // Fronds
-              ctx.beginPath();
-              ctx.moveTo(cx, cy - 3);
-              ctx.lineTo(cx - 3, cy - 9);
-              ctx.lineTo(cx, cy - 7);
-              ctx.lineTo(cx + 3, cy - 9);
-              ctx.closePath();
-              ctx.fill();
-            } else {
-              // Golden Corn / Wheat Stalks
-              ctx.fillStyle = '#eab308';
-              ctx.fillRect(cx - 1.5, cy - 12, 3, 12);
-              ctx.fillStyle = '#fde047';
-              ctx.beginPath();
-              ctx.arc(cx, cy - 12, 2.5, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          } else {
-            // Young Growing Sprouts
-            const spH = 3 + progress * 5;
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(cx - 1, cy - spH, 2, spH);
+          // Red ripe berries
+          if (progress > 0.4) {
+            ctx.fillStyle = '#ef4444';
             ctx.beginPath();
-            ctx.arc(cx, cy - spH, 2, 0, Math.PI * 2);
+            ctx.arc(cx + 1.5, cy + 1, 2 * progress, 0, Math.PI * 2);
             ctx.fill();
+          }
+        } else if (crop.id === 'carrots') {
+          // Feathery Carrot Tops
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(cx - 1.5, cy - 6 * progress, 3, 6 * progress);
+          if (progress > 0.5) {
+            ctx.fillStyle = '#f97316'; // Orange top
+            ctx.fillRect(cx - 1.5, cy, 3, 2);
+          }
+        } else {
+          // Golden Sweet Corn
+          ctx.fillStyle = '#65a30d';
+          ctx.fillRect(cx - 1.5, cy - 10 * progress, 3, 10 * progress);
+          if (progress > 0.6) {
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(cx - 1, cy - 7, 2, 4);
           }
         }
       }
-
-      // Harvest Badge
-      if (isRipe) {
-        const bounce = Math.sin(timestamp / 180) * 4;
-        drawBadge(ctx, basePt.x, basePt.y - 36 + bounce, 'HARVEST', '#16a34a', '#15803d');
-      }
     }
-  } else {
-    // Empty plowed plot indicator
-    drawBadge(ctx, basePt.x, basePt.y - 20, 'PLANT', '#d97706', '#92400e');
+
+    // Sparkles when ready
+    if (isRipe) {
+      const sparkCycle = Math.sin(timestamp / 180);
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(pBottom.x, pBottom.y - 12 + sparkCycle * 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  // D. Cute Wooden Scarecrow in Corner
-  const scX = basePt.x + 26;
-  const scY = basePt.y - 6;
-  ctx.fillStyle = '#78350f'; // Pole
-  ctx.fillRect(scX - 1, scY - 18, 2, 18);
-  ctx.fillRect(scX - 6, scY - 13, 12, 2); // Crossbar
-  ctx.fillStyle = '#3b82f6'; // Blue shirt
-  ctx.fillRect(scX - 3, scY - 14, 6, 7);
-  ctx.fillStyle = '#fde047'; // Straw hat
+  // 4. Wooden Scarecrow in Right Corner
+  const scX = pRight.x - 7;
+  const scY = pRight.y - 5;
+
+  // Post & Arms
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(scX, scY - 16, 3, 0, Math.PI * 2);
+  ctx.moveTo(scX, scY);
+  ctx.lineTo(scX, scY - 14);
+  ctx.moveTo(scX - 5, scY - 10);
+  ctx.lineTo(scX + 5, scY - 10);
+  ctx.stroke();
+
+  // Flannel Shirt
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(scX - 3.5, scY - 11, 7, 5);
+
+  // Straw Hat
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.ellipse(scX, scY - 14, 4.5, 2, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillRect(scX - 4, scY - 16, 8, 1.5); // Brim
 
   ctx.restore();
+
+  return pTop.y - 10;
 }
 
-// -----------------------------------------------------------------------------
-// 5. Handcrafted Civic / Generic Building
-// -----------------------------------------------------------------------------
+// =============================================================================
+// 5. Civic & Decorative Structures (Parks, Townhouses)
+// =============================================================================
 function drawCivicBuilding(
   ctx: CanvasRenderingContext2D,
   _b: PlacedCityBuilding,
   def: CityBuildingDefinition,
-  basePt: { x: number; y: number },
+  pTop: Point,
+  pRight: Point,
+  pBottom: Point,
+  pLeft: Point,
   _timestamp: number,
   atmosphere: CityAtmosphere
-) {
+): number {
   const isNight = atmosphere === 'night';
-  const isSunset = atmosphere === 'sunset';
+  const { pTopT, pRightT, pBottomT, pLeftT } = drawFoundationPlinth(
+    ctx,
+    pTop,
+    pRight,
+    pBottom,
+    pLeft,
+    4,
+    atmosphere
+  );
 
-  const w = def.width * 24;
-  const wallH = def.width * 26 + 20;
-
-  const wallLeft = isNight ? '#334155' : isSunset ? '#b45309' : def.accentColor || '#0284c7';
-  const wallRight = isNight ? '#475569' : isSunset ? '#f59e0b' : def.color || '#38bdf8';
+  const wallH = 46;
+  const wLeft = { x: pLeftT.x, y: pLeftT.y - wallH };
+  const wBottom = { x: pBottomT.x, y: pBottomT.y - wallH };
+  const wRight = { x: pRightT.x, y: pRightT.y - wallH };
+  const wTop = { x: pTopT.x, y: pTopT.y - wallH };
 
   ctx.save();
 
   // Left Wall
-  ctx.fillStyle = wallLeft;
+  ctx.fillStyle = isNight ? '#334155' : def.accentColor || '#475569';
   ctx.beginPath();
-  ctx.moveTo(basePt.x - w, basePt.y - 12);
-  ctx.lineTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 12);
+  ctx.moveTo(pLeftT.x, pLeftT.y);
+  ctx.lineTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
   ctx.closePath();
   ctx.fill();
 
   // Right Wall
-  ctx.fillStyle = wallRight;
+  ctx.fillStyle = isNight ? '#475569' : def.color || '#64748b';
   ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y + 4);
-  ctx.lineTo(basePt.x + w, basePt.y - 12);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 12);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
+  ctx.moveTo(pBottomT.x, pBottomT.y);
+  ctx.lineTo(pRightT.x, pRightT.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
   ctx.closePath();
   ctx.fill();
 
-  // Roof
-  ctx.fillStyle = '#1e293b';
+  // Flat roof
+  ctx.fillStyle = isNight ? '#1e293b' : '#334155';
   ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y - wallH - 22);
-  ctx.lineTo(basePt.x + w, basePt.y - wallH - 12);
-  ctx.lineTo(basePt.x, basePt.y - wallH + 4);
-  ctx.lineTo(basePt.x - w, basePt.y - wallH - 12);
+  ctx.moveTo(wTop.x, wTop.y);
+  ctx.lineTo(wRight.x, wRight.y);
+  ctx.lineTo(wBottom.x, wBottom.y);
+  ctx.lineTo(wLeft.x, wLeft.y);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Windows
-  const winColor = isNight ? '#fef08a' : '#bfdbfe';
-  for (let floor = 0; floor < 2; floor++) {
-    const wy = basePt.y - wallH + 16 + floor * 16;
-    ctx.fillStyle = winColor;
-    ctx.fillRect(basePt.x - w * 0.65, wy, 8, 10);
-    ctx.fillRect(basePt.x + w * 0.35, wy - 4, 8, 10);
-  }
-
   ctx.restore();
+
+  return wTop.y - 10;
 }
 
-// -----------------------------------------------------------------------------
-// Floating Badges & Numbers
-// -----------------------------------------------------------------------------
+// =============================================================================
+// Status Indicator Bubbles (Click-to-Harvest, Restock, Rent Ready)
+// =============================================================================
 function drawStatusBubble(
   ctx: CanvasRenderingContext2D,
   b: PlacedCityBuilding,
   def: CityBuildingDefinition,
-  basePt: { x: number; y: number },
+  anchor: Point,
   timestamp: number
 ) {
-  const bounce = Math.sin(timestamp / 200) * 4;
-  const bubbleY = basePt.y - (def.width * 28 + 36) + bounce;
+  let label = '';
+  let bgColor = '#22c55e';
+  let textColor = '#ffffff';
 
-  // A. Business Needs Goods!
-  if (def.category === 'business') {
+  if (def.id === 'farm_plot') {
+    if (!b.cropId) {
+      label = 'PLANT';
+      bgColor = '#d97706';
+    } else {
+      const crop = CITY_CROPS.find((c) => c.id === b.cropId);
+      if (crop && b.plantedAt) {
+        const elapsed = (Date.now() - b.plantedAt) / 1000;
+        if (elapsed >= crop.growthSeconds) {
+          label = 'HARVEST';
+          bgColor = '#16a34a';
+        }
+      }
+    }
+  } else if (def.category === 'business') {
     if (!b.isStocked) {
-      drawBadge(ctx, basePt.x, bubbleY, 'NEED GOODS', '#f59e0b', '#b45309');
+      label = 'NEED GOODS';
+      bgColor = '#ea580c';
     } else if (b.stockedAt) {
       const elapsed = (Date.now() - b.stockedAt) / 1000;
       if (elapsed >= (def.businessDurationSeconds || 30)) {
-        drawBadge(ctx, basePt.x, bubbleY, '$$$ OPEN', '#10b981', '#047857');
+        label = 'COLLECT';
+        bgColor = '#eab308';
+        textColor = '#0f172a';
+      }
+    }
+  } else if (def.category === 'residential') {
+    if (b.lastHarvestAt) {
+      const elapsed = (Date.now() - b.lastHarvestAt) / 1000;
+      const rentInterval = def.rentPayout?.intervalSeconds || 60;
+      if (elapsed >= rentInterval) {
+        label = 'RENT READY';
+        bgColor = '#0284c7';
       }
     }
   }
 
-  // B. Residential Rent Ready!
-  if (def.category === 'residential' && def.rentPayout) {
-    const elapsed = (Date.now() - b.lastHarvestAt) / 1000;
-    if (elapsed >= def.rentPayout.intervalSeconds) {
-      drawBadge(ctx, basePt.x, bubbleY, 'RENT READY', '#3b82f6', '#1d4ed8');
-    }
-  }
-}
+  if (!label) return;
 
-function drawBadge(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  text: string,
-  bgColor: string,
-  borderColor: string
-) {
+  const bob = Math.sin(timestamp / 220) * 3;
+  const bubbleY = anchor.y - 16 + bob;
+
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.shadowBlur = 6;
-  ctx.fillStyle = bgColor;
-
-  const w = 74;
-  const h = 18;
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(x - w / 2, y - h / 2, w, h, 4);
-  } else {
-    ctx.rect(x - w / 2, y - h / 2, w, h);
-  }
-  ctx.fill();
-
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 1.6;
-  ctx.stroke();
-
-  ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 8px monospace';
+  const textW = ctx.measureText(label).width;
+  const pad = 6;
+  const bw = textW + pad * 2;
+  const bh = 15;
+  const bx = anchor.x - bw / 2;
+
+  // Bubble Shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillRect(bx + 1.5, bubbleY + 1.5, bw, bh);
+
+  // Bubble Body
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(bx, bubbleY, bw, bh);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(bx, bubbleY, bw, bh);
+
+  // Text
+  ctx.fillStyle = textColor;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y);
+  ctx.fillText(label, anchor.x, bubbleY + bh / 2);
+
   ctx.restore();
 }
 
+/**
+ * Renders floating action texts (e.g. +50 🪙, -10 📦)
+ */
 export function drawFloatingTexts(
   ctx: CanvasRenderingContext2D,
-  floatingTexts: FloatingTextItem[]
+  items: FloatingTextItem[]
 ) {
   const now = Date.now();
-  for (const item of floatingTexts) {
-    const elapsed = now - item.createdAt;
-    if (elapsed > 1500) continue;
+  for (const item of items) {
+    const elapsed = (now - item.createdAt) / 1000;
+    if (elapsed > 1.8) continue;
 
-    const progress = elapsed / 1500;
-    const pt = gridToScreen(item.gx, item.gy, 0, 0);
-
-    const riseY = pt.y - 35 - progress * 45;
-    const alpha = 1 - progress;
+    const screenPos = gridToScreen(item.gx, item.gy, 0, 0);
+    const alpha = Math.max(0, 1 - elapsed / 1.8);
+    const yOff = elapsed * 30;
 
     ctx.save();
+    ctx.font = 'bold 10px monospace';
+    ctx.fillStyle = item.color || '#facc15';
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = item.color;
-    ctx.shadowColor = 'rgba(0,0,0,0.9)';
-    ctx.shadowBlur = 4;
-    ctx.font = '900 11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(item.text, pt.x, riseY);
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(item.text, screenPos.x, screenPos.y - yOff);
     ctx.restore();
   }
 }

@@ -57,11 +57,20 @@ const INITIAL_CITY_STRUCTURES: PlacedCityBuilding[] = [
     cropId: 'strawberries',
     plantedAt: Date.now() - 15000, // Ready to harvest!
   },
-  // Connecting avenue
-  { id: 'road_1', buildingTypeId: 'city_street', gridX: 8, gridY: 9, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
-  { id: 'road_2', buildingTypeId: 'city_street', gridX: 12, gridY: 9, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
-  { id: 'road_3', buildingTypeId: 'city_street', gridX: 6, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
-  { id: 'road_4', buildingTypeId: 'city_street', gridX: 6, gridY: 12, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  // Connected urban avenues & intersections
+  { id: 'road_1', buildingTypeId: 'city_street', gridX: 6, gridY: 10, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_2', buildingTypeId: 'city_street', gridX: 6, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_3', buildingTypeId: 'city_street', gridX: 6, gridY: 12, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_4', buildingTypeId: 'city_street', gridX: 7, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_5', buildingTypeId: 'city_street', gridX: 8, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_6', buildingTypeId: 'city_street', gridX: 8, gridY: 10, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_7', buildingTypeId: 'city_street', gridX: 9, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_8', buildingTypeId: 'city_street', gridX: 10, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_9', buildingTypeId: 'city_street', gridX: 11, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_10', buildingTypeId: 'city_street', gridX: 11, gridY: 10, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_11', buildingTypeId: 'city_street', gridX: 12, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_12', buildingTypeId: 'city_street', gridX: 13, gridY: 11, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
+  { id: 'road_13', buildingTypeId: 'city_street', gridX: 13, gridY: 10, level: 1, placedAt: 0, constructedAt: 0, isCompleted: true, lastHarvestAt: 0 },
 ];
 
 interface CityState {

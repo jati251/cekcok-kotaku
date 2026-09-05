@@ -79,48 +79,46 @@ export const CityQuestHUD: React.FC = () => {
         ))}
       </div>
 
-      {/* Mayor Briefing Modal */}
+      {/* Mayor Briefing Retro Dialogue Box (Unblurred, Docked at Bottom-Left) */}
       {dialogue.isOpen && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 font-arcade">
-          <div className="relative w-full max-w-md rounded bg-neutral-950 border-2 border-amber-500/80 shadow-[0_0_30px_rgba(245,158,11,0.2)] p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-neutral-950 font-black text-xs border border-amber-300 shadow">
-                  M
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-amber-300 font-pixel">
-                    {dialogue.speaker}
-                  </h3>
-                  <span className="text-[8px] text-neutral-400 uppercase tracking-wider">
-                    Executive City Hall
-                  </span>
-                </div>
+        <div className="absolute bottom-14 left-3 z-40 w-full max-w-sm rounded bg-neutral-950 border-2 border-amber-500 shadow-[0_4px_25px_rgba(0,0,0,0.9)] p-3 font-arcade animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-neutral-950 font-black text-[10px] border border-amber-300 shadow">
+                M
               </div>
-              <button
-                onClick={handleCloseDialogue}
-                className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <h3 className="text-[10px] font-bold text-amber-300 font-pixel">
+                  {dialogue.speaker}
+                </h3>
+                <span className="text-[7px] text-neutral-400 uppercase tracking-wider">
+                  Executive City Hall
+                </span>
+              </div>
             </div>
+            <button
+              onClick={handleCloseDialogue}
+              className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-            <div className="my-4 p-3.5 rounded bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-200 leading-relaxed font-sans min-h-[60px]">
-              {dialogue.messages[dialogue.currentStep]}
-            </div>
+          <div className="my-2.5 p-2 rounded bg-neutral-900 border border-neutral-800 text-[10px] text-neutral-200 leading-relaxed font-sans min-h-[45px]">
+            {dialogue.messages[dialogue.currentStep]}
+          </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-[8px] text-neutral-500 font-pixel">
-                MSG {dialogue.currentStep + 1}/{dialogue.messages.length}
-              </span>
-              <button
-                onClick={handleNextDialogue}
-                className="flex items-center gap-1 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-neutral-950 font-pixel text-[9px] uppercase tracking-wider cursor-pointer shadow border border-amber-300 font-bold"
-              >
-                <span>{dialogue.currentStep + 1 < dialogue.messages.length ? 'NEXT' : 'GET TO WORK!'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[7px] text-neutral-500 font-pixel">
+              MSG {dialogue.currentStep + 1}/{dialogue.messages.length}
+            </span>
+            <button
+              onClick={handleNextDialogue}
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-neutral-950 font-pixel text-[8px] uppercase tracking-wider cursor-pointer shadow border border-amber-300 font-bold"
+            >
+              <span>{dialogue.currentStep + 1 < dialogue.messages.length ? 'NEXT' : 'GET TO WORK!'}</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
       )}

@@ -156,54 +156,204 @@ export function renderCityRoads(
   buildings: PlacedCityBuilding[],
   atmosphere: CityAtmosphere
 ) {
+  const isNight = atmosphere === 'night';
+  const isSunset = atmosphere === 'sunset';
+
+  // Fast set of road coordinates
+  const roadSet = new Set<string>();
   for (const b of buildings) {
     if (b.buildingTypeId === 'city_street') {
-      const pt = gridToScreen(b.gridX, b.gridY, 0, 0);
+      roadSet.add(`${b.gridX},${b.gridY}`);
+    }
+  }
 
-      // Paved Dark Asphalt with Sidewalk border
-      ctx.fillStyle = atmosphere === 'night' ? '#0f172a' : '#1e293b';
-      ctx.beginPath();
-      ctx.moveTo(pt.x, pt.y);
-      ctx.lineTo(pt.x + CITY_TILE_WIDTH / 2, pt.y + CITY_TILE_HEIGHT / 2);
-      ctx.lineTo(pt.x, pt.y + CITY_TILE_HEIGHT);
-      ctx.lineTo(pt.x - CITY_TILE_WIDTH / 2, pt.y + CITY_TILE_HEIGHT / 2);
-      ctx.closePath();
-      ctx.fill();
+  for (const b of buildings) {
+    if (b.buildingTypeId !== 'city_street') continue;
 
-      // Concrete Sidewalk curb
-      ctx.strokeStyle = atmosphere === 'night' ? '#475569' : '#94a3b8';
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
+    const gx = b.gridX;
+    const gy = b.gridY;
 
-      // Yellow Centerline Striping
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 1.6;
+    // Neighbor connections:
+    // North (gy - 1, towards pTop)
+    // South (gy + 1, towards pBottom)
+    // West (gx - 1, towards pLeft)
+    // East (gx + 1, towards pRight)
+    const hasN = roadSet.has(`${gx},${gy - 1}`);
+    const hasS = roadSet.has(`${gx},${gy + 1}`);
+    const hasW = roadSet.has(`${gx - 1},${gy}`);
+    const hasE = roadSet.has(`${gx + 1},${gy}`);
+
+    const connCount = (hasN ? 1 : 0) + (hasS ? 1 : 0) + (hasW ? 1 : 0) + (hasE ? 1 : 0);
+
+    const pt = gridToScreen(gx, gy, 0, 0);
+    const pTop = pt;
+    const pRight = { x: pt.x + CITY_TILE_WIDTH / 2, y: pt.y + CITY_TILE_HEIGHT / 2 };
+    const pBottom = { x: pt.x, y: pt.y + CITY_TILE_HEIGHT };
+    const pLeft = { x: pt.x - CITY_TILE_WIDTH / 2, y: pt.y + CITY_TILE_HEIGHT / 2 };
+    const center = { x: pt.x, y: pt.y + CITY_TILE_HEIGHT / 2 };
+
+    ctx.save();
+
+    // 1. Dark Paved Asphalt Base
+    ctx.fillStyle = isNight ? '#0f172a' : '#1e293b';
+    ctx.beginPath();
+    ctx.moveTo(pTop.x, pTop.y);
+    ctx.lineTo(pRight.x, pRight.y);
+    ctx.lineTo(pBottom.x, pBottom.y);
+    ctx.lineTo(pLeft.x, pLeft.y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Concrete Sidewalk Border / Curb
+    ctx.strokeStyle = isNight ? '#334155' : '#64748b';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // 2. Dynamic Road Striping based on connectivity
+    ctx.strokeStyle = '#facc15'; // Retro yellow centerline
+    ctx.lineWidth = 1.6;
+
+    const isEastWest = (hasW || hasE) && !hasN && !hasS;
+    const isNorthSouth = (hasN || hasS) && !hasW && !hasE;
+    const isCrossroads = connCount === 4;
+    const isTJunction = connCount === 3;
+    const isCorner = connCount === 2 && !isEastWest && !isNorthSouth;
+
+    if (isEastWest || connCount === 0) {
+      // East-West Avenue (running from pLeft to pRight)
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
-      ctx.moveTo(pt.x - 10, pt.y + CITY_TILE_HEIGHT / 2 - 5);
-      ctx.lineTo(pt.x + 10, pt.y + CITY_TILE_HEIGHT / 2 + 5);
+      ctx.moveTo(pLeft.x, pLeft.y);
+      ctx.lineTo(pRight.x, pRight.y);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // White Zebra Crosswalk markings
+      // White edge marking lines
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.2;
-      for (let c = -1; c <= 1; c++) {
-        ctx.beginPath();
-        ctx.moveTo(pt.x - 3 + c * 4, pt.y + CITY_TILE_HEIGHT / 2 - 4 + c * 2);
-        ctx.lineTo(pt.x + 3 + c * 4, pt.y + CITY_TILE_HEIGHT / 2 - 1 + c * 2);
-        ctx.stroke();
-      }
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pLeft.x + 4, pLeft.y - 4);
+      ctx.lineTo(pRight.x - 4, pRight.y - 4);
+      ctx.moveTo(pLeft.x + 4, pLeft.y + 4);
+      ctx.lineTo(pRight.x - 4, pRight.y + 4);
+      ctx.stroke();
+    } else if (isNorthSouth) {
+      // North-South Avenue (running from pTop to pBottom)
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(pTop.x, pTop.y);
+      ctx.lineTo(pBottom.x, pBottom.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-      // Night streetlight glow on asphalt
-      if (atmosphere === 'night') {
-        ctx.save();
-        ctx.fillStyle = 'rgba(250, 204, 21, 0.1)';
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y + CITY_TILE_HEIGHT / 2, 22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      // White edge marking lines
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pTop.x - 6, pTop.y + 3);
+      ctx.lineTo(pBottom.x - 6, pBottom.y - 3);
+      ctx.moveTo(pTop.x + 6, pTop.y + 3);
+      ctx.lineTo(pBottom.x + 6, pBottom.y - 3);
+      ctx.stroke();
+    } else if (isCorner) {
+      // Smooth Corner Bend
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      if (hasW && hasS) {
+        ctx.moveTo(pLeft.x, pLeft.y);
+        ctx.quadraticCurveTo(center.x, center.y, pBottom.x, pBottom.y);
+      } else if (hasW && hasN) {
+        ctx.moveTo(pLeft.x, pLeft.y);
+        ctx.quadraticCurveTo(center.x, center.y, pTop.x, pTop.y);
+      } else if (hasE && hasS) {
+        ctx.moveTo(pRight.x, pRight.y);
+        ctx.quadraticCurveTo(center.x, center.y, pBottom.x, pBottom.y);
+      } else if (hasE && hasN) {
+        ctx.moveTo(pRight.x, pRight.y);
+        ctx.quadraticCurveTo(center.x, center.y, pTop.x, pTop.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (isTJunction || isCrossroads) {
+      // T-Junction or 4-Way Intersection
+      // Central cast-iron manhole cover
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.ellipse(center.x, center.y, 4.5, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // White Zebra Crosswalks on connected entries
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.4;
+
+      if (hasW) {
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.moveTo(center.x - 12 + i * 3, center.y - 4);
+          ctx.lineTo(center.x - 12 + i * 3, center.y + 4);
+          ctx.stroke();
+        }
+      }
+      if (hasE) {
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.moveTo(center.x + 12 + i * 3, center.y - 4);
+          ctx.lineTo(center.x + 12 + i * 3, center.y + 4);
+          ctx.stroke();
+        }
+      }
+      if (hasN) {
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.moveTo(center.x - 5, center.y - 7 + i * 2.5);
+          ctx.lineTo(center.x + 5, center.y - 7 + i * 2.5);
+          ctx.stroke();
+        }
+      }
+      if (hasS) {
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.moveTo(center.x - 5, center.y + 7 + i * 2.5);
+          ctx.lineTo(center.x + 5, center.y + 7 + i * 2.5);
+          ctx.stroke();
+        }
       }
     }
+
+    // 3. Vintage Streetlight on Sidewalk Corner (for turns, intersections, or terminals)
+    if (isCorner || isTJunction || isCrossroads || connCount <= 1) {
+      const lampX = pLeft.x + 4;
+      const lampY = pLeft.y - 2;
+
+      // Lamp Post
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(lampX, lampY);
+      ctx.lineTo(lampX, lampY - 14);
+      ctx.lineTo(lampX + 3, lampY - 16);
+      ctx.stroke();
+
+      // Lamp Lantern
+      ctx.fillStyle = isNight || isSunset ? '#fef08a' : '#cbd5e1';
+      ctx.beginPath();
+      ctx.arc(lampX + 3, lampY - 14, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Streetlight Ambient Glow at Night / Sunset
+      if (isNight || isSunset) {
+        const glowRadius = isNight ? 28 : 18;
+        const glowAlpha = isNight ? 0.22 : 0.12;
+        ctx.fillStyle = `rgba(250, 204, 21, ${glowAlpha})`;
+        ctx.beginPath();
+        ctx.ellipse(center.x, center.y, glowRadius, glowRadius * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
   }
 }
