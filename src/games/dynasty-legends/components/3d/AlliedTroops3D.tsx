@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { AlliedSoldier3D } from '../../engine/dynasty3dEngine';
 import { proceduralTextures } from './textures/proceduralTextures';
+import { getTerrainHeight } from '../../engine/terrainHeightEngine';
 
 interface AlliedTroops3DProps {
   allies: AlliedSoldier3D[];
@@ -21,7 +22,9 @@ const AlliedSoldierUnit3D: React.FC<{ soldier: AlliedSoldier3D }> = ({ soldier }
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     const dt = Math.min(delta, 0.05);
-    groupRef.current.position.set(soldier.position.x, soldier.position.y, soldier.position.z);
+    const groundY = getTerrainHeight(soldier.position.x, soldier.position.z);
+    soldier.position.y = groundY;
+    groupRef.current.position.set(soldier.position.x, groundY, soldier.position.z);
     groupRef.current.rotation.y = soldier.rotationY;
 
     // Movement tracking via displacement

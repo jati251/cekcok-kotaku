@@ -4,6 +4,7 @@ import {
   HeroState3D,
   updateComboRank,
 } from './dynasty3dEngine';
+import { getTerrainHeight } from './terrainHeightEngine';
 
 export interface MapObstacle {
   x: number;
@@ -95,6 +96,9 @@ export function calculatePlayerMovement(
       player.position.z += (dz / dist) * push;
     }
   }
+
+  // Follow undulating 3D terrain heightmap
+  player.position.y = getTerrainHeight(player.position.x, player.position.z);
 }
 
 /**
@@ -131,6 +135,8 @@ export function updateEnemyPhysicsAndAI(
       enemy.hitFlashTimer -= dt;
     }
 
+    const groundY = getTerrainHeight(enemy.position.x, enemy.position.z);
+
     // 1. Airborne & Juggle Physics (DW5 Ragdoll Launch)
     if (enemy.isAirborne) {
       enemy.position.y += enemy.velocity.y * dt;
@@ -140,8 +146,8 @@ export function updateEnemyPhysicsAndAI(
       enemy.airTumbleAngle += dt * 12;
 
       // Ground impact
-      if (enemy.position.y <= 0) {
-        enemy.position.y = 0;
+      if (enemy.position.y <= groundY) {
+        enemy.position.y = groundY;
         if (enemy.velocity.y < -6.5) {
           // Rebound bounce
           enemy.velocity.y = -enemy.velocity.y * 0.28;
@@ -206,6 +212,9 @@ export function updateEnemyPhysicsAndAI(
       }
     }
 
+    // Ground enemy strictly to undulating terrain
+    enemy.position.y = getTerrainHeight(enemy.position.x, enemy.position.z);
+
     // 6. Attack Execution (only when recovered from hit stun)
     enemy.attackCooldown -= dt;
     if (enemy.attackCooldown <= 0 && distToPlayer <= stopDist + 0.8 && enemy.hitFlashTimer <= 0) {
@@ -214,7 +223,7 @@ export function updateEnemyPhysicsAndAI(
       if (enemy.type === 'ARCHER') {
         world.arrows.push({
           id: `arrow_${Date.now()}_${Math.random()}`,
-          position: { x: enemy.position.x, y: 1.2, z: enemy.position.z },
+          position: { x: enemy.position.x, y: enemy.position.y + 1.2, z: enemy.position.z },
           velocity: {
             x: (dx / distToPlayer) * 16,
             y: 1.5,

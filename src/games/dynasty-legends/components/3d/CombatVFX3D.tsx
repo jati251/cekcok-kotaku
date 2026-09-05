@@ -127,12 +127,13 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
         const progress = Math.min(1, wave.life / wave.maxLife);
         const currentRadius = wave.radius + (wave.maxRadius - wave.radius) * progress;
         const opacity = Math.max(0, 1 - progress);
+        const waveY = wave.position.y || 0;
 
         return (
           <group key={wave.id}>
             {/* Energy Ring */}
             <mesh
-              position={[wave.position.x, 0.05, wave.position.z]}
+              position={[wave.position.x, waveY + 0.05, wave.position.z]}
               rotation={[-Math.PI / 2, 0, 0]}
               scale={[currentRadius, currentRadius, 1]}
               geometry={SHOCKWAVE_RING_GEO}
@@ -147,7 +148,7 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
 
             {/* Earth Dust Debris Ring */}
             <mesh
-              position={[wave.position.x, 0.12, wave.position.z]}
+              position={[wave.position.x, waveY + 0.12, wave.position.z]}
               rotation={[-Math.PI / 2, 0, 0]}
               scale={[currentRadius * 1.05, currentRadius * 1.05, 1]}
               geometry={SHOCKWAVE_DUST_GEO}
@@ -164,7 +165,7 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
             {[0, 1, 2, 3, 4, 5].map((i) => {
               const a = (i / 6) * Math.PI * 2;
               const r = currentRadius * 0.85;
-              const h = Math.sin(progress * Math.PI) * 1.5 * (0.8 + (i % 3) * 0.3);
+              const h = waveY + Math.sin(progress * Math.PI) * 1.5 * (0.8 + (i % 3) * 0.3);
               const s = Math.max(0.04, 0.16 * (1 - progress * 0.5));
               return (
                 <mesh
@@ -185,11 +186,12 @@ export const CombatVFX3D: React.FC<CombatVFX3DProps> = ({
       {fireZones.map((fire) => {
         const progress = fire.life / fire.maxLife;
         const opacity = Math.sin(progress * Math.PI) * 0.6;
+        const fireY = fire.position.y || 0;
 
         return (
           <group
             key={fire.id}
-            position={[fire.position.x, 0.04, fire.position.z]}
+            position={[fire.position.x, fireY + 0.04, fire.position.z]}
             scale={[fire.radius, fire.radius, 1]}
           >
             <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={FIRE_CIRCLE_GEO}>

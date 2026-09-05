@@ -2,6 +2,7 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { proceduralTextures } from './textures/proceduralTextures';
+import { getTerrainHeight } from '../../engine/terrainHeightEngine';
 
 // Individual 3D Han Warhorse (Cavalry Steed)
 export const Warhorse3D: React.FC<{
@@ -242,28 +243,35 @@ export const SoaringEagles3D: React.FC = () => {
 export const Animals3D: React.FC<{ playerPos?: { x: number; y: number; z: number } }> = ({
   playerPos,
 }) => {
-  // Strategic Horse Grazing & Cavalry Encampment Positions
-  const horses = useMemo(
-    () => [
-      // Near Coalition Camp Outpost
-      { pos: [-82, 0, -78] as [number, number, number], rot: 0.8, color: '#78350f', saddle: true },
-      { pos: [-86, 0, -74] as [number, number, number], rot: -1.2, color: '#1c1917', saddle: true },
-      { pos: [-78, 0, -84] as [number, number, number], rot: 2.1, color: '#f8fafc', saddle: false }, // White steed
+  // Strategic Horse Grazing & Cavalry Encampment Positions (All safely OFF-ROAD)
+  const horses = useMemo(() => {
+    const rawCoords = [
+      // 1. Allied Cavalry Paddock (South-West Camp Corral, off-road)
+      { x: -122, z: -88, rot: 0.8, color: '#78350f', saddle: true },
+      { x: -128, z: -94, rot: -1.2, color: '#1c1917', saddle: true },
+      { x: -118, z: -100, rot: 2.1, color: '#f8fafc', saddle: false }, // White Han Charger
 
-      // Grazing peacefully in lush pasture near the riverbank
-      { pos: [-38, 0, -18] as [number, number, number], rot: -0.4, color: '#92400e', saddle: false },
-      { pos: [-42, 0, -26] as [number, number, number], rot: 1.4, color: '#78350f', saddle: false },
-      { pos: [-20, 0, 35] as [number, number, number], rot: 2.8, color: '#451a03', saddle: false },
+      // 2. Lush Riverside Pasture (West of River, peaceful grazing)
+      { x: -58, z: 12, rot: -0.4, color: '#92400e', saddle: false },
+      { x: -64, z: 24, rot: 1.4, color: '#78350f', saddle: false },
+      { x: -52, z: -8, rot: 2.8, color: '#451a03', saddle: false },
 
-      // East Guard Garrison Outpost
-      { pos: [58, 0, -72] as [number, number, number], rot: -1.8, color: '#78350f', saddle: true },
-      { pos: [64, 0, -78] as [number, number, number], rot: 0.3, color: '#1c1917', saddle: true },
+      // 3. East Mountain Foothill Ridge Meadow
+      { x: 88, z: -42, rot: -1.8, color: '#78350f', saddle: true },
+      { x: 96, z: -50, rot: 0.3, color: '#1c1917', saddle: true },
 
-      // Near Citadel Gate Encampment
-      { pos: [98, 0, 92] as [number, number, number], rot: -2.2, color: '#991b1b', saddle: true }, // Red steed (Red Hare lineage)
-    ],
-    []
-  );
+      // 4. Enemy Northern Encampment Cavalcade
+      { x: 145, z: 88, rot: -2.2, color: '#991b1b', saddle: true }, // Red steed (Red Hare lineage)
+      { x: 152, z: 98, rot: 1.1, color: '#1c1917', saddle: true },
+    ];
+
+    return rawCoords.map((h) => ({
+      pos: [h.x, getTerrainHeight(h.x, h.z), h.z] as [number, number, number],
+      rot: h.rot,
+      color: h.color,
+      saddle: h.saddle,
+    }));
+  }, []);
 
   // View distance culling on horses (within 85m of player)
   const visibleHorses = useMemo(() => {

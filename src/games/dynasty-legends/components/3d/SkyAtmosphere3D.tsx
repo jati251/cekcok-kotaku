@@ -1,8 +1,8 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { MapTheme, BattleScenario } from '../../types';
-import { proceduralTextures } from './textures/proceduralTextures';
 
 interface SkyAtmosphere3DProps {
   scenario: BattleScenario;
@@ -57,9 +57,9 @@ const AtmosphericMotes3D: React.FC<{ theme: MapTheme }> = ({ theme }) => {
       </bufferGeometry>
       <pointsMaterial
         color={particleColor}
-        size={theme === MapTheme.CHIBI_FIRE ? 0.4 : 0.28}
+        size={theme === MapTheme.CHIBI_FIRE ? 0.35 : 0.25}
         transparent
-        opacity={0.8}
+        opacity={0.75}
         blending={THREE.AdditiveBlending}
       />
     </points>
@@ -68,81 +68,30 @@ const AtmosphericMotes3D: React.FC<{ theme: MapTheme }> = ({ theme }) => {
 
 export const SkyAtmosphere3D: React.FC<SkyAtmosphere3DProps> = ({ scenario }) => {
   const theme = scenario.mapTheme;
-
   const isSnow = theme === MapTheme.HULAO_SNOW;
   const isFire = theme === MapTheme.CHIBI_FIRE;
 
-  const sunColor = isFire ? '#fb923c' : isSnow ? '#fef08a' : '#fde047';
-  const sunPos: [number, number, number] = isFire ? [90, 110, -150] : [120, 130, -160];
-
-  const skyTexture = useMemo(() => proceduralTextures.getSkyDomeTexture(theme), [theme]);
+  const sunPos: [number, number, number] = isFire
+    ? [100, 35, 120]
+    : isSnow
+    ? [110, 65, 90]
+    : [120, 85, 90];
 
   return (
     <group>
-      {/* 1. Grand Celestial Sky Dome Shell with Procedural Sky Gradient */}
-      <mesh position={[0, 20, 0]}>
-        <sphereGeometry args={[480, 32, 24]} />
-        <meshBasicMaterial
-          map={skyTexture}
-          side={THREE.BackSide}
-          fog={false}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* 1. Photorealistic Physical Atmospheric Sky (Rayleigh / Mie scattering) */}
+      <Sky
+        distance={450000}
+        sunPosition={sunPos}
+        inclination={isFire ? 0.15 : isSnow ? 0.6 : 0.48}
+        azimuth={0.25}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.82}
+        rayleigh={isFire ? 4.0 : isSnow ? 1.2 : 0.8}
+        turbidity={isFire ? 12 : 8}
+      />
 
-      {/* 3. Radiant Three Kingdoms Celestial Sun with Golden Corona */}
-      <group position={sunPos}>
-        {/* Glowing Sun Core */}
-        <mesh>
-          <sphereGeometry args={[16, 24, 24]} />
-          <meshBasicMaterial color={sunColor} fog={false} />
-        </mesh>
-        {/* Radiant Solar Corona Flare Ring */}
-        <mesh rotation={[0, 0, 0]}>
-          <ringGeometry args={[14, 45, 32]} />
-          <meshBasicMaterial
-            color={sunColor}
-            transparent
-            opacity={0.45}
-            side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending}
-            fog={false}
-          />
-        </mesh>
-        {/* Outer Atmospheric Aura */}
-        <mesh rotation={[0, 0, 0]}>
-          <ringGeometry args={[35, 85, 32]} />
-          <meshBasicMaterial
-            color={isFire ? '#f97316' : '#fef08a'}
-            transparent
-            opacity={0.2}
-            side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending}
-            fog={false}
-          />
-        </mesh>
-      </group>
-
-      {/* 4. Horizon Battle Cloud Wisps */}
-      {[-120, -40, 40, 120].map((angleDeg, i) => {
-        const rad = (angleDeg * Math.PI) / 180;
-        const cx = Math.sin(rad) * 360;
-        const cz = Math.cos(rad) * 360;
-        return (
-          <mesh key={`cloud_${i}`} position={[cx, 65 + (i % 2) * 15, cz]} rotation={[0, -rad, 0]}>
-            <planeGeometry args={[140, 35]} />
-            <meshBasicMaterial
-              color={isFire ? '#7c2d12' : isSnow ? '#e2e8f0' : '#f8fafc'}
-              transparent
-              opacity={0.3}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-            />
-          </mesh>
-        );
-      })}
-
-      {/* 5. Atmospheric Floating Motes (Embers / Dust / Snowflakes) */}
+      {/* 2. Atmospheric Floating Motes (Embers / Dust / Snowflakes) */}
       <AtmosphericMotes3D theme={theme} />
     </group>
   );

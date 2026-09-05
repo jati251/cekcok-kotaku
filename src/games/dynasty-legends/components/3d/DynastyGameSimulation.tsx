@@ -30,6 +30,7 @@ import {
   calculatePlayerMovement,
   updateEnemyPhysicsAndAI,
 } from '../../engine/dynastyCombatSystem';
+import { getTerrainHeight } from '../../engine/terrainHeightEngine';
 import {
   updateProjectilesAndHazards,
   updateBaseCapturing,
@@ -239,6 +240,7 @@ export const DynastyGameSimulation: React.FC<DynastyGameSimulationProps> = ({
         const stepMagnitude = player.isChargeAttack ? 2.2 : player.attackStage === 6 ? 2.6 : player.attackStage === 5 ? 1.6 : 0.9;
         player.position.x += Math.sin(player.rotationY) * stepMagnitude * lungeFactor * dt * 2.2;
         player.position.z += Math.cos(player.rotationY) * stepMagnitude * lungeFactor * dt * 2.2;
+        player.position.y = getTerrainHeight(player.position.x, player.position.z);
       }
     }
 

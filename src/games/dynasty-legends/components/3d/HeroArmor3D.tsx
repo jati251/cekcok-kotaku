@@ -122,30 +122,30 @@ export const HeroArmor3D: React.FC<HeroArmor3DProps> = ({
         </mesh>
       </group>
 
-      {/* 3. Layered Imperial Battle Cape with Gold Brocade Border */}
-      <group position={[0, 0.2, -0.22]}>
-        {/* Main Fluttering Cape Body */}
-        <mesh ref={capeRef as any} rotation={[0.18, 0, 0]} castShadow>
-          <planeGeometry args={[0.72, 1.2]} />
+      {/* 3. Layered Imperial Battle Cape with Gold Brocade Border (Proper Shoulder Pivot) */}
+      <group position={[0, 0.45, -0.18]} ref={capeRef as any}>
+        {/* Main Cape Body hanging down from shoulders */}
+        <mesh position={[0, -0.55, -0.04]} castShadow>
+          <planeGeometry args={[0.68, 1.15]} />
           <meshStandardMaterial
             color={heroColorConfig.cape}
-            roughness={0.75}
+            roughness={0.78}
             side={THREE.DoubleSide}
           />
         </mesh>
         {/* Cape Gold Left Edge Trim */}
-        <mesh position={[-0.34, -0.4, 0.06]} rotation={[0.18, 0, 0]}>
-          <planeGeometry args={[0.06, 1.18]} />
+        <mesh position={[-0.32, -0.55, -0.035]}>
+          <planeGeometry args={[0.05, 1.14]} />
           <meshStandardMaterial color={heroColorConfig.trim} metalness={0.85} side={THREE.DoubleSide} />
         </mesh>
         {/* Cape Gold Right Edge Trim */}
-        <mesh position={[0.34, -0.4, 0.06]} rotation={[0.18, 0, 0]}>
-          <planeGeometry args={[0.06, 1.18]} />
+        <mesh position={[0.32, -0.55, -0.035]}>
+          <planeGeometry args={[0.05, 1.14]} />
           <meshStandardMaterial color={heroColorConfig.trim} metalness={0.85} side={THREE.DoubleSide} />
         </mesh>
         {/* Center Han Imperial Banner Ribbon */}
-        <mesh position={[0, -0.38, 0.07]} rotation={[0.18, 0, 0]}>
-          <planeGeometry args={[0.12, 1.15]} />
+        <mesh position={[0, -0.52, -0.03]}>
+          <planeGeometry args={[0.1, 1.08]} />
           <meshStandardMaterial
             color={heroColorConfig.trim}
             metalness={0.7}

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ItemType } from '../../types';
 import type { ItemDrop3D } from '../../engine/dynasty3dEngine';
+import { getTerrainHeight } from '../../engine/terrainHeightEngine';
 
 interface ItemDrops3DProps {
   items: ItemDrop3D[];
@@ -33,8 +34,10 @@ const SingleItem3D: React.FC<{ item: ItemDrop3D }> = ({ item }) => {
     ? '#ef4444'
     : '#a855f7';
 
+  const groundY = getTerrainHeight(item.position.x, item.position.z);
+
   return (
-    <group position={[item.position.x, 0, item.position.z]}>
+    <group position={[item.position.x, groundY, item.position.z]}>
       {/* Floating Rotating Item Mesh */}
       <group ref={meshRef}>
         {isMeatBun && (

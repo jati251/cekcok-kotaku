@@ -9,6 +9,7 @@ import {
   ItemType,
 } from '../types';
 import * as Constants from '../constants';
+import { getTerrainHeight } from './terrainHeightEngine';
 
 export interface Vector3D {
   x: number;
@@ -197,7 +198,7 @@ export function init3DWorld(
 
   const player: HeroState3D = {
     heroType,
-    position: { x: playerSpawn.x, y: 0, z: playerSpawn.z },
+    position: { x: playerSpawn.x, y: getTerrainHeight(playerSpawn.x, playerSpawn.z), z: playerSpawn.z },
     velocity: { x: 0, y: 0, z: 0 },
     rotationY: 0,
     targetRotationY: 0,
@@ -231,11 +232,11 @@ export function init3DWorld(
     enemies.push({
       id: `captain_${base.id}`,
       type: 'CAPTAIN',
-      position: {
-        x: baseCenter.x + (Math.random() - 0.5) * 6,
-        y: 0,
-        z: baseCenter.z + (Math.random() - 0.5) * 6,
-      },
+      position: (() => {
+        const x = baseCenter.x + (Math.random() - 0.5) * 6;
+        const z = baseCenter.z + (Math.random() - 0.5) * 6;
+        return { x, y: getTerrainHeight(x, z), z };
+      })(),
       velocity: { x: 0, y: 0, z: 0 },
       rotationY: Math.random() * Math.PI * 2,
       health: 800 * diffConfig.bossHpMult,
@@ -283,11 +284,11 @@ export function init3DWorld(
       enemies.push({
         id: `enemy_${enemyIdSeq++}`,
         type: enemyType,
-        position: {
-          x: baseCenter.x + Math.cos(angle) * dist,
-          y: 0,
-          z: baseCenter.z + Math.sin(angle) * dist,
-        },
+        position: (() => {
+          const x = baseCenter.x + Math.cos(angle) * dist;
+          const z = baseCenter.z + Math.sin(angle) * dist;
+          return { x, y: getTerrainHeight(x, z), z };
+        })(),
         velocity: { x: 0, y: 0, z: 0 },
         rotationY: Math.random() * Math.PI * 2,
         health: hp,
@@ -316,11 +317,11 @@ export function init3DWorld(
     enemies.push({
       id: `vanguard_enemy_${enemyIdSeq++}`,
       type,
-      position: {
-        x: playerSpawn.x + Math.sin(angle) * dist,
-        y: 0,
-        z: playerSpawn.z + 18 + Math.cos(angle) * (dist * 0.6),
-      },
+      position: (() => {
+        const x = playerSpawn.x + Math.sin(angle) * dist;
+        const z = playerSpawn.z + 18 + Math.cos(angle) * (dist * 0.6);
+        return { x, y: getTerrainHeight(x, z), z };
+      })(),
       velocity: { x: 0, y: 0, z: 0 },
       rotationY: Math.PI, // Facing towards allied base
       health: hp,
@@ -351,11 +352,11 @@ export function init3DWorld(
     enemies.push({
       id: `bridge_ambush_${enemyIdSeq++}`,
       type,
-      position: {
-        x: -25 + Math.cos(angle) * dist,
-        y: 0,
-        z: 25 + Math.sin(angle) * dist,
-      },
+      position: (() => {
+        const x = -25 + Math.cos(angle) * dist;
+        const z = 25 + Math.sin(angle) * dist;
+        return { x, y: getTerrainHeight(x, z), z };
+      })(),
       velocity: { x: 0, y: 0, z: 0 },
       rotationY: Math.random() * Math.PI * 2,
       health: hp,
@@ -382,11 +383,11 @@ export function init3DWorld(
     const dist = 2 + Math.random() * 6;
     allies.push({
       id: `ally_${i + 1}`,
-      position: {
-        x: playerSpawn.x + Math.cos(angle) * dist,
-        y: 0,
-        z: playerSpawn.z + Math.sin(angle) * dist,
-      },
+      position: (() => {
+        const x = playerSpawn.x + Math.cos(angle) * dist;
+        const z = playerSpawn.z + Math.sin(angle) * dist;
+        return { x, y: getTerrainHeight(x, z), z };
+      })(),
       velocity: { x: 0, y: 0, z: 0 },
       rotationY: Math.random() * Math.PI * 2,
       health: 160,
@@ -443,7 +444,7 @@ export function spawnBoss3D(
   return {
     id: `boss_${scenario.id}`,
     type: 'BOSS',
-    position: { x: bossPos.x, y: 0, z: bossPos.z },
+    position: { x: bossPos.x, y: getTerrainHeight(bossPos.x, bossPos.z), z: bossPos.z },
     velocity: { x: 0, y: 0, z: 0 },
     rotationY: Math.PI,
     health: 3500 * diffConfig.bossHpMult,
@@ -475,7 +476,7 @@ export function dropItem3D(pos: Vector3D): ItemDrop3D {
   return {
     id: `item_${Date.now()}_${Math.random()}`,
     type,
-    position: { x: pos.x, y: 0.5, z: pos.z },
+    position: { x: pos.x, y: getTerrainHeight(pos.x, pos.z) + 0.5, z: pos.z },
     rotationY: 0,
     life: 25.0,
   };
