@@ -5,11 +5,13 @@ import { Pause } from 'lucide-react';
 interface JunenHeaderProps {
   onPause: () => void;
   onQualityChange: (quality: Quality) => void;
+  onInspect?: (index: number | null) => void;
 }
 
-export const JunenHeader = ({ onPause, onQualityChange }: JunenHeaderProps) => {
+export const JunenHeader = ({ onPause, onQualityChange, onInspect }: JunenHeaderProps) => {
   const quality = useJunenStore((s) => s.quality);
   const status = useJunenStore((s) => s.snapshot.status);
+  const photoView = useJunenStore((s) => s.photoView);
 
   return (
     <header className="absolute left-5 right-5 top-5 sm:left-9 sm:right-9 sm:top-6 flex justify-between items-center pointer-events-none z-20 select-none">
@@ -39,6 +41,16 @@ export const JunenHeader = ({ onPause, onQualityChange }: JunenHeaderProps) => {
           <option value="cinematic">Cinematic</option>
           <option value="balanced">Balanced</option>
         </select>
+
+        {photoView === null && onInspect && (
+          <button
+            onClick={() => onInspect(0)}
+            aria-label="Inspect reference photos"
+            className="flex items-center gap-1.5 bg-stone-900/80 hover:bg-stone-800 text-amber-300 text-xs px-3 py-1.5 border border-amber-600/50 rounded-md backdrop-blur-md transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          >
+            <span>📷 Photos</span>
+          </button>
+        )}
 
         {status === 'playing' && (
           <button

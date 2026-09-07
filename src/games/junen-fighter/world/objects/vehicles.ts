@@ -26,13 +26,35 @@ export function buildScooter(ctx: WorldContext, x: number, z: number, color: T.M
 
 export function buildCar(ctx: WorldContext, x: number, z: number, covered = false) {
   const { box, cyl, emit, materials } = ctx;
-  const { cloth, white, glass, rubber } = materials;
-  const m = covered ? cloth[2] : white;
+  const { white, glass, rubber, silverCover, cloth } = materials;
+  const m = covered ? (silverCover ?? cloth[2]) : white;
 
-  box(m, x, 0.62, z, 1.6, 0.65, 3.25);
-  emit(new T.SphereGeometry(1, 16, 10), m, x, 1.03, z - 0.1, 0.78, 0.62, 1.35);
-
-  if (!covered) {
+  if (covered) {
+    // Realistic draped car cover over compact MPV/sedan
+    // Lower body draped envelope
+    box(m, x, 0.58, z, 1.68, 0.62, 3.4);
+    // Upper cabin drape
+    box(m, x, 1.08, z - 0.15, 1.48, 0.52, 1.95);
+    // Sloping hood drape
+    box(m, x, 0.82, z + 1.05, 1.54, 0.28, 1.05, 0.18);
+    // Windshield slope drape
+    box(m, x, 1.12, z + 0.52, 1.46, 0.38, 0.65, 0.42);
+    // Rear hatch slope drape
+    box(m, x, 1.05, z - 1.18, 1.46, 0.42, 0.6, -0.32);
+    // Roof curvature smoothing
+    emit(new T.CylinderGeometry(0.72, 0.74, 1.8, 12), m, x, 1.28, z - 0.15, 1, 0.32, 1, Math.PI / 2);
+    // Mirror pockets
+    for (const side of [-1, 1]) {
+      box(m, x + side * 0.84, 0.96, z + 0.55, 0.22, 0.18, 0.26, 0, side * 0.15);
+      // Elastic skirt contouring
+      box(m, x + side * 0.78, 0.26, z, 0.14, 0.22, 3.25);
+    }
+    // Front & rear skirt drape
+    box(m, x, 0.25, z + 1.62, 1.58, 0.22, 0.16);
+    box(m, x, 0.25, z - 1.62, 1.58, 0.22, 0.16);
+  } else {
+    box(m, x, 0.62, z, 1.6, 0.65, 3.25);
+    emit(new T.SphereGeometry(1, 16, 10), m, x, 1.03, z - 0.1, 0.78, 0.62, 1.35);
     box(glass, x, 1.2, z + 0.45, 1.38, 0.58, 0.06, 0.36);
     for (const side of [-1, 1]) {
       box(glass, x + side * 0.775, 1.18, z - 0.1, 0.015, 0.42, 1.3);
@@ -44,7 +66,7 @@ export function buildCar(ctx: WorldContext, x: number, z: number, covered = fals
 
   for (const dx of [-0.73, 0.73]) {
     for (const dz of [-1.05, 1.05]) {
-      cyl(rubber, x + dx, 0.34, z + dz, 0.3, 0.16, 0, Math.PI / 2);
+      cyl(rubber, x + dx, 0.3, z + dz, 0.29, 0.16, 0, Math.PI / 2);
     }
   }
 }

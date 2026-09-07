@@ -12,7 +12,7 @@ export const PROPERTIES: Property[] = [
   { id: 'gray', side: 1, start: 26, width: 7, height: 3.5, depth: 6, setback: 2.6, photos: [9, 11] },
   { id: 'low-yard', side: 1, start: 33, width: 13, height: 2.5, depth: 5, setback: 3, photos: [10] },
   { id: 'pink', side: 1, start: 46, width: 10, height: 7.7, depth: 7, setback: 1.7, photos: [9, 10] },
-  { id: 'tree-court', side: -1, start: -3, width: 8, height: 3, depth: 6, setback: 3, photos: [2] },
+  { id: 'tree-court', side: -1, start: -3, width: 8, height: 6.0, depth: 6, setback: 3, photos: [2] },
   { id: 'pale-green', side: -1, start: 5, width: 6, height: 5.5, depth: 6, setback: 2.1, photos: [3, 4] },
   { id: 'cream-carport', side: -1, start: 11, width: 7, height: 6, depth: 6, setback: 3.4, photos: [4] },
   { id: 'pine-court', side: -1, start: 18, width: 6, height: 3, depth: 6, setback: 3.5, photos: [4, 6] },
@@ -23,7 +23,7 @@ export const PROPERTIES: Property[] = [
 ];
 export const LANDMARK_STAGES = [14, 23, 50];
 export const PHOTO_VIEWS: { photo: number; label: string; eye: [number, number, number]; target: [number, number, number] }[] = [
-  { photo: 2, label: 'White gate and tree court', eye: [0, 2.15, 0], target: [0, 1.8, 15] },
+  { photo: 2, label: '16 Jl. H. Junen & Pale Green House', eye: [-.8, 2.2, 3.8], target: [5, 2.6, 3.8] },
   { photo: 3, label: 'Tank-side junction', eye: [0, 2.35, 4.8], target: [-.7, 2, 17] },
   { photo: 4, label: 'Covered car and cream house', eye: [-.5, 2.2, 14.5], target: [5, 2.7, 14.5] },
   { photo: 5, label: 'Green house and orange tank', eye: [1.1, 2.8, 14], target: [-4.2, 2.5, 14] },

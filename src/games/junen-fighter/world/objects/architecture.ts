@@ -154,9 +154,7 @@ export function buildFence(ctx: WorldContext, w: number, kind: Property['id'], m
       ? white
       : kind === 'green-tank'
         ? green
-        : kind === 'pine-court'
-          ? blue
-          : dark;
+        : dark;
   const left = -w / 2 + 0.18;
   const right = kind === 'green-tank' ? w / 2 - 2 : w / 2 - 0.18;
 

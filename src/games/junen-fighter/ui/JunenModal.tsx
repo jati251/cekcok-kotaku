@@ -32,7 +32,9 @@ export const JunenModal = ({ onResume, onRestart }: JunenModalProps) => {
     );
   }
 
-  if (status !== 'paused' && status !== 'won' && status !== 'lost') {
+  const photoView = useJunenStore((s) => s.photoView);
+
+  if (photoView !== null || (status !== 'paused' && status !== 'won' && status !== 'lost')) {
     return null;
   }
 

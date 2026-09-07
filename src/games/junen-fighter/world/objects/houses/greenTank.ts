@@ -1,15 +1,26 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildWindowFrame, buildDoor, buildAwning, buildAC } from '../architecture';
+import { buildWindowFrame, buildDoor, buildAwning, buildAC, buildGreenHipRoof, buildFence } from '../architecture';
 import { buildScooter } from '../vehicles';
 import { buildPlant, buildHedge } from '../vegetation';
 
 export function buildGreenTankHouse(ctx: WorldContext, p: Property) {
   const { box, cyl, beam, emit, sign, random, materials } = ctx;
-  const { wood, roofGrey, white, dark, green, tankMat, stone } = materials;
-  const { width: w, setback: front } = p;
+  const { wood, roofGrey, white, dark, green, tankMat, stone, concrete, brightGreen } = materials;
+  const { width: w, height: h, depth, setback: front } = p;
   const facadeZ = front - 0.08;
+  const m = brightGreen;
+
+  // Foundation & main volume
+  box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  box(m, 0, h / 2, front + depth / 2, w - 0.16, h, depth);
+  for (const x of [-w / 2 + 0.06, w / 2 - 0.06]) {
+    box(m, x, 0.83, front / 2, 0.12, 1.65, front);
+  }
+
+  // Hip Roof
+  buildGreenHipRoof(ctx, w, depth, h, front);
 
   buildWindowFrame(ctx, -2.2, 1.55, facadeZ, 1.3, 1.6, wood);
   buildWindowFrame(ctx, 0.1, 1.5, facadeZ, 1.3, 1.8, wood);
@@ -77,4 +88,7 @@ export function buildGreenTankHouse(ctx: WorldContext, p: Property) {
   buildHedge(ctx, tx, 0.15, 1.4, 1.2);
   box(stone, w / 2, 0.55, 0.9, 0.12, 1.1, 1.8);
   sign('JL. H. JUNEN II', tx + 0.2, 3.05, -0.1, 1.15, 0.22, '#176455', '#e0e8d5');
+
+  // Front Fence
+  buildFence(ctx, w, 'green-tank', m);
 }

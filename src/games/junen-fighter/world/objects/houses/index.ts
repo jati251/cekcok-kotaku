@@ -1,74 +1,78 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import { FRONTAGE, type Property } from '../../../neighborhood';
-import { buildRoof, buildGreenHipRoof, buildFence } from '../architecture';
+
+import { buildWhiteScrollHouse } from './whiteScroll';
 import { buildGreenTankHouse } from './greenTank';
 import { buildTurquoiseHouse } from './turquoise';
+import { buildGrayHouse } from './gray';
+import { buildLowYardHouse } from './lowYard';
 import { buildPinkHouse } from './pink';
-import { buildGenericHouse } from './generic';
+import { buildTreeCourtHouse } from './treeCourt';
+import { buildPaleGreenHouse } from './paleGreen';
+import { buildCreamCarportHouse } from './creamCarport';
+import { buildPineCourtHouse } from './pineCourt';
+import { buildBlueLowHouse } from './blueLow';
+import { buildYellowBlackHouse } from './yellowBlack';
+import { buildWhiteCarHouse } from './whiteCar';
+import { buildLaundryHouse } from './laundry';
+
+const housePos = new T.Vector3();
+const houseQuat = new T.Quaternion();
+const houseScale = new T.Vector3(1, 1, 1);
+const upAxis = new T.Vector3(0, 1, 0);
 
 export function buildHouse(ctx: WorldContext, p: Property) {
-  const { box, materials } = ctx;
-  const { id, side, width: w, height: h, depth, setback: front } = p;
+  const { id, side, width: w } = p;
 
-  ctx.transform = new T.Matrix4().compose(
-    new T.Vector3(side * FRONTAGE, 0, p.start + w / 2),
-    new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), (side * Math.PI) / 2),
-    new T.Vector3(1, 1, 1),
-  );
+  housePos.set(side * FRONTAGE, 0, p.start + w / 2);
+  houseQuat.setFromAxisAngle(upAxis, (side * Math.PI) / 2);
+  ctx.transform.compose(housePos, houseQuat, houseScale);
 
-  const m =
-    id === 'green-tank'
-      ? materials.brightGreen
-      : id === 'turquoise'
-        ? materials.teal
-        : id === 'pink'
-          ? materials.pink
-          : id === 'pale-green'
-            ? materials.pale
-            : id === 'cream-carport' || id === 'yellow-black'
-              ? materials.cream
-              : id === 'blue-low' || id === 'pine-court'
-                ? materials.blue
-                : id === 'gray'
-                  ? materials.wallGray
-                  : materials.wallDefault;
-
-  // Foundation & main volume
-  box(materials.concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
-  box(m, 0, h / 2, front + depth / 2, w - 0.16, h, depth);
-  for (const x of [-w / 2 + 0.06, w / 2 - 0.06]) {
-    box(m, x, 0.83, front / 2, 0.12, 1.65, front);
+  switch (id) {
+    case 'white-scroll':
+      buildWhiteScrollHouse(ctx, p);
+      break;
+    case 'green-tank':
+      buildGreenTankHouse(ctx, p);
+      break;
+    case 'turquoise':
+      buildTurquoiseHouse(ctx, p);
+      break;
+    case 'gray':
+      buildGrayHouse(ctx, p);
+      break;
+    case 'low-yard':
+      buildLowYardHouse(ctx, p);
+      break;
+    case 'pink':
+      buildPinkHouse(ctx, p);
+      break;
+    case 'tree-court':
+      buildTreeCourtHouse(ctx, p);
+      break;
+    case 'pale-green':
+      buildPaleGreenHouse(ctx, p);
+      break;
+    case 'cream-carport':
+      buildCreamCarportHouse(ctx, p);
+      break;
+    case 'pine-court':
+      buildPineCourtHouse(ctx, p);
+      break;
+    case 'blue-low':
+      buildBlueLowHouse(ctx, p);
+      break;
+    case 'yellow-black':
+      buildYellowBlackHouse(ctx, p);
+      break;
+    case 'white-car':
+      buildWhiteCarHouse(ctx, p);
+      break;
+    case 'laundry':
+      buildLaundryHouse(ctx, p);
+      break;
   }
-
-  // Roof construction
-  const corrugated = ['green-tank', 'blue-low', 'tree-court', 'low-yard', 'laundry'].includes(id);
-  if (id === 'green-tank') {
-    buildGreenHipRoof(ctx, w, depth, h, front);
-  } else if (id === 'turquoise') {
-    const propertyTransform = ctx.transform.clone();
-    ctx.transform.multiply(new T.Matrix4().makeTranslation(-1.2, 0, 0));
-    buildRoof(ctx, 5.3, depth, h, front, false, materials.teal, materials.roofGrey);
-    ctx.transform.copy(propertyTransform).multiply(new T.Matrix4().makeTranslation(0.8, 0, 0));
-    buildRoof(ctx, 4.2, 2.6, 3.1, front - 0.55, false, materials.teal, materials.roofGrey);
-    ctx.transform.copy(propertyTransform);
-  } else {
-    buildRoof(ctx, w, depth, h, front, corrugated, m);
-  }
-
-  // Facade & Compound Detail
-  if (id === 'green-tank') {
-    buildGreenTankHouse(ctx, p);
-  } else if (id === 'turquoise') {
-    buildTurquoiseHouse(ctx, p);
-  } else if (id === 'pink') {
-    buildPinkHouse(ctx, p);
-  } else {
-    buildGenericHouse(ctx, p);
-  }
-
-  // Front Fence
-  buildFence(ctx, w, id, m);
 
   ctx.transform.identity();
 }

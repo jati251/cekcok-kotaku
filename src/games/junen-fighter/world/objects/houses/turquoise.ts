@@ -1,15 +1,30 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildWindowFrame, buildDoor, buildAC } from '../architecture';
+import { buildWindowFrame, buildDoor, buildAC, buildRoof, buildFence } from '../architecture';
 import { buildScooter } from '../vehicles';
 import { buildTree, buildHedge } from '../vegetation';
 
 export function buildTurquoiseHouse(ctx: WorldContext, p: Property) {
   const { box, beam, emit, materials } = ctx;
-  const { teal, white, roofGrey, stone, rust, dark, leafMats } = materials;
-  const { width: w, setback: front } = p;
+  const { teal, white, roofGrey, stone, rust, dark, leafMats, concrete } = materials;
+  const { width: w, height: h, depth, setback: front } = p;
   const facadeZ = front - 0.08;
+
+  // Foundation & main volume
+  box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  box(teal, 0, h / 2, front + depth / 2, w - 0.16, h, depth);
+  for (const x of [-w / 2 + 0.06, w / 2 - 0.06]) {
+    box(teal, x, 0.83, front / 2, 0.12, 1.65, front);
+  }
+
+  // Double roof
+  const propertyTransform = ctx.transform.clone();
+  ctx.transform.multiply(new T.Matrix4().makeTranslation(-1.2, 0, 0));
+  buildRoof(ctx, 5.3, depth, h, front, false, teal, roofGrey);
+  ctx.transform.copy(propertyTransform).multiply(new T.Matrix4().makeTranslation(0.8, 0, 0));
+  buildRoof(ctx, 4.2, 2.6, 3.1, front - 0.55, false, teal, roofGrey);
+  ctx.transform.copy(propertyTransform);
 
   buildWindowFrame(ctx, -1.65, 1.55, facadeZ, 1.7, 1.95);
   buildDoor(ctx, 0.6, facadeZ, white);
@@ -58,4 +73,7 @@ export function buildTurquoiseHouse(ctx: WorldContext, p: Property) {
       0.2,
     );
   }
+
+  // Front Fence
+  buildFence(ctx, w, 'turquoise', teal);
 }

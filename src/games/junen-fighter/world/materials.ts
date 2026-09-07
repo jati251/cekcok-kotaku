@@ -63,7 +63,16 @@ export function createWorldMaterials(
   const rust = makeMaterial('#8c5838', 0.87, 0.25);
   const blue = makeMaterial('#80b6c6');
   const stone = makeMaterial('#b2a386');
-  const cloth = [makeMaterial('#89404f'), makeMaterial('#293c54'), makeMaterial('#b6bdc0')];
+  const cloth = [makeMaterial('#6d1e2b'), makeMaterial('#1b283d'), makeMaterial('#dbe0e2')];
+
+  const teakWood = makeMaterial('#743f26', 0.76);
+  surfaces.apply(teakWood, 'bark', 0.85, 0.18);
+
+  const woodSlat = makeMaterial('#b8683c', 0.72);
+  surfaces.apply(woodSlat, 'bark', 0.6, 0.15);
+
+  const silverCover = makeMaterial('#c1c7cc', 0.58, 0.22);
+  const aquaBlue = makeMaterial('#187bc0', 0.35, 0.12);
 
   for (const m of [cream, pale, teal, brightGreen, pink, blue, stone]) {
     surfaces.apply(m, 'plaster', 0.65, 0.045);
@@ -99,6 +108,10 @@ export function createWorldMaterials(
     cloth,
     leafMats,
     road,
+    teakWood,
+    woodSlat,
+    silverCover,
+    aquaBlue,
   };
 
   return { materials, materialList };

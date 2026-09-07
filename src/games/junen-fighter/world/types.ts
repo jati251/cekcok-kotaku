@@ -27,6 +27,10 @@ export interface WorldMaterials {
   cloth: T.MeshStandardMaterial[];
   leafMats: T.MeshStandardMaterial[];
   road: T.MeshStandardMaterial;
+  teakWood?: T.MeshStandardMaterial;
+  woodSlat?: T.MeshStandardMaterial;
+  silverCover?: T.MeshStandardMaterial;
+  aquaBlue?: T.MeshStandardMaterial;
 }
 
 export interface WorldContext {

@@ -64,7 +64,7 @@ export function buildUtilityPoles(ctx: WorldContext) {
   const { concrete, dark, white } = materials;
 
   const poles = [
-    { x: -FRONTAGE + 0.09, z: 8 },
+    { x: -FRONTAGE + 0.09, z: 4.8 },
     { x: FRONTAGE + 0.88, z: 10 },
     { x: -FRONTAGE + 0.08, z: 30 },
     { x: -FRONTAGE + 0.12, z: 51 },

@@ -30,16 +30,20 @@ export function buildNeighborhood(scene: T.Scene) {
   const wind = { value: 0 };
   const { materials, materialList } = createWorldMaterials(surfaces, wind);
 
-  const transform = new T.Matrix4();
-  const emitters = createWorldEmitter(buckets, materialList, textures, transform);
-
   const ctx: WorldContext = {
     materials,
     random,
-    transform,
+    transform: new T.Matrix4(),
     textures,
-    ...emitters,
+    emit: null as unknown as WorldContext['emit'],
+    box: null as unknown as WorldContext['box'],
+    cyl: null as unknown as WorldContext['cyl'],
+    beam: null as unknown as WorldContext['beam'],
+    sign: null as unknown as WorldContext['sign'],
   };
+
+  const emitters = createWorldEmitter(buckets, materialList, textures, () => ctx.transform);
+  Object.assign(ctx, emitters);
 
   // 1. Build road asphalt and junction branch
   buildRoad(ctx);
@@ -58,8 +62,13 @@ export function buildNeighborhood(scene: T.Scene) {
   // 5. Merge static geometry by material bucket for fast draw calls
   for (const [mat, parts] of buckets) {
     if (!parts.length) continue;
-    const merged = mergeGeometries(parts, false);
-    parts.forEach((g) => g.dispose());
+    const expanded = parts.map((g) => {
+      const n = g.index ? g.toNonIndexed() : g;
+      if (n !== g) g.dispose();
+      return n;
+    });
+    const merged = mergeGeometries(expanded, false);
+    expanded.forEach((g) => g.dispose());
     if (!merged) continue;
     const mesh = new T.Mesh(merged, mat);
     mesh.castShadow = true;

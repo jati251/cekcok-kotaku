@@ -102,7 +102,7 @@ export function JunenFighterGame() {
       <div ref={host} className="absolute inset-0 [&>canvas]:block [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:touch-none" />
 
       {/* Top Header */}
-      <JunenHeader onPause={handlePause} onQualityChange={handleQualityChange} />
+      <JunenHeader onPause={handlePause} onQualityChange={handleQualityChange} onInspect={handleInspect} />
 
       {/* Intro Landing Screen */}
       {status === 'intro' && photoView === null && !error && (

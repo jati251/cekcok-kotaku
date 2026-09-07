@@ -4,7 +4,7 @@ export function createWorldEmitter(
   buckets: Map<T.Material, T.BufferGeometry[]>,
   materialList: T.Material[],
   textures: T.Texture[],
-  transform: T.Matrix4,
+  getTransform: () => T.Matrix4,
 ) {
   const scratchPos = new T.Vector3();
   const scratchRot = new T.Euler();
@@ -30,7 +30,7 @@ export function createWorldEmitter(
     scratchQuat.setFromEuler(scratchRot);
     scratchScale.set(sx, sy, sz);
     scratchMatrix.compose(scratchPos, scratchQuat, scratchScale);
-    geo.applyMatrix4(scratchMatrix.premultiply(transform));
+    geo.applyMatrix4(scratchMatrix.premultiply(getTransform()));
 
     const bucket = buckets.get(mat) || [];
     bucket.push(geo);
