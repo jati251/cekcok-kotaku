@@ -24,3 +24,4 @@ export { PinballGame } from './pinball';
 export { ChessGame } from './chess';
 export { JudolSlotGame } from './judol-slot';
 export { PokerGame } from './poker';
+export { NavalCombatGame } from './naval-combat';

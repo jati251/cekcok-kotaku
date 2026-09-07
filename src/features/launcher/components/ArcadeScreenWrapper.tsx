@@ -77,6 +77,8 @@ export const ArcadeScreenWrapper: React.FC<ArcadeScreenWrapperProps> = ({
         'nightclub-city',
         'car-town',
         'ninja-saga',
+        'naval-combat',
+        'junen-fighter',
       ].includes(id)
     ) {
       return 'w-full h-full max-w-full max-h-full';

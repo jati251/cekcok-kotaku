@@ -2,6 +2,26 @@ import type { LauncherGame } from '../types';
 
 export const LAUNCHER_GAMES: LauncherGame[] = [
   {
+    id: 'junen-fighter',
+    title: 'Junen: Last Stand',
+    tagline: 'A third-person neighborhood fight story on Jl. H. Junen, East Jakarta',
+    genre: '3D Street Combat',
+    category: 'action',
+    status: 'playable',
+    releaseYear: '2026',
+    accentColor: '#d7b47a',
+    aspectRatio: 'fill',
+    description: 'Walk a Jakarta residential lane inspired by neighborhood photographs. Fight through three close-quarters encounters with punch combinations, heavy kicks, timed counters, and evasive footwork.',
+    features: [
+      'Photo-inspired houses, ornamental gates, orange water tank, scooters, and tropical planting',
+      'Third-person movement with animated fighters and three staged encounters',
+      'Punch chains, heavy kicks, stamina, dodges, and timed counters',
+      'Weathered materials, animated foliage and puddle shaders, soft shadows, ambient occlusion, bloom, and film grain',
+      'Combat sound effects, impact particles, camera shake, and counter slow motion',
+      'Keyboard, mouse, and touch controls with pause, retry, and graphics quality settings',
+    ],
+  },
+  {
     id: 'empires-and-allies',
     title: 'Empires & Allies',
     tagline: 'Military island base builder with turn-based tactical combat',
@@ -638,6 +658,26 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Three AI Opponents with distinct playstyles (Conservative, Aggressive, and Balanced Bluffer)',
       'Interactive Chip Betting Slider, pot calculations, and chip stack persistence',
       'Crisp high-resolution card animations, dealer button rotation, and tactile casino audio',
+    ],
+  },
+  {
+    id: 'naval-combat',
+    title: 'Black Flag Lite: Naval Combat',
+    tagline: 'High seas 3D naval warfare with Gerstner ocean waves, broadside salvos, and pirate flotilla battles',
+    genre: '3D Naval Action',
+    category: 'action',
+    status: 'playable',
+    releaseYear: '2026',
+    accentColor: '#f59e0b',
+    description:
+      "Inspired by Assassin's Creed IV: Black Flag! Take command of authentic 3D warships (Sloop, Brig, Frigate), ride dynamic Gerstner ocean swells with 4-point physical buoyancy, maneuver into firing angles, discharge staggered broadside cannon salvos, and sink enemy pirate flotillas in the open Caribbean.",
+    features: [
+      'Full 3D maritime combat powered by Three.js and React Three Fiber with custom Gerstner wave shader',
+      'Realistic 4-point hull water sample physics calculating dynamic pitch, roll, and ocean heave',
+      'Modular fleet vessels: Swift Sloop, balanced Privateer Brig, and iron-hulled Queen Anne Frigate',
+      'Staggered broadside cannon ballistics with parabolic projectile trajectories, water splashes, and wood splinters',
+      'Tactical enemy pirate AI ships that patrol, chase, flank broadsides, take damage, and dramatically sink',
+      'Authentic nautical Black Flag HUD with brass compass minimap, wind indicator, and battery reload meters',
     ],
   },
 ];

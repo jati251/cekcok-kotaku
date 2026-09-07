@@ -4,7 +4,7 @@ import {
   HeroState3D,
   updateComboRank,
 } from './dynasty3dEngine';
-import { getTerrainHeight } from './terrainHeightEngine';
+import { getTerrainHeight, constrainBridgeRailings } from './terrainHeightEngine';
 
 export interface MapObstacle {
   x: number;
@@ -96,6 +96,11 @@ export function calculatePlayerMovement(
       player.position.z += (dz / dist) * push;
     }
   }
+
+  // Constrain player safely to bridge decks so they cannot walk through balustrades
+  const constrained = constrainBridgeRailings(player.position.x, player.position.z);
+  player.position.x = constrained.x;
+  player.position.z = constrained.z;
 
   // Follow undulating 3D terrain heightmap
   player.position.y = getTerrainHeight(player.position.x, player.position.z);
@@ -211,6 +216,11 @@ export function updateEnemyPhysicsAndAI(
         enemy.position.z += (odz / odist) * push;
       }
     }
+
+    // Keep enemies safely on bridge decks without falling through balustrades
+    const enemyConstrained = constrainBridgeRailings(enemy.position.x, enemy.position.z);
+    enemy.position.x = enemyConstrained.x;
+    enemy.position.z = enemyConstrained.z;
 
     // Ground enemy strictly to undulating terrain
     enemy.position.y = getTerrainHeight(enemy.position.x, enemy.position.z);

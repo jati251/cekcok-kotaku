@@ -112,6 +112,11 @@ const JudolSlotGame = lazy(() =>
 const PokerGame = lazy(() =>
   import('./games/poker').then((m) => ({ default: m.PokerGame }))
 );
+const NavalCombatGame = lazy(() =>
+  import('./games/naval-combat').then((m) => ({ default: m.NavalCombatGame }))
+);
+
+const JunenFighterGame = lazy(() => import('./games/junen-fighter/JunenFighterGame').then(m => ({ default: m.JunenFighterGame })));
 
 // Full Settings Page
 const SettingsPage = lazy(() =>
@@ -139,6 +144,10 @@ export const App: React.FC = () => {
         return <JudolSlotGame onBack={() => useLauncherStore.getState().setActiveTab('launcher')} />;
       case 'poker':
         return <PokerGame onBack={() => useLauncherStore.getState().setActiveTab('launcher')} />;
+      case 'junen-fighter':
+        return <JunenFighterGame />;
+      case 'naval-combat':
+        return <NavalCombatGame />;
       case 'cityville':
         return <CityVilleGame />;
       case 'tetris':

@@ -154,6 +154,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
       'chess': 'chess',
       'judol-slot': 'judol-slot',
       'poker': 'poker',
+      'junen-fighter': 'junen-fighter',
+      'naval-combat': 'naval-combat',
     };
 
     const targetTab = tabMap[gameId];

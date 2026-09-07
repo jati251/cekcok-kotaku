@@ -3,20 +3,58 @@ import { createNoise2D } from 'simplex-noise';
 // Seeded noise generator for deterministic, seamless battlefield heightmap
 const noise2D = createNoise2D(() => 0.42);
 
-export const RIVER_WATER_Y = -0.55;
-export const RIVER_BED_DEPTH = -1.75;
-export const RIVER_HALF_WIDTH = 13.5;
-export const RIVER_WATER_HALF_WIDTH = 9.5;
+export const RIVER_WATER_Y = -0.28;
+export const RIVER_BED_DEPTH = -1.35;
+export const RIVER_HALF_WIDTH = 15.5;
+export const RIVER_WATER_HALF_WIDTH = 11.0;
 
 // Main Imperial Arch Bridge coordinate constants
 export const MAIN_BRIDGE_CENTER = { x: -32, z: -32 };
-export const MAIN_BRIDGE_HALF_LEN = 15;
-export const MAIN_BRIDGE_HALF_WID = 5.6;
+export const MAIN_BRIDGE_HALF_LEN = 15.2;
+export const MAIN_BRIDGE_HALF_WID = 5.5;
 
 // Northern Flank Wooden Bridge coordinate constants
 export const FLANK_BRIDGE_CENTER = { x: -7.5, z: 48 };
-export const FLANK_BRIDGE_HALF_LEN = 13;
+export const FLANK_BRIDGE_HALF_LEN = 13.2;
 export const FLANK_BRIDGE_HALF_WID = 3.6;
+
+/**
+ * Constrains a coordinate to remain safely on bridge decks without clipping through balustrades
+ */
+export function constrainBridgeRailings(x: number, z: number): { x: number; z: number } {
+  // Main Imperial Stone Arch Bridge (Rotated 45 degrees along x = z)
+  const dx = x - MAIN_BRIDGE_CENTER.x;
+  const dz = z - MAIN_BRIDGE_CENTER.z;
+  const mainAlong = (dx + dz) * 0.7071;
+  const mainPerp = (dx - dz) * 0.7071;
+
+  if (Math.abs(mainAlong) <= MAIN_BRIDGE_HALF_LEN) {
+    const maxPerp = MAIN_BRIDGE_HALF_WID - 0.85; // Solid balustrade margin
+    if (Math.abs(mainPerp) > maxPerp) {
+      const clampedPerp = Math.sign(mainPerp) * maxPerp;
+      return {
+        x: MAIN_BRIDGE_CENTER.x + (mainAlong + clampedPerp) * 0.7071,
+        z: MAIN_BRIDGE_CENTER.z + (mainAlong - clampedPerp) * 0.7071,
+      };
+    }
+  }
+
+  // Northern Flank Wooden Trestle Bridge (Aligned along X-axis at Z = 48)
+  const flankDistX = Math.abs(x - FLANK_BRIDGE_CENTER.x);
+  const flankDistZ = z - FLANK_BRIDGE_CENTER.z;
+
+  if (flankDistX <= FLANK_BRIDGE_HALF_LEN) {
+    const maxZ = FLANK_BRIDGE_HALF_WID - 0.65; // Solid timber railing margin
+    if (Math.abs(flankDistZ) > maxZ) {
+      return {
+        x,
+        z: FLANK_BRIDGE_CENTER.z + Math.sign(flankDistZ) * maxZ,
+      };
+    }
+  }
+
+  return { x, z };
+}
 
 /**
  * Calculates continuous organic centerline X of the river at longitudinal coordinate Z

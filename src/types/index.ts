@@ -38,6 +38,8 @@ export type ActiveGameTab =
   | 'chess'
   | 'judol-slot'
   | 'poker'
+  | 'junen-fighter'
+  | 'naval-combat'
   | 'settings';
 
 export type LauncherSortOrder =

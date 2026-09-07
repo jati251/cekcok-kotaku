@@ -7,6 +7,7 @@ import {
   getRiverCenterX,
   RIVER_WATER_Y,
   RIVER_BED_DEPTH,
+  RIVER_HALF_WIDTH,
   RIVER_WATER_HALF_WIDTH,
   MAIN_BRIDGE_CENTER,
   FLANK_BRIDGE_CENTER,
@@ -222,10 +223,6 @@ export const DistantMountainRange3D: React.FC<{ theme: MapTheme }> = ({ theme })
   );
 };
 
-// ============================================================================
-// 2. ORGANIC FLOWING CURVED RIVER SYSTEM
-// ============================================================================
-
 export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) => {
   const waterRef = useRef<THREE.Mesh>(null);
   const waterTex = useMemo(() => proceduralTextures.getWaterTexture(isSnow), [isSnow]);
@@ -233,8 +230,8 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
   // Animate flowing river stream caustics
   useFrame((_, delta) => {
     if (waterTex) {
-      waterTex.offset.y += delta * 0.07;
-      waterTex.offset.x = Math.sin(waterTex.offset.y * 2.5) * 0.015;
+      waterTex.offset.y += delta * 0.08;
+      waterTex.offset.x = Math.sin(waterTex.offset.y * 2.8) * 0.02;
     }
   });
 
@@ -242,9 +239,9 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
   const waterRibbonGeo = useMemo(() => {
     const zMin = -360;
     const zMax = 360;
-    const zSegments = 90; // 8m per segment
-    const uSegments = 8;
-    const halfW = RIVER_WATER_HALF_WIDTH; // 9.5m (19m wide active water channel)
+    const zSegments = 96;
+    const uSegments = 10;
+    const halfW = RIVER_WATER_HALF_WIDTH; // 11m wide active water channel
 
     const geo = new THREE.BufferGeometry();
     const vertices: number[] = [];
@@ -260,10 +257,10 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
         const uNorm = i / uSegments; // 0..1 across river
         const xOffset = (uNorm - 0.5) * (halfW * 2);
         const x = centerX + xOffset;
-        const y = RIVER_WATER_Y; // -0.55m
+        const y = RIVER_WATER_Y; // -0.28m
 
         vertices.push(x, y, z);
-        uvs.push(uNorm * 3, zNorm * 24);
+        uvs.push(uNorm * 3, zNorm * 28);
       }
     }
 
@@ -287,13 +284,13 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
     return geo;
   }, []);
 
-  // Generate curved riverbed silt ground directly beneath water
+  // Soft sloped riverbed silt ground directly beneath water
   const riverbedGeo = useMemo(() => {
     const zMin = -360;
     const zMax = 360;
     const zSegments = 72;
-    const uSegments = 6;
-    const halfW = 12.0;
+    const uSegments = 8;
+    const halfW = 14.5;
 
     const geo = new THREE.BufferGeometry();
     const vertices: number[] = [];
@@ -307,8 +304,9 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
       for (let i = 0; i <= uSegments; i++) {
         const uNorm = i / uSegments;
         const xOffset = (uNorm - 0.5) * (halfW * 2);
+        const distRatio = Math.abs(uNorm - 0.5) * 2; // 0 at center, 1 at edge
         const x = centerX + xOffset;
-        const y = RIVER_BED_DEPTH + 0.05; // -1.70m
+        const y = RIVER_BED_DEPTH + distRatio * 0.95; // Curves from bed depth up to edge
 
         vertices.push(x, y, z);
       }
@@ -333,15 +331,62 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
     return geo;
   }, []);
 
-  // Curved shoreline foam lines
+  // Riverbank Pebble & Wet Sand Beaches along both shores
+  const [leftBeachGeo, rightBeachGeo] = useMemo(() => {
+    const createBeachGeo = (isRight: boolean) => {
+      const zMin = -360;
+      const zMax = 360;
+      const zSegments = 72;
+      const innerW = RIVER_WATER_HALF_WIDTH - 0.8;
+      const outerW = RIVER_HALF_WIDTH + 1.2;
+      const sign = isRight ? 1 : -1;
+
+      const geo = new THREE.BufferGeometry();
+      const vertices: number[] = [];
+      const indices: number[] = [];
+
+      for (let j = 0; j <= zSegments; j++) {
+        const zNorm = j / zSegments;
+        const z = zMin + zNorm * (zMax - zMin);
+        const cx = getRiverCenterX(z);
+
+        const xInner = cx + sign * innerW;
+        const xOuter = cx + sign * outerW;
+        const yInner = RIVER_WATER_Y - 0.04;
+        const yOuter = 0.05;
+
+        vertices.push(xInner, yInner, z);
+        vertices.push(xOuter, yOuter, z);
+      }
+
+      for (let j = 0; j < zSegments; j++) {
+        const a = j * 2;
+        const b = (j + 1) * 2;
+        const c = (j + 1) * 2 + 1;
+        const d = j * 2 + 1;
+
+        indices.push(a, b, d);
+        indices.push(b, c, d);
+      }
+
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return geo;
+    };
+
+    return [createBeachGeo(false), createBeachGeo(true)];
+  }, []);
+
+  // Curved shoreline gentle water foam lines
   const [leftFoamGeo, rightFoamGeo] = useMemo(() => {
     const createShoreFoamGeo = (isRight: boolean) => {
       const zMin = -360;
       const zMax = 360;
       const zSegments = 72;
-      const stripWidth = 0.9;
+      const stripWidth = 1.1;
       const offsetSign = isRight ? 1 : -1;
-      const baseDist = RIVER_WATER_HALF_WIDTH - 0.3;
+      const baseDist = RIVER_WATER_HALF_WIDTH - 0.2;
 
       const geo = new THREE.BufferGeometry();
       const vertices: number[] = [];
@@ -354,7 +399,7 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
 
         const xInner = cx + offsetSign * (baseDist - stripWidth);
         const xOuter = cx + offsetSign * baseDist;
-        const y = RIVER_WATER_Y + 0.02;
+        const y = RIVER_WATER_Y + 0.025;
 
         vertices.push(xInner, y, z);
         vertices.push(xOuter, y, z);
@@ -379,7 +424,52 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
     return [createShoreFoamGeo(false), createShoreFoamGeo(true)];
   }, []);
 
-  // Natural River Boulders along curved banks (safe distance from bridge crossings)
+  // Aquatic Reeds & Bulrushes along the shallow waterline
+  const aquaticReeds = useMemo(() => {
+    const reeds: { x: number; y: number; z: number; scale: number; rot: number }[] = [];
+    const zList = [-190, -145, -95, -60, -5, 35, 75, 115, 160, 205];
+    zList.forEach((z, idx) => {
+      const cx = getRiverCenterX(z);
+      // Stagger between left and right shore
+      const isLeft = idx % 2 === 0;
+      const shoreDist = isLeft ? -RIVER_WATER_HALF_WIDTH + 0.6 : RIVER_WATER_HALF_WIDTH - 0.6;
+      for (let k = 0; k < 5; k++) {
+        reeds.push({
+          x: cx + shoreDist + (Math.sin(k * 2) * 0.8),
+          y: RIVER_WATER_Y,
+          z: z + (k - 2) * 1.1,
+          scale: 0.85 + (k % 3) * 0.25,
+          rot: k * 1.2,
+        });
+      }
+    });
+    return reeds;
+  }, []);
+
+  // Floating Water Lilies & Lotus blossom pads on calm river bends
+  const waterLilies = useMemo(() => {
+    const lilies: { x: number; z: number; scale: number }[] = [];
+    const clusterCenters = [
+      { z: -160, offset: -5.5 },
+      { z: -80, offset: 4.5 },
+      { z: 15, offset: -4.0 },
+      { z: 95, offset: 5.0 },
+      { z: 175, offset: -3.5 },
+    ];
+    clusterCenters.forEach((c) => {
+      const cx = getRiverCenterX(c.z) + c.offset;
+      for (let p = 0; p < 4; p++) {
+        lilies.push({
+          x: cx + (p % 2 === 0 ? 0.7 : -0.7) * (p + 1) * 0.6,
+          z: c.z + (p > 1 ? 0.8 : -0.8),
+          scale: 0.7 + (p % 3) * 0.25,
+        });
+      }
+    });
+    return lilies;
+  }, []);
+
+  // Natural River Boulders along banks
   const riverRocks = useMemo(() => {
     const zList = [-220, -170, -110, -70, 0, 20, 85, 130, 180, 240];
     return zList.map((z, idx) => {
@@ -388,7 +478,7 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
       const bankOffset = isLeft ? -RIVER_WATER_HALF_WIDTH - 1.2 : RIVER_WATER_HALF_WIDTH + 1.2;
       return {
         x: cx + bankOffset,
-        y: -0.25,
+        y: -0.15,
         z,
         scale: 1.1 + (idx % 3) * 0.35,
         rot: idx * 0.7,
@@ -397,35 +487,83 @@ export const TerrainWaterRiver3D: React.FC<{ isSnow?: boolean }> = ({ isSnow }) 
   }, []);
 
   const deepWaterColor = isSnow ? '#0284c7' : '#0369a1';
+  const pebbleShoreColor = isSnow ? '#64748b' : '#6b543c';
 
   return (
     <group>
-      {/* 1. Dark Silt Riverbed Ground */}
+      {/* 1. Sloped Riverbed Silt Ground */}
       <mesh geometry={riverbedGeo} receiveShadow>
-        <meshStandardMaterial color="#0f172a" roughness={0.98} />
+        <meshStandardMaterial color="#0f172a" roughness={0.96} />
       </mesh>
 
-      {/* 2. Flowing Translucent Water Surface */}
+      {/* 2. Textured Pebble & Wet Sand Shorebanks */}
+      <mesh geometry={leftBeachGeo} receiveShadow>
+        <meshStandardMaterial color={pebbleShoreColor} roughness={0.94} />
+      </mesh>
+      <mesh geometry={rightBeachGeo} receiveShadow>
+        <meshStandardMaterial color={pebbleShoreColor} roughness={0.94} />
+      </mesh>
+
+      {/* 3. Flowing Translucent Water Surface */}
       <mesh ref={waterRef} geometry={waterRibbonGeo} receiveShadow>
         <meshStandardMaterial
           map={waterTex}
           color={deepWaterColor}
-          roughness={0.06}
-          metalness={0.75}
+          roughness={0.05}
+          metalness={0.8}
           transparent
-          opacity={0.88}
+          opacity={0.9}
         />
       </mesh>
 
-      {/* 3. Shoreline Gentle Foam Edges */}
+      {/* 4. Shoreline Gentle Foam Edges */}
       <mesh geometry={leftFoamGeo}>
-        <meshBasicMaterial color="#e0f2fe" transparent opacity={0.38} />
+        <meshBasicMaterial color="#e0f2fe" transparent opacity={0.45} />
       </mesh>
       <mesh geometry={rightFoamGeo}>
-        <meshBasicMaterial color="#e0f2fe" transparent opacity={0.38} />
+        <meshBasicMaterial color="#e0f2fe" transparent opacity={0.45} />
       </mesh>
 
-      {/* 4. Natural Riverbed & Shore Boulders */}
+      {/* 5. Aquatic Cattails & Bulrushes */}
+      {aquaticReeds.map((reed, idx) => (
+        <group key={`reed_${idx}`} position={[reed.x, reed.y, reed.z]} scale={[reed.scale, reed.scale, reed.scale]} rotation={[0.08, reed.rot, 0]}>
+          {/* Slender green stem */}
+          <mesh position={[0, 0.85, 0]}>
+            <cylinderGeometry args={[0.03, 0.04, 1.7, 5]} />
+            <meshStandardMaterial color="#15803d" roughness={0.7} />
+          </mesh>
+          {/* Brown cattail head */}
+          <mesh position={[0, 1.55, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.5, 6]} />
+            <meshStandardMaterial color="#451a03" roughness={0.85} />
+          </mesh>
+          {/* Splay reed leaves */}
+          <mesh position={[0.1, 0.6, 0]} rotation={[0, 0, -0.3]}>
+            <cylinderGeometry args={[0.02, 0.03, 1.3, 4]} />
+            <meshStandardMaterial color="#16a34a" roughness={0.7} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 6. Floating Water Lilies & Lotus Blossom Pads */}
+      {waterLilies.map((lily, idx) => (
+        <group key={`lily_${idx}`} position={[lily.x, RIVER_WATER_Y + 0.015, lily.z]} scale={[lily.scale, 1, lily.scale]}>
+          {/* Circular floating pad */}
+          <mesh rotation={[-Math.PI / 2, 0, idx * 0.8]}>
+            <circleGeometry args={[0.55, 12]} />
+            <meshStandardMaterial color="#166534" roughness={0.65} />
+          </mesh>
+          {/* Lotus Blossom Flower */}
+          {idx % 3 === 0 && (
+            <mesh position={[0, 0.08, 0]}>
+              <coneGeometry args={[0.22, 0.25, 6]} />
+              <meshStandardMaterial color="#f472b6" roughness={0.5} />
+            </mesh>
+          )}
+        </group>
+      ))}
+
+      {/* 7. Natural Riverbed & Shore Boulders */}
       {riverRocks.map((r, i) => (
         <mesh
           key={`rock_${i}`}
@@ -455,48 +593,88 @@ export const ImperialStoneArchBridge3D: React.FC = () => {
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, Math.PI / 4, 0]}>
-      {/* 1. Stone Abutments (Riverbank anchor blocks) */}
-      <mesh position={[-15.5, -0.6, 0]} castShadow receiveShadow>
-        <boxGeometry args={[4.2, 3.8, 11.2]} />
-        <meshStandardMaterial map={stoneTex} color="#475569" roughness={0.88} />
-      </mesh>
-      <mesh position={[15.5, -0.6, 0]} castShadow receiveShadow>
-        <boxGeometry args={[4.2, 3.8, 11.2]} />
-        <meshStandardMaterial map={stoneTex} color="#475569" roughness={0.88} />
-      </mesh>
+      {/* 1. Heavy Stone Abutments & Retaining Earth Wingwalls (Seals dark voids) */}
+      <group position={[-15.5, 0, 0]}>
+        {/* Main solid abutment block from ground down to riverbed */}
+        <mesh position={[0, -0.7, 0]} castShadow receiveShadow>
+          <boxGeometry args={[4.8, 4.2, 12.0]} />
+          <meshStandardMaterial map={stoneTex} color="#475569" roughness={0.88} />
+        </mesh>
+        {/* Retaining solid earth wedge filling ramp void */}
+        <mesh position={[2.5, -0.5, 0]} receiveShadow>
+          <boxGeometry args={[4.5, 3.2, 11.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" roughness={0.92} />
+        </mesh>
+        {/* Left & Right Angled Stone Wingwalls */}
+        <mesh position={[-0.8, -0.4, 6.4]} rotation={[0, 0.45, 0]} castShadow>
+          <boxGeometry args={[3.2, 3.4, 1.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" />
+        </mesh>
+        <mesh position={[-0.8, -0.4, -6.4]} rotation={[0, -0.45, 0]} castShadow>
+          <boxGeometry args={[3.2, 3.4, 1.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" />
+        </mesh>
+      </group>
+
+      <group position={[15.5, 0, 0]}>
+        {/* Main solid abutment block from ground down to riverbed */}
+        <mesh position={[0, -0.7, 0]} castShadow receiveShadow>
+          <boxGeometry args={[4.8, 4.2, 12.0]} />
+          <meshStandardMaterial map={stoneTex} color="#475569" roughness={0.88} />
+        </mesh>
+        {/* Retaining solid earth wedge filling ramp void */}
+        <mesh position={[-2.5, -0.5, 0]} receiveShadow>
+          <boxGeometry args={[4.5, 3.2, 11.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" roughness={0.92} />
+        </mesh>
+        {/* Left & Right Angled Stone Wingwalls */}
+        <mesh position={[0.8, -0.4, 6.4]} rotation={[0, -0.45, 0]} castShadow>
+          <boxGeometry args={[3.2, 3.4, 1.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" />
+        </mesh>
+        <mesh position={[0.8, -0.4, -6.4]} rotation={[0, 0.45, 0]} castShadow>
+          <boxGeometry args={[3.2, 3.4, 1.4]} />
+          <meshStandardMaterial map={stoneTex} color="#334155" />
+        </mesh>
+      </group>
 
       {/* 2. Main Center Pier with Triangular Stream Cutwaters */}
-      <group position={[0, -1.1, 0]}>
+      <group position={[0, -1.0, 0]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[3.6, 3.0, 11.2]} />
+          <boxGeometry args={[3.8, 3.2, 11.4]} />
           <meshStandardMaterial map={stoneTex} color="#334155" roughness={0.9} />
         </mesh>
-        {/* Upstream Triangular Cutwater */}
-        <mesh position={[0, 0, 6.2]} rotation={[0, Math.PI / 4, 0]} castShadow>
-          <cylinderGeometry args={[0.01, 1.6, 3.0, 4]} />
+        {/* Upstream Triangular Cutwater Pier */}
+        <mesh position={[0, 0, 6.4]} rotation={[0, Math.PI / 4, 0]} castShadow>
+          <cylinderGeometry args={[0.01, 1.8, 3.2, 4]} />
           <meshStandardMaterial map={stoneTex} color="#334155" roughness={0.9} />
+        </mesh>
+        {/* Pier Water Current Wake Foam */}
+        <mesh position={[0, 0.9, 7.8]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[3.2, 2.4]} />
+          <meshBasicMaterial color="#e0f2fe" transparent opacity={0.5} />
         </mesh>
         {/* Downstream Cutwater */}
-        <mesh position={[0, 0, -6.2]} rotation={[0, Math.PI / 4, 0]} castShadow>
-          <cylinderGeometry args={[0.01, 1.6, 3.0, 4]} />
+        <mesh position={[0, 0, -6.4]} rotation={[0, Math.PI / 4, 0]} castShadow>
+          <cylinderGeometry args={[0.01, 1.8, 3.2, 4]} />
           <meshStandardMaterial map={stoneTex} color="#334155" roughness={0.9} />
         </mesh>
       </group>
 
-      {/* 3. Arched Stone Deck (Segmented along arch to smoothly elevate characters) */}
+      {/* 3. Arched Stone Deck (Solid masonry under roadway) */}
       {/* Left Approach Ramp */}
       <mesh position={[-9.5, 0.45, 0]} rotation={[0, 0, 0.075]} receiveShadow>
-        <boxGeometry args={[9.5, 0.5, 11.0]} />
+        <boxGeometry args={[9.5, 0.65, 11.0]} />
         <meshStandardMaterial map={stoneTex} color="#64748b" roughness={0.84} />
       </mesh>
       {/* Center Arched Crown */}
       <mesh position={[0, 0.95, 0]} receiveShadow>
-        <boxGeometry args={[10.5, 0.5, 11.0]} />
+        <boxGeometry args={[10.5, 0.65, 11.0]} />
         <meshStandardMaterial map={stoneTex} color="#64748b" roughness={0.84} />
       </mesh>
       {/* Right Approach Ramp */}
       <mesh position={[9.5, 0.45, 0]} rotation={[0, 0, -0.075]} receiveShadow>
-        <boxGeometry args={[9.5, 0.5, 11.0]} />
+        <boxGeometry args={[9.5, 0.65, 11.0]} />
         <meshStandardMaterial map={stoneTex} color="#64748b" roughness={0.84} />
       </mesh>
 

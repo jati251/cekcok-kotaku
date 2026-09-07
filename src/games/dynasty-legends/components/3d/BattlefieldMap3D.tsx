@@ -28,6 +28,7 @@ import {
   ImperialStoneArchBridge3D,
   NorthernFlankTimberBridge3D,
 } from './map/BattlefieldTerrain3D';
+import { DenseForest3D, PRECOMPUTED_FOREST } from './DenseForest3D';
 
 interface BattlefieldMap3DProps {
   scenario: BattleScenario;
@@ -41,45 +42,105 @@ export interface MapObstacle {
   radius: number;
 }
 
+// 1. Village Hamlet Houses
+const VILLAGE_OBSTACLES: MapObstacle[] = [
+  { x: -72, z: 45, radius: 4.4 },
+  { x: -84, z: 54, radius: 4.4 },
+  { x: -68, z: 62, radius: 4.2 },
+  { x: -80, z: 32, radius: 4.2 },
+];
+
+// 2. Military Watchtowers
+const WATCHTOWER_OBSTACLES: MapObstacle[] = [
+  { x: 115, z: 80, radius: 3.2 },
+  { x: 80, z: 115, radius: 3.2 },
+];
+
+// 3. Command & Military Tents
+const TENT_OBSTACLES: MapObstacle[] = [
+  { x: -115, z: -90, radius: 4.5 },
+  { x: -105, z: -110, radius: 4.5 },
+  { x: -125, z: -75, radius: 4.5 },
+  { x: 135, z: 115, radius: 4.5 },
+  { x: 148, z: 98, radius: 4.5 },
+];
+
+// 4. Heavy Wooden Barricades (Spiked barrier segments)
+const BARRICADE_OBSTACLES: MapObstacle[] = [
+  // Allied base perimeter barricades
+  { x: -75, z: -55, radius: 1.6 },
+  { x: -76.2, z: -53.6, radius: 1.4 },
+  { x: -73.8, z: -56.4, radius: 1.4 },
+  { x: -55, z: -75, radius: 1.6 },
+  { x: -53.6, z: -76.2, radius: 1.4 },
+  { x: -56.4, z: -73.8, radius: 1.4 },
+  // Enemy stronghold barricades
+  { x: 105, z: 85, radius: 1.6 },
+  { x: 106.5, z: 83.5, radius: 1.4 },
+  { x: 103.5, z: 86.5, radius: 1.4 },
+  { x: 85, z: 105, radius: 1.6 },
+  { x: 83.5, z: 106.5, radius: 1.4 },
+  { x: 86.5, z: 103.5, radius: 1.4 },
+];
+
+// 5. Military Camp Props & Braziers
+const PROP_OBSTACLES: MapObstacle[] = [
+  { x: -118, z: -98, radius: 1.2 }, // War drum
+  { x: -105, z: -80, radius: 1.3 }, // Supplies crate
+  { x: -110, z: -85, radius: 1.1 }, // Allied brazier
+  { x: 125, z: 108, radius: 1.1 },  // Enemy brazier
+  { x: -108, z: -78, radius: 0.9 }, // Clay urn
+];
+
+// 6. Tree Trunks & Bamboo Clusters
+const TREE_OBSTACLES: MapObstacle[] = [
+  // Mountain Pines
+  { x: -135, z: -125, radius: 0.9 },
+  { x: -145, z: -80, radius: 0.9 },
+  { x: -105, z: -145, radius: 0.9 },
+  { x: 65, z: -125, radius: 0.9 },
+  { x: 95, z: -95, radius: 0.9 },
+  { x: 125, z: -135, radius: 0.9 },
+  { x: -140, z: 75, radius: 0.9 },
+  { x: -115, z: 105, radius: 0.9 },
+  { x: 80, z: 140, radius: 0.9 },
+  { x: 110, z: 95, radius: 0.9 },
+  { x: 140, z: 65, radius: 0.9 },
+  // Canopy Trees
+  { x: -65, z: -130, radius: 1.0 },
+  { x: -45, z: -85, radius: 1.0 },
+  { x: -65, z: -35, radius: 1.0 },
+  { x: 50, z: -90, radius: 1.0 },
+  { x: -40, z: 90, radius: 1.0 },
+  { x: 30, z: 75, radius: 1.0 },
+  { x: 65, z: 85, radius: 1.0 },
+  { x: 95, z: 45, radius: 1.0 },
+  // Weeping Willows
+  { x: -58, z: -55, radius: 0.9 },
+  { x: -45, z: -10, radius: 0.9 },
+  { x: -35, z: 25, radius: 0.9 },
+  { x: -24, z: -55, radius: 0.9 },
+  { x: -10, z: -10, radius: 0.9 },
+  { x: 2, z: 25, radius: 0.9 },
+  { x: 15, z: 75, radius: 0.9 },
+  // Bamboo Groves
+  { x: -115, z: 22, radius: 2.2 },
+  { x: -85, z: 80, radius: 2.2 },
+  { x: 75, z: 120, radius: 2.2 },
+  { x: 120, z: 45, radius: 2.2 },
+];
+
+/**
+ * Exhaustive Master Obstacle Array covering every single 3D element on the battlefield
+ */
 export const MAP_OBSTACLES: MapObstacle[] = [
-  // Bases perimeter clearings
-  { x: -95, z: -95, radius: 12.0 },
-  { x: 125, z: 125, radius: 14.0 },
-  { x: -85, z: 65, radius: 8.0 },
-  { x: 65, z: -85, radius: 8.0 },
-  { x: -45, z: 25, radius: 3.5 },
-  { x: 35, z: -40, radius: 3.8 },
-  { x: -75, z: -15, radius: 4.2 },
-  { x: 85, z: 15, radius: 4.0 },
-  { x: -115, z: -110, radius: 1.5 },
-  { x: -125, z: -75, radius: 1.4 },
-  { x: -95, z: -135, radius: 1.6 },
-  { x: 55, z: -115, radius: 1.5 },
-  { x: 85, z: -90, radius: 1.7 },
-  { x: 110, z: -130, radius: 1.5 },
-  { x: -130, z: 60, radius: 1.6 },
-  { x: -105, z: 95, radius: 1.8 },
-  { x: 70, z: 130, radius: 1.7 },
-  { x: 100, z: 85, radius: 1.5 },
-  { x: 130, z: 70, radius: 1.4 },
-  { x: 125, z: -40, radius: 1.6 },
-  { x: -60, z: -120, radius: 1.8 },
-  { x: -40, z: -70, radius: 2.0 },
-  { x: -50, z: -20, radius: 1.7 },
-  { x: -15, z: -100, radius: 1.9 },
-  { x: 15, z: -75, radius: 1.8 },
-  { x: -30, z: 85, radius: 2.1 },
-  { x: 20, z: 60, radius: 1.8 },
-  { x: 60, z: 75, radius: 1.9 },
-  { x: 90, z: 40, radius: 1.7 },
-  { x: 40, z: 115, radius: 1.9 },
-  // Major structures with collision radii (Placed safely off the road)
-  { x: -115, z: -90, radius: 5.5 }, // Allied Commander Tent
-  { x: -105, z: -110, radius: 5.2 },
-  { x: 135, z: 115, radius: 5.5 }, // Enemy Command Tent
-  { x: 148, z: 98, radius: 5.2 },
-  { x: 115, z: 80, radius: 3.5 }, // Enemy Watchtower
-  { x: 80, z: 115, radius: 3.5 },
+  ...VILLAGE_OBSTACLES,
+  ...WATCHTOWER_OBSTACLES,
+  ...TENT_OBSTACLES,
+  ...BARRICADE_OBSTACLES,
+  ...PROP_OBSTACLES,
+  ...TREE_OBSTACLES,
+  ...PRECOMPUTED_FOREST.treeColliders,
 ];
 
 export const BattlefieldMap3D: React.FC<BattlefieldMap3DProps> = ({ scenario }) => {
@@ -426,6 +487,9 @@ export const BattlefieldMap3D: React.FC<BattlefieldMap3DProps> = ({ scenario }) 
       {weepingWillows.map((w, idx) => (
         <WeepingWillow3D key={`willow_${idx}`} position={w.pos} scale={w.s} rotationY={w.rot} />
       ))}
+
+      {/* 13. Dense Instanced Ancient Forests & Bamboo Sea (Zero FPS drop) */}
+      <DenseForest3D theme={scenario.mapTheme} />
     </group>
   );
 };
