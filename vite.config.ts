@@ -16,6 +16,15 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        viewer: fileURLToPath(new URL('./junen-viewer.html', import.meta.url)),
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

@@ -6,7 +6,7 @@ import { buildPlant } from './vegetation';
 export function buildRoad(ctx: WorldContext) {
   const { box, materials } = ctx;
   // Main lane road asphalt
-  box(materials.road, 0, -0.12, 27, LANE.halfWidth * 2, 0.2, 64);
+  box(materials.road, 0, -0.12, (LANE.end - 3) / 2, LANE.halfWidth * 2, 0.2, LANE.end + 7);
   // Tank-side junction road branch
   box(
     materials.road,
@@ -17,6 +17,59 @@ export function buildRoad(ctx: WorldContext) {
     0.2,
     3,
   );
+
+  // Roadside asphalt patches (tambalan aspal)
+  for (const [px, pz, pw, pd] of [
+    [-0.4, 6.2, 1.4, 2.2],
+    [0.6, 17.5, 1.6, 2.8],
+    [-0.5, 28.5, 1.8, 2.5],
+    [0.3, 44.0, 1.5, 3.0],
+  ] as const) {
+    box(materials.andesite ?? materials.dark, px, -0.018, pz, pw, 0.01, pd);
+  }
+
+  // Cast-iron circular manhole cover at the junction
+  buildManholeCover(ctx, 0.55, 8.8, 0.36);
+  buildManholeCover(ctx, -0.65, 33.5, 0.36);
+
+  // Authentic white painted road stencil "JL. H. JUNEN"
+  buildRoadMarking(ctx, 'JL. H. JUNEN', 0.2, 13.5, 0.85, 3.2);
+  buildRoadMarking(ctx, 'JL. H. JUNEN', -0.2, 23.0, 0.85, 3.2);
+  buildRoadMarking(ctx, 'JL. H. JUNEN', 0.15, 46.5, 0.85, 3.2);
+  buildRoadMarking(ctx, 'JL. H. JUNEN', -0.1, 54.5, 0.85, 3.2);
+}
+
+
+export function buildManholeCover(ctx: WorldContext, x: number, z: number, r = 0.36) {
+  const { cyl, emit, box, materials: m } = ctx;
+  cyl(m.dark, x, -0.015, z, r, 0.018);
+  emit(new T.TorusGeometry(r - 0.02, 0.012, 6, 24), m.dark, x, -0.005, z, 1, 1, 1, Math.PI / 2);
+  emit(new T.TorusGeometry(r * 0.55, 0.01, 5, 20), m.dark, x, -0.005, z, 1, 1, 1, Math.PI / 2);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    box(m.dark, x + Math.cos(a) * r * 0.72, -0.005, z + Math.sin(a) * r * 0.72, 0.03, 0.006, 0.08, 0, -a, 0);
+  }
+}
+
+export function buildRoadMarking(ctx: WorldContext, text: string, x: number, z: number, w = 0.85, h = 3.2) {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 768;
+  const ctx2d = c.getContext('2d')!;
+  ctx2d.fillStyle = 'rgba(0,0,0,0)';
+  ctx2d.fillRect(0, 0, 256, 768);
+  ctx2d.fillStyle = '#eceae2';
+  ctx2d.font = 'bold 52px Arial';
+  ctx2d.textAlign = 'center';
+  const chars = text.split('');
+  chars.forEach((char, i) => {
+    ctx2d.fillText(char, 128, 65 + i * 58);
+  });
+  const t = new T.CanvasTexture(c);
+  t.colorSpace = T.SRGBColorSpace;
+  ctx.textures.push(t);
+  const m = new T.MeshStandardMaterial({ map: t, transparent: true, opacity: 0.9, roughness: 0.95, depthWrite: false });
+  ctx.emit(new T.PlaneGeometry(w, h), m, x, -0.016, z, 1, 1, 1, -Math.PI / 2, 0, 0);
 }
 
 export function buildCurbs(ctx: WorldContext) {
@@ -30,7 +83,7 @@ export function buildCurbs(ctx: WorldContext) {
   }));
 
   for (const side of [-1, 1]) {
-    for (let z = -4; z < 59; z += 0.5) {
+    for (let z = -4; z < LANE.end + 2; z += 0.5) {
       if (side === 1 && z >= LANE.junctionStart && z < LANE.junctionEnd) continue;
       box(dark, side * (LANE.halfWidth + 0.16), -0.15, z + 0.25, 0.3, 0.1, 0.5);
       box(concrete, side * (LANE.halfWidth - 0.02), -0.04, z + 0.25, 0.1, 0.12, 0.49);

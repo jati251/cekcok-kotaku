@@ -1,5 +1,6 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
+import { propertyDetails } from '../detail';
 import { FRONTAGE, type Property } from '../../../neighborhood';
 
 import { buildWhiteScrollHouse } from './whiteScroll';
@@ -15,6 +16,7 @@ import { buildPineCourtHouse } from './pineCourt';
 import { buildBlueLowHouse } from './blueLow';
 import { buildYellowBlackHouse } from './yellowBlack';
 import { buildWhiteCarHouse } from './whiteCar';
+import { buildGreenCarHouse } from './greenCar';
 import { buildLaundryHouse } from './laundry';
 
 const housePos = new T.Vector3();
@@ -28,6 +30,8 @@ export function buildHouse(ctx: WorldContext, p: Property) {
   housePos.set(side * FRONTAGE, 0, p.start + w / 2);
   houseQuat.setFromAxisAngle(upAxis, (side * Math.PI) / 2);
   ctx.transform.compose(housePos, houseQuat, houseScale);
+
+  if (id !== 'low-yard') propertyDetails(ctx,w,p.setback,p.height);
 
   switch (id) {
     case 'white-scroll':
@@ -68,6 +72,9 @@ export function buildHouse(ctx: WorldContext, p: Property) {
       break;
     case 'white-car':
       buildWhiteCarHouse(ctx, p);
+      break;
+    case 'green-car':
+      buildGreenCarHouse(ctx, p);
       break;
     case 'laundry':
       buildLaundryHouse(ctx, p);

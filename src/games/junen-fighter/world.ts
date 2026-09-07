@@ -62,19 +62,29 @@ export function buildNeighborhood(scene: T.Scene) {
   // 5. Merge static geometry by material bucket for fast draw calls
   for (const [mat, parts] of buckets) {
     if (!parts.length) continue;
-    const expanded = parts.map((g) => {
-      const n = g.index ? g.toNonIndexed() : g;
-      if (n !== g) g.dispose();
-      return n;
-    });
-    const merged = mergeGeometries(expanded, false);
-    expanded.forEach((g) => g.dispose());
-    if (!merged) continue;
-    const mesh = new T.Mesh(merged, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    neighborhood.add(mesh);
-    geometries.push(merged);
+    // Separate street sections retain frustum culling; indices retain shared vertices.
+    const cells = new Map<number, T.BufferGeometry[]>();
+    for (const part of parts) {
+      part.computeBoundingBox();
+      const center = part.boundingBox!.getCenter(new T.Vector3());
+      const key = Math.floor(center.z / 12);
+      if (!part.index) part.setIndex(Array.from({ length: part.attributes.position.count }, (_, i) => i));
+      const cell = cells.get(key) ?? [];
+      cell.push(part);
+      cells.set(key, cell);
+    }
+    for (const [cell, pieces] of cells) {
+      const merged = mergeGeometries(pieces, false);
+      pieces.forEach((g) => g.dispose());
+      if (!merged) continue;
+      merged.computeBoundingSphere();
+      const mesh = new T.Mesh(merged, mat);
+      mesh.name = `street-${cell}-${mat.name || mat.uuid}`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      neighborhood.add(mesh);
+      geometries.push(merged);
+    }
   }
 
   // 6. Build water puddles with animated ripple shader

@@ -82,6 +82,8 @@ export function disposeActorAssets(): void {
   }
 }
 
+export const ACTOR_SCALE = 0.78;
+
 export function createActor(id: number) {
   const assets = getActorAssetPool();
   const isPlayer = id === 0;
@@ -97,6 +99,7 @@ export function createActor(id: number) {
   const warningMat = assets.warningMat;
 
   const root = new T.Group();
+  root.scale.setScalar(ACTOR_SCALE);
 
   function ellipsoid(parent: T.Object3D, m: T.Material, x: number, y: number, z: number, a: number, b: number, c: number) {
     const mesh = new T.Mesh(assets.sphereGeo, m);
@@ -242,7 +245,7 @@ export function createActor(id: number) {
 
       if (!f.hp) {
         root.rotation.x = -Math.min(1, phase * 3) * Math.PI / 2;
-        root.position.y = .15;
+        root.position.y = .11;
         warning.visible = false;
       }
     },

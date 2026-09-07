@@ -303,4 +303,16 @@ export function buildPaleGreenHouse(ctx: WorldContext, p: Property) {
   for (let x = gateL + 0.1; x <= gateR - 0.05; x += 0.13) {
     box(dark, x, gateH / 2, -0.015, 0.022, gateH - 0.05, 0.03);
   }
+
+  // Low cream wall with vertical decorative slit recesses (Street View Ground Truth)
+  const wallL = gateR + 0.15;
+  const wallR = rightPostX - 0.18;
+  const wallW = wallR - wallL;
+  const wallMidX = (wallL + wallR) / 2;
+  const wallH = 1.35;
+  box(white, wallMidX, wallH / 2, 0, wallW, wallH, 0.22);
+  box(pale, wallMidX, wallH / 2, -0.01, wallW - 0.08, wallH - 0.08, 0.23);
+  for (let sx = wallL + 0.35; sx <= wallR - 0.25; sx += 0.32) {
+    box(dark, sx, wallH / 2, -0.02, 0.07, wallH * 0.55, 0.26);
+  }
 }

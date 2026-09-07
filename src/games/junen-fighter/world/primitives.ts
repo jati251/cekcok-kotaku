@@ -59,7 +59,7 @@ export function createWorldEmitter(
     h: number,
     rx = 0,
     rz = 0,
-  ) => emit(new T.CylinderGeometry(r, r, h, 10), m, x, y, z, 1, 1, 1, rx, 0, rz);
+  ) => emit(new T.CylinderGeometry(r, r, h, r > 0.1 ? 24 : 10), m, x, y, z, 1, 1, 1, rx, 0, rz);
 
   const beam = (m: T.Material, a: number[], b: number[], r: number) => {
     const start = new T.Vector3(...a);

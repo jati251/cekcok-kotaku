@@ -57,7 +57,7 @@ export function createRuntime(
   scene.fog = new T.FogExp2('#d5dfe6', 0.0035);
 
   const camera = new T.PerspectiveCamera(62, 1, 0.08, 170);
-  const hemi = new T.HemisphereLight('#e6f1ff', '#777366', 0.7);
+  const hemi = new T.HemisphereLight('#e6f1ff', '#777366', 1.65);
   scene.add(hemi);
 
   const sun = new T.DirectionalLight('#fff5e6', 3);
@@ -353,7 +353,7 @@ export function createRuntime(
       audio.hit(impact.heavy, impact.counter);
 
       for (let i = 0; i < 12; i++) {
-        spawnParticle(impact.x, 1.35, impact.z);
+        spawnParticle(impact.x, 1.05, impact.z);
       }
     }
 
@@ -377,16 +377,17 @@ export function createRuntime(
       cameraTarget.set(...view.eye);
       look.set(...view.target);
     } else if (game.status === 'intro') {
-      cameraTarget.set(-0.35 + Math.sin(worldTime * 0.09) * 0.15, 2.05, 2);
-      look.set(0.1, 1.8, 15);
+      cameraTarget.set(-0.35 + Math.sin(worldTime * 0.09) * 0.15, 1.95, 2);
+      look.set(0.1, 1.7, 15);
     } else {
-      const cameraZ = player.z - Math.cos(orbit) * 2.9;
+      const cameraDist = 3.4;
+      const cameraZ = player.z - Math.cos(orbit) * cameraDist;
       cameraTarget.set(
-        T.MathUtils.clamp(player.x - Math.sin(orbit) * 2.9, ...laneBounds(cameraZ, 0.3)),
-        2.25 + pitch * 0.5,
+        T.MathUtils.clamp(player.x - Math.sin(orbit) * cameraDist, ...laneBounds(cameraZ, 0.3)),
+        1.95 + pitch * 0.45,
         cameraZ,
       );
-      look.set(player.x + Math.sin(orbit) * 2, 1.45, player.z + Math.cos(orbit) * 2);
+      look.set(player.x + Math.sin(orbit) * 1.6, 1.15, player.z + Math.cos(orbit) * 1.6);
     }
 
     camera.position.lerp(cameraTarget, 1 - Math.exp(-dt * 6));

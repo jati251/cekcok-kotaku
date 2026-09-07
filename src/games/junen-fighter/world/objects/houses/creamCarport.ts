@@ -3,7 +3,7 @@ import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
 import { buildDoor, buildAC } from '../architecture';
 import { buildCar } from '../vehicles';
-import { buildTree, buildPlant } from '../vegetation';
+import { buildPlant } from '../vegetation';
 
 function emitGable(
   ctx: WorldContext,
@@ -371,26 +371,8 @@ export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
   box(cloth[2], gateMidX + 0.42, gateH - 0.08, -0.055, 0.44, 0.62, 0.025, 0.06);
 
   // ---------------------------------------------------------------------------
-  // 7. FRONT RIGHT VEGETATION (POHON JAMBU LEBAT & CEMARA TINGGI)
+  // 7. FRONT RIGHT VEGETATION (SUBTLE BOUNDARY PLANTS)
   // ---------------------------------------------------------------------------
-  buildTree(ctx, halfW - 1.2, 0.85, 4.8, false, false);
-  for (let i = 0; i < 40; i++) {
-    const a = ctx.random() * Math.PI * 2;
-    const r = 0.5 + ctx.random() * 1.2;
-    emit(
-      new T.PlaneGeometry(0.85, 0.95),
-      materials.leafMats[i % 4],
-      halfW - 1.2 + Math.cos(a) * r,
-      2.4 + ctx.random() * 2.1,
-      0.8 + Math.sin(a) * r,
-      1,
-      1,
-      1,
-      ctx.random() * 0.8 - 0.4,
-      a,
-      (ctx.random() - 0.5) * 0.6,
-    );
-  }
-
-  buildTree(ctx, halfW - 0.7, 2.2, 9.2, true);
+  buildPlant(ctx, halfW - 0.8, 0.75, 0.85);
+  buildPlant(ctx, halfW - 1.4, 0.65, 0.65);
 }

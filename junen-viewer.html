@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Junen — Neighborhood viewer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #c9d9e6; color: #f3f4ef; font: 14px/1.5 system-ui, sans-serif; }
+    canvas { display: block; width: 100vw; height: 100dvh; touch-action: none; }
+    aside { position: fixed; top: 16px; left: 16px; width: 300px; max-width: calc(100vw - 32px); padding: 18px; background: #18211ff0; border: 1px solid #ffffff28; border-radius: 8px; }
+    h1 { font-size: 18px; margin: 0 0 4px; font-weight: 600; }
+    p { margin: 0 0 14px; color: #c5cec8; }
+    label { display: block; margin: 10px 0 5px; }
+    select, button { font: inherit; color: inherit; background: #2b3833; border: 1px solid #72847b; border-radius: 4px; min-height: 38px; padding: 6px 9px; }
+    select { width: 100%; }
+    button { cursor: pointer; }
+    button:hover { background: #3c5046; }
+    :focus-visible { outline: 2px solid #c1e9ae; outline-offset: 3px; }
+    .row { display: flex; gap: 8px; margin-top: 10px; }
+    .row button { flex: 1; }
+    .check { display: flex; align-items: center; gap: 8px; }
+    input { accent-color: #b0d5a0; }
+    small { display: block; color: #c5cec8; margin-top: 12px; }
+    #status { margin-top: 10px; font-size: 12px; color: #b8d4ae; }
+    #stats { font-variant-numeric: tabular-nums; }
+    details summary { cursor: pointer; padding: 4px 0; }
+    @media(max-width:600px) { aside { top: 8px; left: 8px; padding: 12px; width: 270px; } h1 {font-size: 16px;} }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-label="Interactive 3D neighborhood. Drag to orbit; right-drag to pan; scroll to zoom." tabindex="0"></canvas>
+  <aside>
+    <h1>Junen neighborhood</h1>
+    <p>Jl. H. Junen · 3D map viewer</p>
+    <label for="view">Photo viewpoint</label>
+    <select id="view"></select>
+    <div class="row"><button id="previous" aria-label="Previous photo viewpoint">← Previous</button><button id="next" aria-label="Next photo viewpoint">Next →</button></div>
+    <div class="row"><button id="street">Street entrance</button><button id="overview">Overview</button></div>
+    <details>
+      <summary>Display settings</summary>
+      <label for="quality">Resolution</label>
+      <select id="quality"><option value="1">Balanced</option><option value="2" selected>High</option></select>
+      <label class="check"><input id="wireframe" type="checkbox" /> Show geometry</label>
+      <label class="check"><input id="wind" type="checkbox" checked /> Animate foliage</label>
+      <small id="stats"></small>
+    </details>
+    <small>Drag to orbit · Right-drag to pan · Scroll to zoom<br>Touch: one finger to orbit, two to pan / zoom</small>
+    <div id="status" role="status">Building neighborhood…</div>
+  </aside>
+  <script type="module" src="/src/junen-viewer.ts"></script>
+</body>
+</html>

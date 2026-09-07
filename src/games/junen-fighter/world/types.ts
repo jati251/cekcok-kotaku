@@ -27,10 +27,19 @@ export interface WorldMaterials {
   cloth: T.MeshStandardMaterial[];
   leafMats: T.MeshStandardMaterial[];
   road: T.MeshStandardMaterial;
-  teakWood?: T.MeshStandardMaterial;
-  woodSlat?: T.MeshStandardMaterial;
-  silverCover?: T.MeshStandardMaterial;
-  aquaBlue?: T.MeshStandardMaterial;
+  teakWood: T.MeshStandardMaterial;
+  woodSlat: T.MeshStandardMaterial;
+  silverCover: T.MeshStandardMaterial;
+  aquaBlue: T.MeshStandardMaterial;
+  andesite: T.MeshStandardMaterial;
+  kamprot: T.MeshStandardMaterial;
+  brickWeathered: T.MeshStandardMaterial;
+  polycarbonate: T.MeshStandardMaterial;
+  terracottaTile: T.MeshStandardMaterial;
+  marbleWainscot: T.MeshStandardMaterial;
+  scooterPaint: T.MeshStandardMaterial;
+  chrome: T.MeshStandardMaterial;
+  plnBlue: T.MeshStandardMaterial;
 }
 
 export interface WorldContext {

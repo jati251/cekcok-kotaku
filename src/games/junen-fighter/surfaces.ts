@@ -108,12 +108,12 @@ export function createSurfaceLibrary() {
             ? `
           float damp = (1.-smoothstep(.05,1.25,vSurfacePosition.y)) * (.18 + mottle*.35);
           float streak = surfaceMottle(vec2((vSurfacePosition.x+vSurfacePosition.z)*9.,vSurfacePosition.y*.23));
-          diffuseColor.rgb *= clamp(surfaceColor * 1.6, .38, 1.15) * (1.-damp) * (.9 + streak*.14);
+          diffuseColor.rgb *= mix(vec3(1.), clamp(surfaceColor * 1.6, .65, 1.12), .25) * (1.-damp) * (.9 + streak*.14);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.16,.19,.105), damp*.27);`
             : kind === 'asphalt'
               ? 'diffuseColor.rgb *= surfaceColor * 1.45 * (.8 + mottle*.4);'
               : kind === 'roof'
-                ? 'diffuseColor.rgb *= clamp(surfaceColor * 1.7, .25, 1.2) * (.72 + mottle*.4);'
+                ? 'diffuseColor.rgb *= mix(vec3(1.), clamp(surfaceColor * 1.7, .5, 1.2), .38) * (.72 + mottle*.4);'
                 : 'diffuseColor.rgb *= surfaceColor * 2.;'
         }
         `,
@@ -126,7 +126,7 @@ export function createSurfaceLibrary() {
         vec3 surfR1 = cross(surfDy, normal), surfR2 = cross(normal, surfDx);
         float surfDet = dot(surfDx, surfR1);
         vec3 surfGradient = sign(surfDet) * (dFdx(surfaceGrain)*surfR1 + dFdy(surfaceGrain)*surfR2);
-        normal = normalize(abs(surfDet)*normal + uMaterialRelief*surfGradient);
+        normal = normalize(abs(surfDet)*normal + uMaterialRelief*.035*surfGradient);
       `,
       );
     };

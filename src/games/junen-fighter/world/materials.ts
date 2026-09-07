@@ -21,7 +21,7 @@ export function createWorldMaterials(
 
   const concrete = makeMaterial('#a4a38e');
   const dark = makeMaterial('#26322f', 0.63, 0.35);
-  const white = makeMaterial('#dddccd', 0.48, 0.25);
+  const white = makeMaterial('#eeeae2', 0.65, 0);
   const wood = makeMaterial('#503b2b');
   const tile = makeMaterial('#83503b');
   const roofGrey = makeMaterial('#777970');
@@ -74,6 +74,30 @@ export function createWorldMaterials(
   const silverCover = makeMaterial('#c1c7cc', 0.58, 0.22);
   const aquaBlue = makeMaterial('#187bc0', 0.35, 0.12);
 
+  // High-fidelity AAA materials
+  const andesite = makeMaterial('#1e2322', 0.88, 0.1);
+  surfaces.apply(andesite, 'plaster', 1.8, 0.16);
+
+  const kamprot = makeMaterial('#7a5440', 0.94, 0.05);
+  surfaces.apply(kamprot, 'plaster', 1.6, 0.22);
+
+  const brickWeathered = makeMaterial('#a25542', 0.9, 0.05);
+  surfaces.apply(brickWeathered, 'plaster', 1.5, 0.15);
+
+  const polycarbonate = makeMaterial('#ded5c0', 0.35, 0.1);
+  polycarbonate.transparent = true;
+  polycarbonate.opacity = 0.82;
+
+  const terracottaTile = makeMaterial('#9e4c30', 0.76, 0.05);
+  surfaces.apply(terracottaTile, 'roof', 1.2, 0.14);
+
+  const marbleWainscot = makeMaterial('#c8bfab', 0.42, 0.08);
+  surfaces.apply(marbleWainscot, 'plaster', 0.8, 0.06);
+
+  const scooterPaint = makeMaterial('#181b22', 0.28, 0.45);
+  const chrome = makeMaterial('#eaedf0', 0.15, 0.95);
+  const plnBlue = makeMaterial('#105e94', 0.65, 0.1);
+
   for (const m of [cream, pale, teal, brightGreen, pink, blue, stone]) {
     surfaces.apply(m, 'plaster', 0.65, 0.045);
   }
@@ -112,6 +136,15 @@ export function createWorldMaterials(
     woodSlat,
     silverCover,
     aquaBlue,
+    andesite,
+    kamprot,
+    brickWeathered,
+    polycarbonate,
+    terracottaTile,
+    marbleWainscot,
+    scooterPaint,
+    chrome,
+    plnBlue,
   };
 
   return { materials, materialList };
