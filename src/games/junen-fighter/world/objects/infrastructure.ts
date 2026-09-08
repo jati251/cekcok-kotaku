@@ -25,7 +25,7 @@ export function buildRoad(ctx: WorldContext) {
     [-0.5, 28.5, 1.8, 2.5],
     [0.3, 44.0, 1.5, 3.0],
   ] as const) {
-    box(materials.andesite ?? materials.dark, px, -0.018, pz, pw, 0.01, pd);
+    box(materials.asphaltPatch, px, -0.019, pz, pw, 0.005, pd);
   }
 
   // Cast-iron circular manhole cover at the junction
@@ -121,6 +121,8 @@ export function buildUtilityPoles(ctx: WorldContext) {
     { x: FRONTAGE + 0.88, z: 10 },
     { x: -FRONTAGE + 0.08, z: 30 },
     { x: -FRONTAGE + 0.12, z: 51 },
+    { x: -FRONTAGE + 0.12, z: 75 },
+    { x: FRONTAGE + 0.88, z: 100 },
   ];
 
   for (const [i, p] of poles.entries()) {

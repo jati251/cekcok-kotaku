@@ -16,8 +16,8 @@ export function createWorldMaterials(
 
   const wallDefault = makeMaterial('#ded7bf');
   const wallGray = makeMaterial('#777e7c');
-  surfaces.apply(wallDefault, 'plaster', 0.65, 0.035);
-  surfaces.apply(wallGray, 'plaster', 0.65, 0.035);
+  surfaces.apply(wallDefault, 'plaster', 0.7, 0.08);
+  surfaces.apply(wallGray, 'plaster', 0.7, 0.08);
 
   const concrete = makeMaterial('#a4a38e');
   const dark = makeMaterial('#26322f', 0.63, 0.35);
@@ -32,10 +32,10 @@ export function createWorldMaterials(
   const tankMat = makeMaterial('#cf5b2e', 0.48);
   const clay = makeMaterial('#8f5339');
 
-  surfaces.apply(concrete, 'plaster', 1.4, 0.12);
+  surfaces.apply(concrete, 'concrete', 1.2, 0.18);
   surfaces.apply(wood, 'bark', 0.8, 0.2);
-  surfaces.apply(roofGrey, 'roof', 0.8, 0.16);
-  surfaces.apply(tile, 'roof', 1.3, 0.09);
+  surfaces.apply(roofGrey, 'roof', 0.9, 0.15);
+  surfaces.apply(tile, 'roof', 1.2, 0.16);
 
   const leafMats = ['#d3dfb9', '#ffffff', '#adc696', '#c8d5b8'].map((c) => {
     const m = makeMaterial(c, 0.85);
@@ -66,30 +66,30 @@ export function createWorldMaterials(
   const cloth = [makeMaterial('#6d1e2b'), makeMaterial('#1b283d'), makeMaterial('#dbe0e2')];
 
   const teakWood = makeMaterial('#743f26', 0.76);
-  surfaces.apply(teakWood, 'bark', 0.85, 0.18);
+  surfaces.apply(teakWood, 'bark', 0.85, 0.22);
 
   const woodSlat = makeMaterial('#b8683c', 0.72);
-  surfaces.apply(woodSlat, 'bark', 0.6, 0.15);
+  surfaces.apply(woodSlat, 'bark', 0.65, 0.18);
 
   const silverCover = makeMaterial('#c1c7cc', 0.58, 0.22);
   const aquaBlue = makeMaterial('#187bc0', 0.35, 0.12);
 
   // High-fidelity AAA materials
   const andesite = makeMaterial('#1e2322', 0.88, 0.1);
-  surfaces.apply(andesite, 'plaster', 1.8, 0.16);
+  surfaces.apply(andesite, 'andesite', 1.6, 0.22);
 
   const kamprot = makeMaterial('#7a5440', 0.94, 0.05);
-  surfaces.apply(kamprot, 'plaster', 1.6, 0.22);
+  surfaces.apply(kamprot, 'kamprot', 1.4, 0.24);
 
   const brickWeathered = makeMaterial('#a25542', 0.9, 0.05);
-  surfaces.apply(brickWeathered, 'plaster', 1.5, 0.15);
+  surfaces.apply(brickWeathered, 'brick', 1.2, 0.20);
 
   const polycarbonate = makeMaterial('#ded5c0', 0.35, 0.1);
   polycarbonate.transparent = true;
   polycarbonate.opacity = 0.82;
 
   const terracottaTile = makeMaterial('#9e4c30', 0.76, 0.05);
-  surfaces.apply(terracottaTile, 'roof', 1.2, 0.14);
+  surfaces.apply(terracottaTile, 'roof', 1.1, 0.18);
 
   const marbleWainscot = makeMaterial('#c8bfab', 0.42, 0.08);
   surfaces.apply(marbleWainscot, 'plaster', 0.8, 0.06);
@@ -98,12 +98,15 @@ export function createWorldMaterials(
   const chrome = makeMaterial('#eaedf0', 0.15, 0.95);
   const plnBlue = makeMaterial('#105e94', 0.65, 0.1);
 
-  for (const m of [cream, pale, teal, brightGreen, pink, blue, stone]) {
-    surfaces.apply(m, 'plaster', 0.65, 0.045);
+  for (const m of [cream, pale, teal, brightGreen, pink, blue, stone, white]) {
+    surfaces.apply(m, 'plaster', 0.7, 0.08);
   }
 
   const road = makeMaterial('#b1ada2');
-  surfaces.apply(road, 'asphalt', 0.42, 0.19);
+  surfaces.apply(road, 'asphalt', 0.38, 0.22);
+
+  const asphaltPatch = makeMaterial('#525456', 0.86, 0.04);
+  surfaces.apply(asphaltPatch, 'asphalt', 0.42, 0.16);
 
   const materials: WorldMaterials = {
     wallDefault,
@@ -132,6 +135,7 @@ export function createWorldMaterials(
     cloth,
     leafMats,
     road,
+    asphaltPatch,
     teakWood,
     woodSlat,
     silverCover,

@@ -5,6 +5,7 @@ import { createSurfaceLibrary } from './surfaces';
 import { createWorldMaterials } from './world/materials';
 import { createWorldEmitter } from './world/primitives';
 import { buildRoad, buildCurbs, buildUtilityPoles, buildPuddles } from './world/objects/infrastructure';
+import { buildExtendedBackdrop, buildExtendedProps } from './world/objects/extendedMap';
 import { buildHouse } from './world/objects/houses';
 import type { WorldContext } from './world/types';
 
@@ -51,12 +52,18 @@ export function buildNeighborhood(scene: T.Scene) {
   // 2. Build sidewalks, curbs, and roadside potted plants
   buildCurbs(ctx);
 
-  // 3. Build all individual property houses, facades, roofs, and fences
+  // 3. Build extended backdrop (ground foundation, extended road, curbs, low-poly houses)
+  buildExtendedBackdrop(ctx);
+
+  // 4. Build all individual property houses, facades, roofs, and fences
   for (const p of PROPERTIES) {
     buildHouse(ctx, p);
   }
 
-  // 4. Build utility electrical poles and powerlines
+  // 5. Build road portals, gentong/water drums, parked cars, and barricades
+  buildExtendedProps(ctx);
+
+  // 6. Build utility electrical poles and powerlines
   buildUtilityPoles(ctx);
 
   // 5. Merge static geometry by material bucket for fast draw calls

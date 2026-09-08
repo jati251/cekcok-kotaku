@@ -40,6 +40,7 @@ export interface WorldMaterials {
   scooterPaint: T.MeshStandardMaterial;
   chrome: T.MeshStandardMaterial;
   plnBlue: T.MeshStandardMaterial;
+  asphaltPatch: T.MeshStandardMaterial;
 }
 
 export interface WorldContext {

@@ -1,7 +1,7 @@
 // Coordinates are estimated metres, with +z following photos 2, 3, 6, 9 and 10.
 // Property side is photograph-relative: +1 right, -1 left. World x is reversed.
 // Image evidence fixes adjacency; it does not establish survey coordinates.
-export const LANE = { halfWidth: 2.25, end: 65, junctionStart: 7, junctionEnd: 10, junctionDepth: 8 };
+export const LANE = { halfWidth: 2.25, end: 63.8, junctionStart: 7, junctionEnd: 10, junctionDepth: 8 };
 export const FRONTAGE = LANE.halfWidth + .37;
 export type PropertyKind = 'white-scroll' | 'green-tank' | 'turquoise' | 'gray' | 'low-yard' | 'pink' | 'tree-court' | 'pale-green' | 'cream-carport' | 'pine-court' | 'blue-low' | 'yellow-black' | 'white-car' | 'laundry' | 'green-car';
 export type Property = { id: PropertyKind; side: -1 | 1; start: number; width: number; height: number; depth: number; setback: number; photos: number[] };
