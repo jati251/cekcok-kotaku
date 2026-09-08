@@ -111,11 +111,22 @@ export function createSurfaceLibrary() {
           diffuseColor.rgb *= mix(vec3(1.), clamp(surfaceColor * 1.6, .65, 1.12), .25) * (1.-damp) * (.9 + streak*.14);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.16,.19,.105), damp*.27);`
             : kind === 'asphalt'
-              ? 'diffuseColor.rgb *= surfaceColor * 1.45 * (.8 + mottle*.4);'
+              ? `
+          float asphaltPuddle = smoothstep(0.62, 0.82, mottle) * smoothstep(0.08, -0.04, vSurfacePosition.y);
+          diffuseColor.rgb *= surfaceColor * 1.45 * (.8 + mottle*.4);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.72, asphaltPuddle * 0.6);`
               : kind === 'roof'
                 ? 'diffuseColor.rgb *= mix(vec3(1.), clamp(surfaceColor * 1.7, .5, 1.2), .38) * (.72 + mottle*.4);'
                 : 'diffuseColor.rgb *= surfaceColor * 2.;'
         }
+        `,
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+        roughnessFactor = clamp(roughnessFactor * mix(0.85, 1.22, surfaceGrain), 0.04, 0.98);
+        ${kind === 'asphalt' ? 'roughnessFactor = mix(roughnessFactor, 0.22, asphaltPuddle * 0.75);' : ''}
         `,
       );
 
@@ -126,7 +137,7 @@ export function createSurfaceLibrary() {
         vec3 surfR1 = cross(surfDy, normal), surfR2 = cross(normal, surfDx);
         float surfDet = dot(surfDx, surfR1);
         vec3 surfGradient = sign(surfDet) * (dFdx(surfaceGrain)*surfR1 + dFdy(surfaceGrain)*surfR2);
-        normal = normalize(abs(surfDet)*normal + uMaterialRelief*.035*surfGradient);
+        normal = normalize(abs(surfDet)*normal + uMaterialRelief*.045*surfGradient);
       `,
       );
     };

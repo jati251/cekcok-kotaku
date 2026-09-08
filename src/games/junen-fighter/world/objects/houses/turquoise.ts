@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildBarrelTileRoof } from '../architecture';
+import { buildBarrelTileRoof, buildBasePlinth } from '../architecture';
 import { scroll, piercedWall, buildOutdoorAC, buildPLNMeter, buildRealisticScooter, buildDrainGutter } from '../detail';
 import { layeredGable, archedCasements, turquoiseFence, limestoneSkirting } from '../turquoiseDetails';
 import { buildTree, buildHedge } from '../vegetation';
@@ -14,6 +14,7 @@ export function buildTurquoiseHouse(ctx: WorldContext, p: Property) {
 
   // Foundation & Porch Pavement
   box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  buildBasePlinth(ctx, 0, (front + depth) / 2, w - 0.16, depth, 0.28, m.andesite ?? dark);
 
   // Porch tile floor
   for (let x = -w / 2 + 0.3; x < w / 2 - 0.2; x += 0.4) {

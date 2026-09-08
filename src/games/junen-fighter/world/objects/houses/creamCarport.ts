@@ -1,87 +1,22 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildDoor, buildAC } from '../architecture';
-import { buildCar } from '../vehicles';
+import { buildBarrelTileRoof } from '../architecture';
 import { buildPlant } from '../vegetation';
 
-function emitGable(
-  ctx: WorldContext,
-  mat: T.Material,
-  cx: number,
-  base: number,
-  rise: number,
-  halfW: number,
-  z: number,
-) {
-  const g = new T.BufferGeometry();
-  const positions = new Float32Array([
-    // Front face
-    cx - halfW, base, z,
-    cx + halfW, base, z,
-    cx, base + rise, z,
-    // Back face
-    cx - halfW, base, z,
-    cx, base + rise, z,
-    cx + halfW, base, z,
-  ]);
-  const uvs = new Float32Array([
-    0, 0,
-    1, 0,
-    0.5, 1,
-    0, 0,
-    0.5, 1,
-    1, 0,
-  ]);
-  g.setAttribute('position', new T.BufferAttribute(positions, 3));
-  g.setAttribute('uv', new T.BufferAttribute(uvs, 2));
-  g.computeVertexNormals();
-  ctx.emit(g, mat, 0, 0, 0);
-}
-
-function buildGableRoofSlopes(
-  ctx: WorldContext,
-  mat: T.Material,
-  cx: number,
-  base: number,
-  rise: number,
-  halfW: number,
-  zStart: number,
-  zEnd: number,
-  overhang = 0.25,
-) {
-  const { box, beam } = ctx;
-  const depth = zEnd - zStart;
-  const midZ = (zStart + zEnd) / 2;
-  const slope = Math.atan2(rise, halfW);
-  const slopeLen = Math.hypot(halfW + overhang, rise);
-
-  for (const s of [-1, 1]) {
-    const plateX = cx + (s * (halfW + overhang)) / 2;
-    const plateY = base + rise / 2;
-    box(
-      mat,
-      plateX,
-      plateY,
-      midZ,
-      slopeLen,
-      0.09,
-      depth + overhang * 2,
-      0,
-      0,
-      -s * slope,
-    );
-  }
-  beam(mat, [cx, base + rise + 0.04, zStart - overhang], [cx, base + rise + 0.04, zEnd + overhang], 0.07);
-}
-
 /**
- * Builds the cream two-storey house with dedicated carport, multi-tiered terracotta gables,
- * Indonesian teak wood paneled window, covered car, water gallon, wood-slat gate with hanging laundry,
- * and lush tropical foliage matching the Street View reference photo (Photo 4).
+ * Builds the Cream Carport House (Foto 3 - Jl. H. Junen):
+ * - 2-storey house with multi-tiered terracotta tile roof with reddish-brown / burgundy painted timber fascia trim (lisplang merah hati)
+ * - Upper dormer gable with round medallion rosette emblem in red-brown trim
+ * - 2nd floor: large 4-pane dark teak wood window with lower raised timber panel apron and eave awning; 1 outdoor AC unit on left
+ * - Ground floor: full-width corrugated carport awning with exposed wooden kaso-kaso rafters underneath
+ * - Carport interior: car fully draped in silver-gray car cover; dark teak entrance double doors
+ * - Front fence: white sliding gate with vertical reddish-brown wood plank infill and white vertical bottom grilles
+ * - 3 hanging towels/cloths on gate rail (red, navy, cyan) as seen in Google Street View
+ * - White concrete gate pillars with recessed vertical slot reveals; pedestrian wicket gate; guava/conifer tree on right
  */
 export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
-  const { box, cyl, beam, emit, materials } = ctx;
+  const { box, beam, cyl, emit, materials: m } = ctx;
   const {
     cream,
     concrete,
@@ -89,290 +24,289 @@ export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
     dark,
     white,
     roofGrey,
-    cloth,
-    teakWood = materials.wood,
-    woodSlat = materials.salmon,
-    aquaBlue = materials.blue,
-  } = materials;
+    terracottaTile = m.tile,
+    glass,
+  } = m;
 
   const { width: w, height: h, depth, setback: front } = p;
-  const facadeZ = front;
-  const halfW = w / 2;
+  const facadeZ = front; // 3.4m
+  const halfW = w / 2; // 3.0m (-3.0 to +3.0)
+
+  // Custom materials for Photo 3 palette
+  const redLisplang = new T.MeshStandardMaterial({ color: '#7b241c', roughness: 0.65 });
+  const teakWood = new T.MeshStandardMaterial({ color: '#4a2810', roughness: 0.75 });
+  const woodPlank = new T.MeshStandardMaterial({ color: '#8a4b2d', roughness: 0.8 });
+  const silverCover = new T.MeshStandardMaterial({ color: '#c4c8cb', roughness: 0.45, metalness: 0.25 });
 
   // ---------------------------------------------------------------------------
-  // 1. FOUNDATION & CONTINUOUS SOLID MAIN BUILDING VOLUME
+  // 1. FOUNDATION & 2-STOREY SOLID BUILDING MASS
   // ---------------------------------------------------------------------------
   box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
-  // Solid 2-storey cream building volume from ground to roof level
-  box(cream, 0, h / 2, front + depth / 2, w - 0.16, h, depth);
 
-  // Left boundary wall separating cream carport from pale-green property
-  const wallL = -halfW + 0.08;
-  box(cream, wallL, 1.4, front / 2, 0.16, 2.8, front);
-  beam(concrete, [wallL, 2.8, 0.1], [wallL, 2.05, front], 0.09);
+  // Main 2-storey building block
+  box(cream, 0, h / 2, front + depth / 2, w - 0.12, h, depth);
 
-  // Horizontal dark wood molding beam between 1st & 2nd floor
-  box(teakWood, -halfW + 2.1, 2.9, facadeZ - 0.04, 4.2, 0.12, 0.16);
+  // Left party wall separating from pale-green house
+  box(cream, -halfW + 0.08, 1.4, front / 2, 0.16, 2.8, front);
+  beam(concrete, [-halfW + 0.08, 2.8, 0.1], [-halfW + 0.08, 2.05, front], 0.09);
 
-  // ---------------------------------------------------------------------------
-  // 2. GROUND FLOOR CARPORT INTERIOR DETAILS
-  // ---------------------------------------------------------------------------
-  // Carport driveway pavement
-  box(concrete, -halfW + 2.0, 0.04, front / 2, 3.9, 0.08, front);
-
-  // Teak wood front entrance door inside the carport
-  buildDoor(ctx, -0.4, facadeZ, teakWood);
-  for (let dx = -0.8; dx <= 0.0; dx += 0.4) {
-    box(teakWood, dx, 2.65, facadeZ - 0.05, 0.36, 0.38, 0.08);
-    box(materials.glass, dx, 2.65, facadeZ - 0.05, 0.28, 0.3, 0.05);
-  }
-
-  // Indonesian 19L Aqua water gallon on the left floor near front of carport
-  const gallonX = -2.65;
-  const gallonZ = 1.35;
-  cyl(aquaBlue, gallonX, 0.24, gallonZ, 0.16, 0.45);
-  cyl(aquaBlue, gallonX, 0.5, gallonZ, 0.07, 0.1);
-  cyl(white, gallonX, 0.56, gallonZ, 0.032, 0.04);
-  emit(new T.TorusGeometry(0.162, 0.008, 4, 16), aquaBlue, gallonX, 0.18, gallonZ, 1, 1, 1, Math.PI / 2);
-  emit(new T.TorusGeometry(0.162, 0.008, 4, 16), aquaBlue, gallonX, 0.32, gallonZ, 1, 1, 1, Math.PI / 2);
-
-  // Parked car with realistic contoured silver car cover
-  buildCar(ctx, -1.55, 1.85, true);
+  // Right boundary wall
+  box(cream, halfW - 0.08, 1.3, front / 2, 0.16, 2.6, front);
 
   // ---------------------------------------------------------------------------
-  // 3. CARPORT CANOPY (ATAP KANOPI SENG/ASBES GELOMBANG)
+  // 2. GROUND FLOOR: FULL-WIDTH CARPORT AWNING & KASO-KASO RAFTERS (FOTO 3)
   // ---------------------------------------------------------------------------
-  const canopyW = 4.3;
-  const canopyZStart = facadeZ + 0.05;
-  const canopyZEnd = 0.25;
-  const canopyLength = canopyZStart - canopyZEnd;
-  const canopySlope = Math.atan2(2.92 - 2.25, canopyLength);
-  const canopyMidY = (2.92 + 2.25) / 2;
-  const canopyMidZ = (canopyZStart + canopyZEnd) / 2;
-  const canopyCenterX = -halfW + canopyW / 2 + 0.1;
+  const awningW = 4.6;
+  const awningCenterX = -0.5; // spans x = -2.8 to +1.8
+  const awningZEnd = 0.25;
+  const awningZStart = facadeZ;
+  const awningLen = awningZStart - awningZEnd;
+  const awningBaseY = 2.75;
+  const awningSlope = 0.055;
 
-  // Main corrugated canopy sheet
-  box(
-    roofGrey,
-    canopyCenterX,
-    canopyMidY,
-    canopyMidZ,
-    canopyW,
-    0.045,
-    canopyLength + 0.15,
-    -canopySlope,
-  );
+  // Carport paved driveway floor
+  box(concrete, awningCenterX, 0.04, front / 2, awningW, 0.08, front);
 
-  // Corrugated ridges along the canopy length
-  for (let x = canopyCenterX - canopyW / 2 + 0.05; x <= canopyCenterX + canopyW / 2 - 0.05; x += 0.12) {
+  // Corrugated roof sheet (atap seng/asbes gelombang)
+  const roofMidZ = (awningZStart + awningZEnd) / 2;
+  box(roofGrey, awningCenterX, awningBaseY - 0.02, roofMidZ, awningW + 0.1, 0.04, awningLen + 0.1, -awningSlope);
+  // Corrugation ridges running along the slope (Z)
+  for (let rx = awningCenterX - awningW / 2 + 0.08; rx <= awningCenterX + awningW / 2; rx += 0.14) {
     beam(
       roofGrey,
-      [x, 2.92, canopyZStart],
-      [x, 2.25, canopyZEnd - 0.08],
-      0.016,
+      [rx, awningBaseY + (awningLen / 2) * awningSlope, awningZStart],
+      [rx, awningBaseY - (awningLen / 2) * awningSlope, awningZEnd],
+      0.018,
     );
   }
 
-  // Canopy steel frame underneath: posts and purlins
-  box(white, canopyCenterX + canopyW / 2 - 0.1, 1.15, canopyZEnd + 0.08, 0.08, 2.3, 0.08);
-  box(white, canopyCenterX, 2.22, canopyZEnd + 0.08, canopyW, 0.09, 0.08);
-  box(white, canopyCenterX, 2.88, canopyZStart - 0.06, canopyW, 0.08, 0.08);
-  beam(white, [canopyCenterX - canopyW / 2 + 0.06, 2.9, canopyZStart], [canopyCenterX - canopyW / 2 + 0.06, 2.24, canopyZEnd], 0.035);
-  beam(white, [canopyCenterX + canopyW / 2 - 0.06, 2.9, canopyZStart], [canopyCenterX + canopyW / 2 - 0.06, 2.24, canopyZEnd], 0.035);
-  for (let zz = canopyZEnd + 0.7; zz < canopyZStart; zz += 0.8) {
-    const py = 2.25 + (2.92 - 2.25) * ((zz - canopyZEnd) / canopyLength) - 0.05;
-    box(white, canopyCenterX, py, zz, canopyW - 0.1, 0.04, 0.05);
+  // EXPOSED WOODEN KASO-KASO RAFTERS UNDERNEATH (Grid kayu reng & usuk Foto 3)
+  // 1. Cross purlins (reng kayu melintang X)
+  for (let zz = awningZEnd + 0.35; zz <= awningZStart; zz += 0.65) {
+    const py = awningBaseY - 0.07 - (awningZStart - zz) * (awningSlope * 0.4);
+    box(teakWood, awningCenterX, py, zz, awningW, 0.06, 0.06);
   }
-
-  // ---------------------------------------------------------------------------
-  // 4. SECOND FLOOR FACADE & INDONESIAN TEAK WINDOW
-  // ---------------------------------------------------------------------------
-  // Left: Signature Indonesian Teak Wood Casement Window with 5 square recessed lower panels
-  const winX = -1.75;
-  const winY = 4.25;
-  const winZ = facadeZ - 0.06;
-  const winW = 1.85;
-  const winH = 1.95;
-
-  // Dark window reveal opening in upper section
-  box(dark, winX, winY + winH * 0.18, winZ - 0.02, winW - 0.1, winH * 0.54, 0.04);
-
-  // Lower panel zone apron: 5 square recessed timber panels
-  const lowerY = winY - winH * 0.32;
-  const panelW = 0.28;
-  const panelH = 0.32;
-  box(teakWood, winX, lowerY, winZ - 0.03, winW, winH * 0.44, 0.05);
-  for (let i = 0; i < 5; i++) {
-    const px = winX - (winW * 0.38) + i * ((winW * 0.76) / 4);
-    box(dark, px, lowerY, winZ - 0.065, panelW, panelH, 0.02);
-    box(teakWood, px, lowerY, winZ - 0.055, panelW - 0.04, panelH - 0.04, 0.03);
-  }
-
-  // Upper glazed casement zone (2 glass panes with mullions)
-  const glassY = winY + winH * 0.18;
-  const glassH = winH * 0.52;
-  for (const dx of [-winW * 0.23, winW * 0.23]) {
-    box(materials.glass, winX + dx, glassY, winZ - 0.03, winW * 0.42, glassH, 0.02);
-    box(teakWood, winX + dx, glassY + glassH / 2, winZ - 0.05, winW * 0.44, 0.04, 0.04);
-    box(teakWood, winX + dx, glassY - glassH / 2, winZ - 0.05, winW * 0.44, 0.04, 0.04);
-    box(teakWood, winX + dx, glassY, winZ - 0.05, winW * 0.44, 0.025, 0.04);
-  }
-  for (const dx of [-winW / 2, 0, winW / 2]) {
-    box(teakWood, winX + dx, winY, winZ - 0.06, 0.06, winH + 0.06, 0.06);
-  }
-  box(teakWood, winX, winY + winH / 2 + 0.04, winZ - 0.07, winW + 0.12, 0.07, 0.08);
-
-  // Outdoor AC unit mounted to the left of the teak window
-  buildAC(ctx, -3.05, facadeZ - 0.2, 4.45);
-
-  // Right: Recessed balcony on second floor
-  const balcX = 1.7;
-  const balcW = 3.3;
-  // White balcony columns
-  box(white, 0.2, 4.2, facadeZ - 0.02, 0.14, 2.45, 0.14);
-  box(white, halfW - 0.15, 4.2, facadeZ - 0.02, 0.14, 2.45, 0.14);
-  // Balcony parapet railing with top handrail
-  box(cream, balcX, 3.42, facadeZ - 0.02, balcW, 0.9, 0.12);
-  box(teakWood, balcX, 3.88, facadeZ - 0.02, balcW + 0.06, 0.05, 0.16);
-
-  // Potted plants and cascading foliage on the balcony
-  for (let i = 0; i < 5; i++) {
-    const px = balcX - 1.2 + i * 0.6;
-    buildPlant(ctx, px, facadeZ - 0.08, 0.55 + ctx.random() * 0.25);
-  }
-  for (let i = 0; i < 16; i++) {
-    const vx = balcX - 1.3 + (i / 16) * 2.6;
-    const vy = 3.4 - (i % 3) * 0.15;
-    emit(
-      new T.PlaneGeometry(0.35, 0.4),
-      materials.leafMats[i % 4],
-      vx,
-      vy,
-      facadeZ - 0.1,
-      1,
-      1,
-      1,
-      0.1,
-      0,
-      (ctx.random() - 0.5) * 0.4,
+  // 2. Longitudinal rafters (usuk kayu membujur Z)
+  for (let x = awningCenterX - awningW / 2 + 0.35; x <= awningCenterX + awningW / 2 - 0.2; x += 0.55) {
+    beam(
+      teakWood,
+      [x, awningBaseY - 0.05, awningZStart],
+      [x, awningBaseY - 0.05 - awningLen * awningSlope, awningZEnd],
+      0.032,
     );
   }
 
+  // Front steel/timber support posts at corners
+  box(dark, awningCenterX - awningW / 2 + 0.12, 1.35, awningZEnd + 0.08, 0.10, 2.7, 0.10);
+  box(dark, awningCenterX + awningW / 2 - 0.12, 1.35, awningZEnd + 0.08, 0.10, 2.7, 0.10);
+  // Front header fascia beam
+  box(dark, awningCenterX, awningBaseY - awningLen * awningSlope * 0.5, awningZEnd, awningW + 0.15, 0.12, 0.08);
+
   // ---------------------------------------------------------------------------
-  // 5. MULTI-TIERED GABLE ROOF (ATAP GENTENG BERTINGKAT)
+  // 3. CARPORT INTERIOR: SILVER COVERED CAR & ENTRANCE DOOR (FOTO 3)
   // ---------------------------------------------------------------------------
-  // Tier 1: Eave awning over second floor teak window
-  const eaveW = 2.4;
-  const eaveSlope = 0.42;
-  box(tile, winX, 5.35, facadeZ - 0.28, eaveW, 0.07, 0.75, -eaveSlope);
-  for (const bx of [winX - eaveW * 0.4, winX, winX + eaveW * 0.4]) {
-    beam(teakWood, [bx, 5.05, facadeZ - 0.02], [bx, 5.32, facadeZ - 0.55], 0.035);
-  }
-  for (let x = winX - eaveW / 2 + 0.08; x <= winX + eaveW / 2; x += 0.22) {
-    emit(new T.CylinderGeometry(0.045, 0.055, 0.35, 6, 1, true, 0, Math.PI), tile, x, 5.38, facadeZ - 0.32, 1, 1, 1, Math.PI / 2);
-  }
-
-  // Tier 2: Left Gable Roof (over winX) with attic dormer/vent
-  const gable1W = 3.6;
-  const gable1Rise = 1.35;
-  const gable1Base = h - 0.3; // 5.7
-  const gable1Half = gable1W / 2;
-  const gable1Z = facadeZ;
-
-  // Solid left gable triangular wall (cream)
-  emitGable(ctx, cream, winX, gable1Base, gable1Rise, gable1Half + 0.08, gable1Z);
-  // Left gable terracotta roof slopes
-  buildGableRoofSlopes(ctx, tile, winX, gable1Base, gable1Rise, gable1Half + 0.15, gable1Z, gable1Z + depth * 0.75, 0.25);
-
-  // Timber rafter tails / corbels under left gable
+  // Car completely draped in silver-gray car cover (Foto 3)
+  const carX = -0.55;
+  const carZ = 1.75;
+  // Main body form of covered car
+  box(silverCover, carX, 0.52, carZ, 1.76, 0.74, 3.7);
+  box(silverCover, carX, 1.02, carZ - 0.15, 1.62, 0.62, 2.2);
+  // Soft rounded creases and hems around wheel wells
   for (const s of [-1, 1]) {
-    for (let i = 0; i <= 4; i++) {
-      const rx = winX + s * (0.3 + i * 0.32);
-      const ry = gable1Base + gable1Rise * (1 - (0.3 + i * 0.32) / gable1Half) - 0.04;
-      box(teakWood, rx, ry, gable1Z - 0.08, 0.045, 0.06, 0.25);
+    const wx = carX + s * 0.88;
+    for (const wz of [carZ - 1.0, carZ + 1.0]) {
+      cyl(silverCover, wx, 0.35, wz, 0.34, 0.18, Math.PI / 2);
     }
   }
-  // Attic dormer vent window in left gable
-  box(teakWood, winX, gable1Base + 0.52, gable1Z - 0.04, 0.55, 0.65, 0.08);
-  box(materials.dark, winX, gable1Base + 0.52, gable1Z - 0.05, 0.44, 0.52, 0.05);
 
-  // Tier 3: Right Higher Gable Roof (offset to the right, higher peak matching Gambar 2)
-  const gable2CenterX = 1.45;
-  const gable2W = 3.8;
-  const gable2Rise = 1.45;
-  const gable2Base = h; // 6.0
-  const gable2Half = gable2W / 2;
-  const gable2Z = facadeZ + 0.25;
+  // Teak wood entrance double doors under carport (Foto 3)
+  const doorX = -0.4;
+  box(teakWood, doorX, 1.25, facadeZ - 0.02, 1.4, 2.3, 0.06);
+  for (const dx of [doorX - 0.34, doorX + 0.34]) {
+    box(teakWood, dx, 1.22, facadeZ - 0.05, 0.64, 2.2, 0.03);
+    // Recessed panels
+    box(dark, dx, 0.7, facadeZ - 0.065, 0.44, 0.75, 0.015);
+    box(dark, dx, 1.6, facadeZ - 0.065, 0.44, 0.75, 0.015);
+  }
+  // Transoms with glass above door
+  for (let dx = -0.8; dx <= 0.0; dx += 0.4) {
+    box(teakWood, dx, 2.62, facadeZ - 0.04, 0.36, 0.36, 0.06);
+    box(glass, dx, 2.62, facadeZ - 0.05, 0.28, 0.28, 0.02);
+  }
 
-  // Solid right gable triangular wall (cream)
-  emitGable(ctx, cream, gable2CenterX, gable2Base, gable2Rise, gable2Half + 0.08, gable2Z);
-  // Right higher gable terracotta roof slopes
-  buildGableRoofSlopes(ctx, tile, gable2CenterX, gable2Base, gable2Rise, gable2Half + 0.15, gable2Z, gable2Z + depth * 0.8, 0.25);
+  // Indonesian 19L Aqua water gallon on left carport floor (Foto 3)
+  cyl(m.blue, -2.6, 0.24, 1.25, 0.16, 0.45);
+  cyl(m.blue, -2.6, 0.48, 1.25, 0.07, 0.1);
 
-  // Timber corbels under right gable
+  // ---------------------------------------------------------------------------
+  // 4. SECOND FLOOR: 4-PANE TEAK WINDOW WITH RAISED PANELS & AC (FOTO 3)
+  // ---------------------------------------------------------------------------
+  const winX = -0.35;
+  const winY = 4.45;
+  const winZ = facadeZ - 0.04;
+  const winW = 2.15;
+  const winH = 2.05;
+
+  // Dark teak wood window surround frame
+  box(teakWood, winX, winY, winZ - 0.02, winW + 0.12, winH + 0.12, 0.06);
+
+  // Lower apron zone: 5 square raised / recessed timber panels (Foto 3)
+  const apronY = winY - winH * 0.32;
+  const apronH = winH * 0.36;
+  box(teakWood, winX, apronY, winZ - 0.04, winW, apronH, 0.04);
+  for (let i = 0; i < 5; i++) {
+    const px = winX - winW * 0.4 + i * (winW * 0.8 / 4);
+    box(dark, px, apronY, winZ - 0.065, 0.32, 0.34, 0.02);
+    box(teakWood, px, apronY, winZ - 0.055, 0.26, 0.28, 0.025);
+  }
+
+  // Upper glazed casement zone: 4 glass panes with dark teak mullions
+  const glassY = winY + winH * 0.20;
+  const glassH = winH * 0.56;
+  const paneW = (winW - 0.2) / 2;
+  for (const dx of [-winW * 0.25, winW * 0.25]) {
+    box(glass, winX + dx, glassY, winZ - 0.03, paneW, glassH, 0.02);
+    // Inner window mullion cross
+    box(teakWood, winX + dx, glassY, winZ - 0.045, paneW, 0.035, 0.03);
+    box(teakWood, winX + dx, glassY, winZ - 0.045, 0.035, glassH, 0.03);
+  }
+  // Central vertical mullion & top horizontal beam
+  box(teakWood, winX, glassY, winZ - 0.05, 0.08, glassH, 0.05);
+  box(teakWood, winX, winY + winH / 2, winZ - 0.05, winW + 0.08, 0.08, 0.06);
+
+  // Cantilevered timber awning over the 2nd floor teak window
+  const eaveW = winW + 0.5;
+  box(teakWood, winX, winY + winH / 2 + 0.12, winZ - 0.25, eaveW, 0.06, 0.55, -0.4);
+  box(tile, winX, winY + winH / 2 + 0.15, winZ - 0.26, eaveW + 0.06, 0.04, 0.58, -0.4);
+  // Angled support brackets
+  for (const bx of [winX - eaveW * 0.42, winX, winX + eaveW * 0.42]) {
+    beam(teakWood, [bx, winY + winH / 2 - 0.15, winZ - 0.02], [bx, winY + winH / 2 + 0.10, winZ - 0.48], 0.035);
+  }
+
+  // 1 OUTDOOR AC COMPRESSOR MOUNTED ON WHITE WALL TO LEFT OF WINDOW (Foto 3)
+  const acX = -2.05;
+  const acY = 4.55;
+  // Mounting brackets
+  beam(dark, [acX - 0.32, acY - 0.28, facadeZ - 0.02], [acX - 0.32, acY - 0.28, facadeZ - 0.3], 0.02);
+  beam(dark, [acX + 0.32, acY - 0.28, facadeZ - 0.02], [acX + 0.32, acY - 0.28, facadeZ - 0.3], 0.02);
+  // AC chassis & fan
+  box(white, acX, acY, facadeZ - 0.2, 0.8, 0.54, 0.32);
+  emit(new T.CylinderGeometry(0.18, 0.18, 0.02, 16), dark, acX - 0.1, acY, facadeZ - 0.36, 1, 1, 1, Math.PI / 2);
+  // Pipe bundle
+  beam(white, [acX + 0.36, acY - 0.1, facadeZ - 0.2], [acX + 0.36, 2.8, facadeZ - 0.02], 0.03);
+
+  // ---------------------------------------------------------------------------
+  // 5. ROOF: TERRACOTTA GENTENG WITH RED-BROWN LISPLANG & DORMER (FOTO 3)
+  // ---------------------------------------------------------------------------
+  const roofBaseY = h - 0.2; // 5.8m
+  const roofRise = 1.35;
+
+  // Main continuous terracotta tile roof
+  buildBarrelTileRoof(ctx, 0, w, depth, roofBaseY, roofRise, facadeZ, terracottaTile, redLisplang, white);
+
+  // UPPER DORMER GABLE WITH RED-BROWN LISPLANG & ROUND MEDALLION (Foto 3)
+  const dormerW = 2.8;
+  const dormerRise = 0.95;
+  const dormerBaseY = roofBaseY + 0.45;
+  const dormerHalfW = dormerW / 2;
+  const dormerX = 0.2; // slightly offset as in photo
+  const dormerZ = facadeZ - 0.05;
+
+  // Dormer triangular pediment wall (white/cream)
+  const gDorm = new T.BufferGeometry();
+  gDorm.setAttribute(
+    'position',
+    new T.Float32BufferAttribute(
+      [dormerX - dormerHalfW, dormerBaseY, dormerZ, dormerX + dormerHalfW, dormerBaseY, dormerZ, dormerX, dormerBaseY + dormerRise, dormerZ],
+      3,
+    ),
+  );
+  gDorm.setIndex([0, 2, 1]);
+  gDorm.computeVertexNormals();
+  gDorm.setAttribute('uv', new T.Float32BufferAttribute([0, 0, 1, 0, 0.5, 1], 2));
+  emit(gDorm, white, 0, 0, 0);
+
+  // Distinctive Red-Brown Lisplang Fascia on Dormer Rakes (Foto 3)
+  beam(redLisplang, [dormerX - dormerHalfW, dormerBaseY, dormerZ - 0.03], [dormerX, dormerBaseY + dormerRise, dormerZ - 0.03], 0.065);
+  beam(redLisplang, [dormerX, dormerBaseY + dormerRise, dormerZ - 0.03], [dormerX + dormerHalfW, dormerBaseY, dormerZ - 0.03], 0.065);
+
+  // Circular Decorative Medallion in Dormer Apex (Foto 3)
+  const dormMedalY = dormerBaseY + 0.52;
+  emit(new T.CylinderGeometry(0.20, 0.20, 0.035, 18), redLisplang, dormerX, dormMedalY, dormerZ - 0.02, 1, 1, 1, Math.PI / 2);
+  emit(new T.TorusGeometry(0.21, 0.02, 5, 20), redLisplang, dormerX, dormMedalY, dormerZ - 0.03);
+  box(cream, dormerX, dormMedalY, dormerZ - 0.03, 0.26, 0.26, 0.02);
+
+  // Wooden corbels / exposed rafter brackets under dormer lisplang
   for (const s of [-1, 1]) {
-    for (let i = 0; i <= 4; i++) {
-      const rx = gable2CenterX + s * (0.3 + i * 0.34);
-      const ry = gable2Base + gable2Rise * (1 - (0.3 + i * 0.34) / gable2Half) - 0.04;
-      box(teakWood, rx, ry, gable2Z - 0.08, 0.045, 0.06, 0.25);
+    for (let i = 0; i <= 3; i++) {
+      const rx = dormerX + s * (0.3 + i * 0.3);
+      const ry = dormerBaseY + dormerRise * (1 - (0.3 + i * 0.3) / dormerHalfW) - 0.05;
+      box(redLisplang, rx, ry, dormerZ - 0.06, 0.05, 0.07, 0.22);
     }
   }
-  // Circular ventilation medallion emblem in the right gable apex (matching Gambar 2)
-  emit(new T.CylinderGeometry(0.18, 0.18, 0.04, 16), teakWood, gable2CenterX, gable2Base + 0.78, gable2Z - 0.03, 1, 1, 1, Math.PI / 2);
-  emit(new T.TorusGeometry(0.19, 0.02, 5, 20), white, gable2CenterX, gable2Base + 0.78, gable2Z - 0.04);
 
   // ---------------------------------------------------------------------------
-  // 6. FRONT FENCE & GATE WITH WOOD SLATS AND HANGING CLOTHS (GAMBAR 2)
+  // 6. FRONT FENCE: WOODPLANK SLIDING GATE & HANGING TOWELS (FOTO 3)
   // ---------------------------------------------------------------------------
-  const gateLeft = -halfW + 0.18;
-  const gateRight = 0.65;
-  const fenceEnd = halfW - 0.18;
-  const gateH = 1.48;
-
-  // Concrete pillars
-  for (const x of [gateLeft, gateRight, fenceEnd]) {
-    box(cream, x, gateH / 2, 0, 0.24, gateH + 0.1, 0.28);
-    box(concrete, x, gateH + 0.08, 0, 0.32, 0.08, 0.34);
-  }
-
-  // Right fence section: Low cream wall + white bars
-  box(cream, (gateRight + fenceEnd) / 2, 0.45, 0, fenceEnd - gateRight, 0.9, 0.2);
-  box(white, (gateRight + fenceEnd) / 2, 1.15, 0, fenceEnd - gateRight, 0.04, 0.04);
-  for (let x = gateRight + 0.2; x < fenceEnd - 0.1; x += 0.18) {
-    box(white, x, 1.15, 0, 0.025, 0.55, 0.035);
-  }
-
-  // Main Carport Gate:
+  const gateLeft = -halfW + 0.15; // -2.85
+  const gateRight = 1.35; // gate width 4.2m
+  const fenceEnd = halfW - 0.15; // +2.85
+  const gateH = 1.55;
   const gateW = gateRight - gateLeft;
   const gateMidX = (gateLeft + gateRight) / 2;
 
-  // Frame outer border
-  box(white, gateMidX, 0.1, -0.015, gateW - 0.06, 0.05, 0.05);
-  box(white, gateMidX, gateH * 0.78, -0.015, gateW - 0.06, 0.05, 0.05);
-  box(white, gateMidX, gateH, -0.015, gateW - 0.06, 0.05, 0.05);
-
-  // Vertical wood/GRC panels with white dividers
-  const slatStartY = 0.15;
-  const slatEndY = gateH * 0.76;
-  const slatH = slatEndY - slatStartY;
-  for (let x = gateLeft + 0.18; x < gateRight - 0.12; x += 0.19) {
-    box(white, x, gateH / 2, -0.01, 0.024, gateH, 0.035);
-    box(woodSlat, x, (slatStartY + slatEndY) / 2, 0.015, 0.155, slatH, 0.028);
-    box(dark, x - 0.04, (slatStartY + slatEndY) / 2, 0.022, 0.008, slatH, 0.01);
-    box(dark, x + 0.04, (slatStartY + slatEndY) / 2, 0.022, 0.008, slatH, 0.01);
+  // White concrete gate pillars with recessed vertical slot reveals (Foto 3)
+  for (const px of [gateLeft - 0.12, gateRight + 0.12, fenceEnd]) {
+    box(white, px, gateH / 2 + 0.05, 0.05, 0.32, gateH + 0.15, 0.32);
+    box(concrete, px, gateH + 0.14, 0.05, 0.38, 0.06, 0.38);
+    // Vertical recessed slot reveals on pillar face
+    box(dark, px, gateH * 0.55, -0.115, 0.08, 0.75, 0.02);
   }
 
-  // Gate handle in the center
-  box(dark, gateMidX, gateH * 0.55, -0.05, 0.04, 0.16, 0.05);
+  // Main Sliding Gate:
+  // White outer steel frame
+  box(white, gateMidX, 0.08, 0.02, gateW, 0.05, 0.05);
+  box(white, gateMidX, gateH * 0.75, 0.02, gateW, 0.05, 0.05);
+  box(white, gateMidX, gateH, 0.02, gateW, 0.05, 0.05);
 
-  // Hanging laundry over the upper gate horizontal rail (Gambar 2):
-  box(cloth[0], gateMidX - 0.65, gateH - 0.08, -0.055, 0.44, 0.66, 0.025, 0.06);
-  box(cloth[1], gateMidX - 0.12, gateH - 0.08, -0.055, 0.42, 0.64, 0.025, 0.06);
-  box(cloth[2], gateMidX + 0.42, gateH - 0.08, -0.055, 0.44, 0.62, 0.025, 0.06);
+  // Infill: Vertical Reddish-Brown Woodplank Slats with White Dividers (Foto 3)
+  const slatStartY = 0.18;
+  const slatEndY = gateH * 0.74;
+  const slatH = slatEndY - slatStartY;
+  for (let x = gateLeft + 0.14; x < gateRight - 0.08; x += 0.16) {
+    // White structural divider bar
+    box(white, x, gateH / 2, 0.025, 0.022, gateH, 0.03);
+    // Reddish-brown woodplank panel
+    box(woodPlank, x, (slatStartY + slatEndY) / 2, 0.045, 0.135, slatH, 0.026);
+  }
 
-  // ---------------------------------------------------------------------------
-  // 7. FRONT RIGHT VEGETATION (SUBTLE BOUNDARY PLANTS)
-  // ---------------------------------------------------------------------------
-  buildPlant(ctx, halfW - 0.8, 0.75, 0.85);
-  buildPlant(ctx, halfW - 1.4, 0.65, 0.65);
+  // White vertical grilles at the bottom section of the gate
+  for (let x = gateLeft + 0.08; x < gateRight; x += 0.08) {
+    box(white, x, 0.12, 0.02, 0.015, 0.18, 0.02);
+  }
+
+  // 3 HANGING TOWELS / CLOTHS ON TOP GATE RAIL (Foto 3: Red, Navy Blue, Cyan)
+  const cloths = [
+    { x: -0.65, color: '#9e2a2b', w: 0.38, h: 0.52 }, // Red towel
+    { x: -0.22, color: '#1d2d44', w: 0.36, h: 0.48 }, // Navy towel
+    { x: +0.18, color: '#74a4bc', w: 0.40, h: 0.45 }, // Cyan/light-blue towel
+  ];
+  for (const c of cloths) {
+    const towelMat = new T.MeshStandardMaterial({ color: c.color, roughness: 0.9 });
+    // Draped over top rail
+    box(towelMat, c.x, gateH - c.h / 2 + 0.02, 0.01, c.w, c.h, 0.075, 0.08);
+  }
+
+  // Right Side: Pedestrian Wicket Gate (pintu pagar kecil Foto 3)
+  const wicketW = fenceEnd - (gateRight + 0.24);
+  const wicketMidX = (gateRight + 0.24 + fenceEnd) / 2;
+  box(white, wicketMidX, gateH / 2, 0.05, wicketW, gateH - 0.1, 0.04);
+  // Woodplank infill on wicket
+  for (let wx = gateRight + 0.35; wx < fenceEnd - 0.1; wx += 0.16) {
+    box(woodPlank, wx, gateH * 0.45, 0.065, 0.13, gateH * 0.65, 0.025);
+  }
+
+  // Lush tropical guava / conifer tree growing in the right corner over fence (Foto 3)
+  buildPlant(ctx, halfW - 0.4, 0.4, 1.8, true);
+  buildPlant(ctx, halfW - 0.2, 0.8, 2.2, true);
 }

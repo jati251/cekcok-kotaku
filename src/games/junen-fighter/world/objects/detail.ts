@@ -298,7 +298,7 @@ export function buildBambooTampah(ctx: WorldContext, x: number, y: number, z: nu
 /**
  * Realistic Indonesian Automatic Scooter (Honda Beat / Vario style)
  */
-export function buildRealisticScooter(ctx: WorldContext, x: number, z: number, facingAngle = 0, color = ctx.materials.scooterPaint ?? ctx.materials.dark) {
+export function buildRealisticScooter(ctx: WorldContext, x: number, z: number, facingAngle = 0, color: T.Material = ctx.materials.scooterPaint ?? ctx.materials.dark) {
   const { box, cyl, emit, beam, materials: m } = ctx;
   const rubber = m.rubber;
   const dark = m.dark;

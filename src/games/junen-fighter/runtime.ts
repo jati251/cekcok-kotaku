@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Combat, emptyInput, type Input } from './combat';
@@ -44,11 +45,12 @@ export function createRuntime(
   onError: (s: string) => void,
 ) {
   const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.shadowMap.type = T.PCFShadowMap;
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
+  renderer.toneMappingExposure = 1.06;
+  renderer.outputColorSpace = T.SRGBColorSpace;
   host.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-label', 'Jalan Junen third-person fighting game');
 
@@ -57,18 +59,21 @@ export function createRuntime(
   scene.fog = new T.FogExp2('#d5dfe6', 0.0035);
 
   const camera = new T.PerspectiveCamera(62, 1, 0.08, 170);
-  const hemi = new T.HemisphereLight('#e6f1ff', '#777366', 1.65);
+  const hemi = new T.HemisphereLight('#8fb3d9', '#5a5342', 1.65);
   scene.add(hemi);
 
-  const sun = new T.DirectionalLight('#fff5e6', 3);
-  sun.position.set(-17, 25, 12);
+  // 4K Soft Shadows with tight frustum and precision normalBias
+  const sun = new T.DirectionalLight('#fff4de', 3.2);
+  sun.position.set(-17, 26, 12);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 22, bottom: -22, near: 0.5, far: 75 });
-  sun.shadow.bias = -0.0002;
-  sun.shadow.normalBias = 0.015;
+  sun.shadow.mapSize.set(4096, 4096);
+  Object.assign(sun.shadow.camera, { left: -19, right: 19, top: 21, bottom: -21, near: 0.2, far: 85 });
+  sun.shadow.bias = -0.00008;
+  sun.shadow.normalBias = 0.022;
+  sun.shadow.radius = 2.0;
   scene.add(sun, sun.target);
 
+  // Procedural Sky with Mie Sun Scattering & Rayleigh Atmosphere
   const skyGeo = new T.SphereGeometry(140, 32, 16);
   const skyMat = new T.ShaderMaterial({
     side: T.BackSide,
@@ -79,7 +84,24 @@ export function createRuntime(
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1)),f.x),f.y);}
       float fbm(vec2 p){float n=0.;float a=.5;for(int i=0;i<6;i++){n+=noise(p)*a;p=p*2.03+vec2(13.7,9.2);a*=.5;}return n;}
-      void main(){vec3 d=normalize(vPosition);float h=max(d.y,0.);vec3 c=mix(vec3(.73,.82,.9),vec3(.17,.38,.7),pow(h,.42));vec2 uv=d.xz/(h+.18)*3.;float n=fbm(uv);float cloud=smoothstep(.46,.64,n)*smoothstep(.02,.22,h);vec3 cloudColor=mix(vec3(.67,.73,.79),vec3(1.15),smoothstep(.47,.68,n));c=mix(c,cloudColor,cloud);gl_FragColor=vec4(c,1.);}`,
+      void main(){
+        vec3 d=normalize(vPosition);
+        float h=max(d.y,0.);
+        vec3 horizonColor = vec3(0.82, 0.88, 0.94);
+        vec3 zenithColor = vec3(0.14, 0.36, 0.72);
+        vec3 c = mix(horizonColor, zenithColor, pow(h, 0.45));
+        vec3 sunDir = normalize(vec3(-17.0, 26.0, 12.0));
+        float sunCos = dot(d, sunDir);
+        float sunDisc = smoothstep(0.997, 0.9995, sunCos);
+        float sunGlow = pow(max(sunCos, 0.0), 32.0) * 0.45;
+        c += vec3(1.1, 0.95, 0.8) * (sunDisc * 2.5 + sunGlow);
+        vec2 uv=d.xz/(h+.18)*3.;
+        float n=fbm(uv);
+        float cloud=smoothstep(.45,.65,n)*smoothstep(.02,.22,h);
+        vec3 cloudColor=mix(vec3(.72,.78,.84),vec3(1.22),smoothstep(.47,.7,n));
+        c=mix(c,cloudColor,cloud);
+        gl_FragColor=vec4(c,1.);
+      }`,
   });
   const sky = new T.Mesh(skyGeo, skyMat);
   scene.add(sky);
@@ -87,32 +109,72 @@ export function createRuntime(
   const environmentScene = new T.Scene();
   environmentScene.add(sky.clone());
   const pmrem = new T.PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(environmentScene, 0.025);
+  const environment = pmrem.fromScene(environmentScene, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.65;
+  scene.environmentIntensity = 0.85;
   environmentScene.clear();
   pmrem.dispose();
 
   const world = buildNeighborhood(scene);
 
-  const composer = new EffectComposer(renderer);
+  // WebGL2 Multi-sampled HDR Render Target for EffectComposer
+  const renderTarget = new T.WebGLRenderTarget(800, 600, {
+    samples: 4,
+    type: T.HalfFloatType,
+    colorSpace: T.SRGBColorSpace,
+  });
+  const composer = new EffectComposer(renderer, renderTarget);
   composer.addPass(new RenderPass(scene, camera));
 
+  // High-Depth Screen-Space Ambient Occlusion (SSAO)
   const ao = new SSAOPass(scene, camera, 800, 600);
-  ao.kernelRadius = 0.3;
-  ao.minDistance = 0.001;
-  ao.maxDistance = 0.15;
+  ao.kernelRadius = 0.42;
+  ao.minDistance = 0.0015;
+  ao.maxDistance = 0.28;
+  ao.output = SSAOPass.OUTPUT.Default;
   composer.addPass(ao);
 
-  const bloom = new UnrealBloomPass(new T.Vector2(800, 600), 0.055, 0.4, 1.25);
+  // Selective Unreal Bloom (Specular Sun Glints on Chrome, Headlights, and Gold)
+  const bloom = new UnrealBloomPass(new T.Vector2(800, 600), 0.12, 0.45, 0.95);
   composer.addPass(bloom);
+
+  // Subpixel Morphological Anti-Aliasing (SMAA)
+  const smaa = new SMAAPass();
+  composer.addPass(smaa);
+
   composer.addPass(new OutputPass());
 
+  // Cinematic S-Curve Tone Mapping & Lens Shader
   const grade = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, time: { value: 0 }, damage: { value: 0 } },
     vertexShader:
       'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform float time; uniform float damage; varying vec2 vUv; void main(){ vec3 c=texture2D(tDiffuse,vUv).rgb; float v=smoothstep(.25,.83,length(vUv-.5)); c=mix(c,c*vec3(.65,.72,.68),v*.46); c=mix(c,vec3(.55,.075,.035),v*damage*.55); float grain=fract(sin(dot(vUv+fract(time),vec2(12.9898,78.233)))*43758.5453); c+=(grain-.5)*.018; gl_FragColor=vec4(c,1.); }`,
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float time; uniform float damage; varying vec2 vUv;
+      vec3 filmicTone(vec3 x) {
+        float a = 2.51; float b = 0.03; float c = 2.43; float d = 0.59; float e = 0.14;
+        return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+      }
+      void main(){
+        vec2 uv = vUv;
+        vec2 dist = uv - 0.5;
+        float rDist = length(dist);
+        float ca = 0.0016 * smoothstep(0.2, 0.8, rDist);
+        vec3 col;
+        col.r = texture2D(tDiffuse, uv + dist * ca).r;
+        col.g = texture2D(tDiffuse, uv).g;
+        col.b = texture2D(tDiffuse, uv - dist * ca).b;
+        col = filmicTone(col * 1.05);
+        vec3 warmTint = vec3(1.02, 1.01, 0.98);
+        vec3 coolShadow = vec3(0.96, 0.98, 1.02);
+        float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+        col *= mix(coolShadow, warmTint, smoothstep(0.08, 0.72, lum));
+        float vignette = smoothstep(0.95, 0.38, rDist * 1.15);
+        col *= mix(0.72, 1.0, vignette);
+        col = mix(col, vec3(0.65, 0.06, 0.04), damage * (1.0 - vignette) * 0.75);
+        float grain = fract(sin(dot(uv + fract(time * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
+        col += (grain - 0.5) * 0.012;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
   });
   composer.addPass(grade);
 
@@ -211,6 +273,8 @@ export function createRuntime(
     renderer.setSize(width, height);
     composer.setSize(width, height);
     ao.setSize(width, height);
+    bloom.setSize(width, height);
+    smaa.setSize(width, height);
   }
 
   const observer = new ResizeObserver(resize);
@@ -463,8 +527,10 @@ export function createRuntime(
     quality(next: Quality) {
       quality = next;
       ao.enabled = quality === 'cinematic';
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'cinematic' ? 1.5 : 1));
-      sun.shadow.mapSize.set(quality === 'cinematic' ? 2048 : 1024, quality === 'cinematic' ? 2048 : 1024);
+      bloom.enabled = quality === 'cinematic';
+      smaa.enabled = true;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'cinematic' ? 2.0 : 1.25));
+      sun.shadow.mapSize.set(quality === 'cinematic' ? 4096 : 2048, quality === 'cinematic' ? 4096 : 2048);
       sun.shadow.map?.dispose();
       sun.shadow.map = null;
       resize();

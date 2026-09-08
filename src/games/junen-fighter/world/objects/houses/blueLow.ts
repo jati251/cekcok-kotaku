@@ -1,6 +1,6 @@
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildDeepWindow, buildPaneledDoor, buildAwning, buildCorrugatedRoof, buildFence } from '../architecture';
+import { buildDeepWindow, buildPaneledDoor, buildAwning, buildCorrugatedRoof, buildFence, buildBasePlinth } from '../architecture';
 import { buildOutdoorAC, buildPLNMeter, buildDrainGutter, downpipe } from '../detail';
 import { buildHedge, buildPlant } from '../vegetation';
 
@@ -12,6 +12,7 @@ export function buildBlueLowHouse(ctx: WorldContext, p: Property) {
 
   // Foundation & Porch Pavement
   box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  buildBasePlinth(ctx, 0, (front + depth) / 2, w - 0.16, depth, 0.28, m.andesite ?? concrete);
   for (let x = -w / 2 + 0.3; x < w / 2 - 0.2; x += 0.4) {
     for (let z = 0.3; z < front; z += 0.4) {
       box(white, x, 0.085, z, 0.39, 0.025, 0.39);

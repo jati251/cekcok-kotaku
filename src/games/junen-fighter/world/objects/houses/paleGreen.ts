@@ -1,8 +1,9 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildDoor } from '../architecture';
+import { buildBarrelTileRoof, buildBasePlinth, buildPaneledDoor } from '../architecture';
 import { buildScooter } from '../vehicles';
+import { buildDrainGutter } from '../detail';
 
 function emitGable(
   ctx: WorldContext,
@@ -38,41 +39,7 @@ function emitGable(
   ctx.emit(g, mat, 0, 0, 0);
 }
 
-function buildGableRoofSlopes(
-  ctx: WorldContext,
-  mat: T.Material,
-  cx: number,
-  base: number,
-  rise: number,
-  halfW: number,
-  zStart: number,
-  zEnd: number,
-  overhang = 0.25,
-) {
-  const { box, beam } = ctx;
-  const depth = zEnd - zStart;
-  const midZ = (zStart + zEnd) / 2;
-  const slope = Math.atan2(rise, halfW);
-  const slopeLen = Math.hypot(halfW + overhang, rise);
 
-  for (const s of [-1, 1]) {
-    const plateX = cx + (s * (halfW + overhang)) / 2;
-    const plateY = base + rise / 2;
-    box(
-      mat,
-      plateX,
-      plateY,
-      midZ,
-      slopeLen,
-      0.09,
-      depth + overhang * 2,
-      0,
-      0,
-      -s * slope,
-    );
-  }
-  beam(mat, [cx, base + rise + 0.04, zStart - overhang], [cx, base + rise + 0.04, zEnd + overhang], 0.07);
-}
 
 /**
  * Builds the Pale Green House (Gambar 2):
@@ -94,6 +61,7 @@ export function buildPaleGreenHouse(ctx: WorldContext, p: Property) {
   // 1. FOUNDATION & SOLID BUILDING MASS
   // ---------------------------------------------------------------------------
   box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  buildBasePlinth(ctx, 0, (front + depth) / 2, w - 0.16, depth, 0.28, materials.andesite ?? dark);
   // Upper floor pale green wall mass
   box(pale, 0, h * 0.75, front + depth / 2, w - 0.16, h * 0.5, depth);
   // Ground floor white plaster wall mass (two-tone Indonesian residential style)
@@ -134,11 +102,11 @@ export function buildPaleGreenHouse(ctx: WorldContext, p: Property) {
   beam(white, [porchCenterX - porchHalfW, porchCanopyBase, porchFrontZ - 0.03], [porchCenterX, porchCanopyBase + porchCanopyRise, porchFrontZ - 0.03], 0.045);
   beam(white, [porchCenterX, porchCanopyBase + porchCanopyRise, porchFrontZ - 0.03], [porchCenterX + porchHalfW, porchCanopyBase, porchFrontZ - 0.03], 0.045);
 
-  // Terracotta roof slopes over the porch canopy
-  buildGableRoofSlopes(ctx, tile, porchCenterX, porchCanopyBase, porchCanopyRise, porchHalfW, porchFrontZ, facadeZ, 0.18);
+  // High-fidelity physical barrel-tile roof over porch canopy with kaso-kaso rafters and lisplang
+  buildBarrelTileRoof(ctx, porchCenterX, porchHalfW * 2, facadeZ - porchFrontZ, porchCanopyBase, porchCanopyRise, porchFrontZ, materials.terracottaTile ?? tile, white, white);
 
-  // White front entrance door under the porch
-  buildDoor(ctx, porchCenterX + 0.4, facadeZ, white);
+  // Paneled front entrance door under the porch
+  buildPaneledDoor(ctx, porchCenterX + 0.4, facadeZ, 0.95, 2.3, white, dark);
 
   // Ground floor window beside entrance door
   const gfWinX = porchCenterX - 0.45;
@@ -220,8 +188,8 @@ export function buildPaleGreenHouse(ctx: WorldContext, p: Property) {
   // Solid pale green front gable triangle
   emitGable(ctx, pale, 0, gableBase, gableRise, halfW + 0.1, facadeZ);
 
-  // Terracotta roof slopes
-  buildGableRoofSlopes(ctx, tile, 0, gableBase, gableRise, halfW + 0.2, facadeZ, facadeZ + depth, 0.35);
+  // High-fidelity physical barrel-tile roof with kaso-kaso rafters, lisplang, and wuwungan ridge
+  buildBarrelTileRoof(ctx, 0, w, depth, gableBase, gableRise, facadeZ, materials.terracottaTile ?? tile, white, white);
 
   // CRISP WHITE LISPLANG (FASCIA TRIM) ALONG GABLE RAKES (GAMBAR 2)
   beam(white, [-halfW, gableBase, facadeZ - 0.05], [0, gableBase + gableRise, facadeZ - 0.05], 0.065);
@@ -315,4 +283,7 @@ export function buildPaleGreenHouse(ctx: WorldContext, p: Property) {
   for (let sx = wallL + 0.35; sx <= wallR - 0.25; sx += 0.32) {
     box(dark, sx, wallH / 2, -0.02, 0.07, wallH * 0.55, 0.26);
   }
+
+  // Roadside concrete drainage gutter
+  buildDrainGutter(ctx, -front, depth, -halfW - 0.25, 0.42);
 }

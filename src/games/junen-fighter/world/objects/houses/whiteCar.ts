@@ -1,6 +1,6 @@
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
-import { buildDeepWindow, buildPaneledDoor, buildBarrelTileRoof } from '../architecture';
+import { buildDeepWindow, buildPaneledDoor, buildBarrelTileRoof, buildBasePlinth } from '../architecture';
 import { buildCar } from '../vehicles';
 import { buildOutdoorAC, buildPLNMeter, buildDrainGutter, downpipe } from '../detail';
 import { buildPlant } from '../vegetation';
@@ -13,6 +13,7 @@ export function buildWhiteCarHouse(ctx: WorldContext, p: Property) {
 
   // Foundation & Porch Pavement
   box(concrete, 0, -0.01, (front + depth) / 2, w, 0.15, front + depth);
+  buildBasePlinth(ctx, 0, (front + depth) / 2, w - 0.16, depth, 0.28, m.andesite ?? dark);
 
   // Driveway Pavers under carport (dark grey stone tiles)
   box(andesite ?? dark, ( -0.35 + w / 2 - 0.1 ) / 2, 0.015, front / 2, (w / 2 - 0.1 - -0.35), 0.03, front);
