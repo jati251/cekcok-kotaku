@@ -172,6 +172,10 @@ async function start() {
     controls.update();
     select.value = String(i);
   };
+  (window as any).view = view;
+  (window as any).viewerCamera = camera;
+  (window as any).viewerControls = controls;
+  (window as any).viewerScene = scene;
   select.onchange = () => view(Number(select.value));
   document.querySelector<HTMLButtonElement>('#previous')!.onclick = () => view(Number(select.value) - 1);
   document.querySelector<HTMLButtonElement>('#next')!.onclick = () => view(Number(select.value) + 1);
