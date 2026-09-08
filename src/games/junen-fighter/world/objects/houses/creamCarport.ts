@@ -2,7 +2,7 @@ import * as T from 'three';
 import type { WorldContext } from '../../types';
 import type { Property } from '../../../neighborhood';
 import { buildBarrelTileRoof } from '../architecture';
-import { buildPlant } from '../vegetation';
+import { buildTree } from '../vegetation';
 
 /**
  * Builds the Cream Carport House (Foto 3 - Jl. H. Junen):
@@ -105,14 +105,17 @@ export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
   box(dark, awningCenterX, awningBaseY - awningLen * awningSlope * 0.5, awningZEnd, awningW + 0.12, 0.10, 0.08);
 
   // Car draped in silver-gray car cover inside carport (Foto 3)
-  const carX = -0.9;
-  const carZ = 1.75;
-  box(silverCover, carX, 0.52, carZ, 1.76, 0.74, 3.7);
-  box(silverCover, carX, 1.02, carZ - 0.15, 1.62, 0.62, 2.2);
+  // Positioned safely inside carport (z = 0.55 to 3.55, gate is at z = 0.02)
+  const carX = -0.95;
+  const carZ = 2.05;
+  box(silverCover, carX, 0.50, carZ, 1.74, 0.70, 3.0);
+  box(silverCover, carX, 0.98, carZ + 0.15, 1.56, 0.58, 1.85);
+  // Hood slope down to front bumper
+  beam(silverCover, [carX, 0.84, carZ - 0.70], [carX, 0.52, carZ - 1.45], 0.12);
   for (const s of [-1, 1]) {
-    const wx = carX + s * 0.88;
-    for (const wz of [carZ - 1.0, carZ + 1.0]) {
-      cyl(silverCover, wx, 0.35, wz, 0.34, 0.18, Math.PI / 2);
+    const wx = carX + s * 0.86;
+    for (const wz of [carZ - 0.9, carZ + 0.9]) {
+      cyl(silverCover, wx, 0.32, wz, 0.32, 0.16, Math.PI / 2);
     }
   }
 
@@ -242,10 +245,23 @@ export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
     box(dark, rx, balcFloorY + railH / 2, facadeZ - 0.02, 0.018, railH - 0.08, 0.018);
   }
 
-  // Potted plants and foliage on balcony floor & railing (Foto 3)
-  for (const px of [0.55, 1.25, 2.05]) {
-    box(dark, px, balcFloorY + 0.12, facadeZ + 0.25, 0.24, 0.18, 0.24);
-    buildPlant(ctx, px, facadeZ + 0.25, 0.65, true);
+  // Balcony garden with planter troughs and vibrant flowering bougainvillea (Foto 3)
+  const balcFlower = new T.MeshStandardMaterial({ color: '#d82b6b', roughness: 0.6 }); // Bougainvillea magenta
+  for (const px of [0.65, 1.35, 2.15]) {
+    // Low rectangular planter trough sitting firmly on balcony floor
+    box(teakWood, px, balcFloorY + 0.09, facadeZ + 0.28, 0.55, 0.16, 0.26);
+    box(dark, px, balcFloorY + 0.17, facadeZ + 0.28, 0.51, 0.02, 0.22);
+    // Textured leaf planes from leafMats
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      emit(new T.PlaneGeometry(1, 1), m.leafMats[k % 4], px + Math.cos(a) * 0.14, balcFloorY + 0.32, facadeZ + 0.24 + Math.sin(a) * 0.08, 0.38, 0.38, 1, -0.3, a, 0.15);
+    }
+    // Flowering blossoms & leaves spilling gently over railing
+    for (let f = -0.16; f <= 0.16; f += 0.08) {
+      emit(new T.PlaneGeometry(1, 1), m.leafMats[(Math.abs(Math.round(f * 10))) % 4], px + f, balcFloorY + 0.35, facadeZ + 0.09, 0.32, 0.32, 1, -0.45, f * 1.6, 0);
+      box(balcFlower, px + f * 1.1, balcFloorY + 0.40, facadeZ + 0.06, 0.045, 0.045, 0.045);
+      box(balcFlower, px + f * 0.7, balcFloorY + 0.46, facadeZ + 0.12, 0.04, 0.04, 0.04);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -390,19 +406,40 @@ export function buildCreamCarportHouse(ctx: WorldContext, p: Property) {
     box(woodPlank, wx, gateH * 0.45, 0.065, 0.13, gateH * 0.65, 0.025);
   }
 
-  // Lush tropical guava tree (pohon jambu) growing in the right corner over fence (Foto 3)
-  // Main woody trunk & major branches
-  const barkMat = new T.MeshStandardMaterial({ color: '#563d2d', roughness: 0.85 });
-  beam(barkMat, [halfW - 0.35, 0.05, 0.7], [halfW - 0.25, 1.4, 0.45], 0.07);
-  beam(barkMat, [halfW - 0.25, 1.4, 0.45], [halfW - 0.55, 2.2, 0.15], 0.05);
-  beam(barkMat, [halfW - 0.25, 1.4, 0.45], [halfW - 0.15, 2.6, 0.35], 0.05);
-  beam(barkMat, [halfW - 0.55, 2.2, 0.15], [halfW - 0.95, 2.8, -0.1], 0.038);
-  beam(barkMat, [halfW - 0.15, 2.6, 0.35], [halfW - 0.35, 3.4, 0.2], 0.035);
+  // ---------------------------------------------------------------------------
+  // 7. HIGH-FIDELITY BOTANICAL TREE & DRAPING FOLIAGE (FOTO 3)
+  // The prominent high-fidelity tree belonging to Cream Carport house,
+  // featuring real wind-animated textured leafMats and branches arching over fence.
+  // ---------------------------------------------------------------------------
+  const treeX = halfW - 0.85;
+  const treeZ = 0.85;
 
-  // Spreading guava foliage clumps reaching over the fence and up towards the balcony (Foto 3)
-  buildPlant(ctx, halfW - 0.3, 0.6, 1.8, true);
-  buildPlant(ctx, halfW - 0.6, 0.2, 2.3, true);
-  buildPlant(ctx, halfW - 0.9, -0.05, 2.7, true);
-  buildPlant(ctx, halfW - 0.4, 0.35, 3.3, true);
-  buildPlant(ctx, halfW - 0.1, 0.8, 2.8, true);
+  // The prominent high-fidelity tree belonging to Cream Carport house
+  buildTree(ctx, treeX, treeZ, 7.8, true, true);
+
+  // Forward branches arching gracefully over the pedestrian wicket gate and fence (Foto 3)
+  const { leafMats, wood: barkMat } = m;
+  beam(barkMat, [treeX, 1.4, treeZ], [treeX - 0.5, 1.8, treeZ - 0.4], 0.07);
+  beam(barkMat, [treeX - 0.5, 1.8, treeZ - 0.4], [treeX - 1.0, 2.05, treeZ - 0.7], 0.05);
+  beam(barkMat, [treeX - 1.0, 2.05, treeZ - 0.7], [treeX - 1.5, 2.15, treeZ - 0.95], 0.035);
+
+  // Drooping leaf sprays over fence using high-fidelity leafMats quads (no spheres)
+  const leafQuad = new T.PlaneGeometry(1, 1);
+  const addLeafSpray = (cx: number, cy: number, cz: number, count = 16, rad = 0.6) => {
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + (i % 3) * 0.35;
+      const r = (0.2 + (i % 4) * 0.1) * rad * 1.5;
+      const lx = cx + Math.cos(a) * r;
+      const lz = cz + Math.sin(a) * r;
+      const ly = cy + Math.sin(i * 1.7) * (rad * 0.35);
+      const mat = leafMats[i % leafMats.length];
+      const sz = 0.65 + ((i * 7) % 5) * 0.08;
+      emit(leafQuad, mat, lx, ly, lz, sz, sz, 1, (i % 2 === 0 ? 0.3 : -0.3), a, (i % 3) * 0.2);
+    }
+  };
+
+  addLeafSpray(treeX - 0.5, 1.9, treeZ - 0.35, 14, 0.55);
+  addLeafSpray(treeX - 0.9, 2.1, treeZ - 0.65, 18, 0.65);
+  addLeafSpray(treeX - 1.4, 2.2, treeZ - 0.95, 20, 0.70);
+  addLeafSpray(treeX - 1.7, 2.05, treeZ - 1.05, 16, 0.60);
 }

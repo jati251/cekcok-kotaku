@@ -46,10 +46,10 @@ export function buildPineCourtHouse(ctx: WorldContext, p: Property) {
   // Front Porch Awning
   buildAwning(ctx, w - 0.2, front + 0.12, 2.85, front, roofGrey, white);
 
-  // Iconic Indonesian Pine Tree (Cemara Udang)
-  buildTree(ctx, 0.3, 1.2, 8.2, true);
-  buildPlant(ctx, -1.2, 1.4, 0.75);
-  buildPlant(ctx, 1.8, 1.5, 0.8);
+  // Small normal yard tree in the right house (pohon kecil biasa)
+  buildTree(ctx, 0.6, 2.0, 2.8, false, false);
+  buildPlant(ctx, -1.2, 1.4, 0.65, false);
+  buildPlant(ctx, 1.8, 1.5, 0.70, false);
 
   // Street Drainage Gutter
   buildDrainGutter(ctx, -front, depth, -w / 2 - 0.25, 0.42);
