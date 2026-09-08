@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type { WorldContext } from '../../types';
 import { propertyDetails } from '../detail';
-import { FRONTAGE, type Property } from '../../../neighborhood';
+import { type Property, getRoadPoint } from '../../../neighborhood';
 
 import { buildWhiteScrollHouse } from './whiteScroll';
 import { buildGreenTankHouse } from './greenTank';
@@ -26,9 +26,17 @@ const upAxis = new T.Vector3(0, 1, 0);
 
 export function buildHouse(ctx: WorldContext, p: Property) {
   const { id, side, width: w } = p;
+  const zCenter = p.start + w / 2;
+  const pt = getRoadPoint(zCenter);
+  const frontageDist = pt.halfWidth + 0.37;
 
-  housePos.set(side * FRONTAGE, 0, p.start + w / 2);
-  houseQuat.setFromAxisAngle(upAxis, (side * Math.PI) / 2);
+  // Position along the curved frontage normal
+  const posX = pt.x + side * frontageDist * pt.normalX;
+  const posZ = zCenter + side * frontageDist * pt.normalZ;
+
+  housePos.set(posX, 0, posZ);
+  // Orient perpendicular to the curved road tangent
+  houseQuat.setFromAxisAngle(upAxis, (side * Math.PI) / 2 + pt.angle);
   ctx.transform.compose(housePos, houseQuat, houseScale);
 
   if (id !== 'low-yard') propertyDetails(ctx,w,p.setback,p.height);

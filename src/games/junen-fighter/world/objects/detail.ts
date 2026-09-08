@@ -375,26 +375,9 @@ export function buildRealisticScooter(ctx: WorldContext, x: number, z: number, f
 }
 
 /**
- * Precast Concrete Street Drainage Gutter with Slotted Slabs
+ * Precast Concrete Street Drainage Gutter (disabled per user request to remove square slab cross-road objects)
  */
-export function buildDrainGutter(ctx: WorldContext, startZ: number, endZ: number, x: number, w = 0.45) {
-  const { box, materials: m } = ctx;
-  const concrete = m.concrete;
-  const dark = m.dark;
-  const length = endZ - startZ;
-
-  // Longitudinal channel base
-  box(dark, x, -0.16, (startZ + endZ) / 2, w, 0.12, length);
-
-  // Precast segmented slabs with drainage slots
-  const slabLen = 0.6;
-  const numSlabs = Math.floor(length / slabLen);
-  for (let i = 0; i < numSlabs; i++) {
-    const sz = startZ + i * slabLen + slabLen / 2;
-    // Slab body
-    box(concrete, x, -0.02, sz, w - 0.03, 0.07, slabLen - 0.03);
-    // Drainage hole / slot in the center
-    box(dark, x, -0.01, sz, 0.06, 0.08, 0.18);
-  }
+export function buildDrainGutter(_ctx: WorldContext, _startZ: number, _endZ: number, _x: number, _w = 0.45) {
+  // Empty: removed square slab objects crossing the road
 }
 

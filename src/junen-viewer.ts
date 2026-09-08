@@ -18,20 +18,20 @@ async function start() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, Number(quality.value)));
 
   const scene = new T.Scene();
-  const camera = new T.PerspectiveCamera(62, 1, 0.08, 250);
+  const camera = new T.PerspectiveCamera(62, 1, 0.08, 380);
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.minDistance = 0.3;
-  controls.maxDistance = 130;
+  controls.maxDistance = 260;
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.screenSpacePanning = true;
 
   const pipeline = createRenderingPipeline(renderer, scene, camera, 'cinematic');
   const { sun, sky } = pipeline;
 
-  const ground = new T.Mesh(new T.PlaneGeometry(220, 220), new T.MeshStandardMaterial({ color: '#8b8b79', roughness: 1 }));
+  const ground = new T.Mesh(new T.PlaneGeometry(320, 320), new T.MeshStandardMaterial({ color: '#8b8b79', roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, -0.25, 30);
+  ground.position.set(0, -0.25, 40);
   ground.receiveShadow = true;
   scene.add(ground);
 
@@ -57,8 +57,8 @@ async function start() {
   document.querySelector<HTMLButtonElement>('#street')!.onclick = () => view(0);
   document.querySelector<HTMLButtonElement>('#overview')!.onclick = () => {
     controls.reset();
-    camera.position.set(35, 44, -7);
-    controls.target.set(0, 0, 30);
+    camera.position.set(50, 105, 30);
+    controls.target.set(-5, 0, 40);
     controls.update();
   };
   wireframe.onchange = () => scene.traverse(object => {
@@ -87,8 +87,10 @@ async function start() {
     if (wind.checked) time += dt;
     world.update(time);
     controls.update();
-    sun.position.set(controls.target.x - 17, 26, controls.target.z + 12);
-    sun.target.position.copy(controls.target).setY(0);
+    sun.position.set(controls.target.x - 7.5, 30, controls.target.z - 6);
+    sun.target.position.set(controls.target.x + 0.5, 0, controls.target.z + 6);
+    sun.target.updateMatrixWorld();
+    sun.updateMatrixWorld();
     sky.position.copy(camera.position);
     pipeline.update(time);
 

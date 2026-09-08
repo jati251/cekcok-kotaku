@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { Combat, emptyInput, type Input } from './combat';
 import { buildNeighborhood } from './world';
-import { laneBounds, PHOTO_VIEWS } from './neighborhood';
+import { laneBounds, PHOTO_VIEWS, getWorldRoadCenter } from './neighborhood';
 import { createActor, disposeActorAssets } from './actors';
 import { FightAudio } from './audio';
 import { useLauncherStore } from '../../stores/launcherStore';
@@ -307,8 +307,9 @@ export function createRuntime(
       cameraTarget.set(...view.eye);
       look.set(...view.target);
     } else if (game.status === 'intro') {
-      cameraTarget.set(-0.35 + Math.sin(worldTime * 0.09) * 0.15, 1.95, 2);
-      look.set(0.1, 1.7, 15);
+      const introX = getWorldRoadCenter(2);
+      cameraTarget.set(introX - 0.35 + Math.sin(worldTime * 0.09) * 0.15, 1.95, 2);
+      look.set(getWorldRoadCenter(15) + 0.1, 1.7, 15);
     } else {
       const cameraDist = 3.4;
       const cameraZ = player.z - Math.cos(orbit) * cameraDist;
@@ -328,8 +329,11 @@ export function createRuntime(
     camera.lookAt(look);
 
     const lightZ = photoView !== null ? PHOTO_VIEWS[photoView].eye[2] : player.z;
-    sun.position.set(-17, 25, lightZ + 12);
-    sun.target.position.set(0, 0, lightZ + 5);
+    const lightX = getWorldRoadCenter(lightZ);
+    sun.position.set(lightX - 7.5, 30, lightZ - 6);
+    sun.target.position.set(lightX + 0.5, 0, lightZ + 6);
+    sun.target.updateMatrixWorld();
+    sun.updateMatrixWorld();
 
     sky.position.copy(camera.position);
     world.update(worldTime);
@@ -343,7 +347,7 @@ export function createRuntime(
     }
   }
 
-  camera.position.set(-0.35, 2.05, 2);
+  camera.position.set(getWorldRoadCenter(2) - 0.35, 2.05, 2);
   frame = requestAnimationFrame(animate);
   report();
 

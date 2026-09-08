@@ -1,152 +1,112 @@
 import * as T from 'three';
 import type { WorldContext } from '../types';
-import { LANE, FRONTAGE } from '../../neighborhood';
+import { getRoadPoint } from '../../neighborhood';
 import { buildPlant } from './vegetation';
 import { buildCar } from './vehicles';
+import { buildRoadRibbon } from './infrastructure';
+import { buildWestJunction } from './landmarks/westJunction';
+import { buildEastJunction } from './landmarks/eastJunction';
+import { buildKampungRooftops } from './landmarks/kampungRooftops';
+
+const upAxis = new T.Vector3(0, 1, 0);
 
 /**
  * Builds the wide ground foundation plane, extended asphalt road,
- * roadside gutters, low-poly backdrop houses, and distant perimeter boundary.
+ * roadside gutters, low-poly backdrop houses, landmarks, and dense kampung rooftops.
  */
 export function buildExtendedBackdrop(ctx: WorldContext) {
   const { box, materials: m } = ctx;
 
-  // 1. Massive ground foundation plane (tanah / alas lingkungan)
-  // Ensures no floating edges or bottom void under houses from any camera angle.
-  box(m.concrete, 0, -0.22, 50, 160, 0.08, 220);
+  // 1. Massive ground foundation plane (covering full 200m x 260m neighborhood area)
+  box(m.concrete, 0, -0.22, 40, 200, 0.08, 260);
 
-  // 2. Forward road extension: z = 65 to z = 122
-  box(m.road, 0, -0.12, 93.5, LANE.halfWidth * 2, 0.2, 57);
+  // 2. Forward road extension (z = 64 to 150) along spline
+  buildRoadRibbon(ctx, 64, 150, 1.0);
 
-  // 3. Backward road extension: z = -3 to z = -25
-  box(m.road, 0, -0.12, -14, LANE.halfWidth * 2, 0.2, 22);
+  // 3. Backward road extension (z = -75 to -3) along spline
+  buildRoadRibbon(ctx, -75, -3, 1.0);
 
-  // 4. Extended curbs and drainage gutters
+  // 4. Extended curbs and drainage gutters along the curved road
   for (const side of [-1, 1]) {
-    // Forward curbs (z = 65 .. 120)
-    for (let z = 65; z < 120; z += 0.5) {
-      box(m.dark, side * (LANE.halfWidth + 0.16), -0.15, z + 0.25, 0.3, 0.1, 0.5);
-      box(m.concrete, side * (LANE.halfWidth - 0.02), -0.04, z + 0.25, 0.1, 0.12, 0.49);
-      box(m.concrete, side * (LANE.halfWidth + 0.35), -0.01, z + 0.25, 0.14, 0.14, 0.49);
+    // Forward curbs (z = 64 .. 142)
+    for (let z = 64; z < 142; z += 0.5) {
+      // Skip gap at Gg. Kresek VI branch alley (North side: side === 1, z in [68.5, 73.5])
+      if (side === 1 && z >= 68.5 && z <= 73.5) continue;
+      // Skip gap at Jl. Lestari junction entrance (z >= 134)
+      if (z >= 134) continue;
+
+      const midZ = z + 0.25;
+      const pt = getRoadPoint(midZ);
+      const hw = pt.halfWidth;
+      const ang = pt.angle;
+      const cos = pt.normalX;
+      const sin = -pt.normalZ;
+
+      const distDark = side * (hw + 0.16);
+      box(m.dark, pt.x + distDark * cos, -0.15, midZ + distDark * sin, 0.3, 0.1, 0.52, 0, ang, 0);
+      const distGutter = side * (hw - 0.02);
+      box(m.concrete, pt.x + distGutter * cos, -0.04, midZ + distGutter * sin, 0.1, 0.12, 0.51, 0, ang, 0);
+      const distCurb = side * (hw + 0.35);
+      box(m.concrete, pt.x + distCurb * cos, -0.01, midZ + distCurb * sin, 0.14, 0.14, 0.51, 0, ang, 0);
     }
-    // Backward curbs (z = -24 .. -3)
-    for (let z = -24; z < -3; z += 0.5) {
-      box(m.dark, side * (LANE.halfWidth + 0.16), -0.15, z + 0.25, 0.3, 0.1, 0.5);
-      box(m.concrete, side * (LANE.halfWidth - 0.02), -0.04, z + 0.25, 0.1, 0.12, 0.49);
-      box(m.concrete, side * (LANE.halfWidth + 0.35), -0.01, z + 0.25, 0.14, 0.14, 0.49);
+    // Backward curbs (z = -65 .. -3)
+    for (let z = -65; z < -3; z += 0.5) {
+      // Skip gap at Ksa Sport Badminton Hall parking apron (side === 1, z in [-30, -22])
+      if (side === 1 && z >= -30 && z <= -22) continue;
+      // Skip gap at Jl. Bambu Indah crossing (z <= -56)
+      if (z <= -56) continue;
+
+      const midZ = z + 0.25;
+      const pt = getRoadPoint(midZ);
+      const hw = pt.halfWidth;
+      const ang = pt.angle;
+      const cos = pt.normalX;
+      const sin = -pt.normalZ;
+
+      const distDark = side * (hw + 0.16);
+      box(m.dark, pt.x + distDark * cos, -0.15, midZ + distDark * sin, 0.3, 0.1, 0.52, 0, ang, 0);
+      const distGutter = side * (hw - 0.02);
+      box(m.concrete, pt.x + distGutter * cos, -0.04, midZ + distGutter * sin, 0.1, 0.12, 0.51, 0, ang, 0);
+      const distCurb = side * (hw + 0.35);
+      box(m.concrete, pt.x + distCurb * cos, -0.01, midZ + distCurb * sin, 0.14, 0.14, 0.51, 0, ang, 0);
     }
   }
 
-  // 5. Low-poly backdrop houses along the forward extension (z = 66 .. 118)
-  buildForwardBackdropHouses(ctx);
+  // 5. West Junction Area (Gg. Kresek VI, House 17-19, Jl. Lestari, Warkop H. Junen)
+  buildWestJunction(ctx);
 
-  // 6. Low-poly backdrop houses along the backward extension (z = -4 .. -24)
-  buildBackwardBackdropHouses(ctx);
+  // 6. East Junction Area (House 16 frontage, Ksa Sport Badminton Hall, Kumpul Kopi, GM Motor)
+  buildEastJunction(ctx);
 
-  // 7. Far-end street termination: Perimeter wall & tropical trees at z = 121
-  box(m.wallDefault, 0, 1.8, 121, 30, 3.8, 0.4);
-  box(m.tile, 0, 3.8, 121, 30.5, 0.25, 0.8);
+  // 7. Dense Surrounding Urban Kampung Rooftops ("Laut Genteng" Satellite View)
+  buildKampungRooftops(ctx);
 
-  // Far-end trees behind the wall
-  for (let i = -14; i <= 14; i += 3.5) {
+  // 8. Side junction alley extension (Jl. H. Junen II / Water Tank junction branch)
+  buildJunctionExtension(ctx);
+
+  // 9. Perimeter boundary wall & trees at far West / Jl. Lestari end (z = 145)
+  const endPt = getRoadPoint(145);
+  box(m.wallDefault, endPt.x, 1.8, 146, 42, 3.8, 0.4, 0, endPt.angle, 0);
+  box(m.tile, endPt.x, 3.8, 146, 42.5, 0.25, 0.8, 0, endPt.angle, 0);
+  for (let i = -18; i <= 18; i += 3.5) {
     const treeMat = m.leafMats[Math.abs(Math.floor(i * 13)) % m.leafMats.length];
     const treeH = 4.8 + (Math.sin(i * 2.3) * 0.5 + 0.5) * 1.8;
-    box(treeMat, i, treeH, 123.5, 4.2, 4.5, 3.8);
-    // Tree trunk
-    box(m.wood, i, treeH - 2.5, 123.5, 0.35, 4.0, 0.35);
+    const tx = endPt.x + i * endPt.normalX;
+    const tz = 148.5 + i * endPt.normalZ;
+    box(treeMat, tx, treeH, tz, 4.2, 4.5, 3.8);
+    box(m.wood, tx, treeH - 2.5, tz, 0.35, 4.0, 0.35);
   }
 
-  // 8. Backward street termination wall & trees at z = -24.5
-  box(m.wallDefault, 0, 1.8, -24.5, 28, 3.6, 0.4);
-  box(m.tile, 0, 3.7, -24.5, 28.5, 0.25, 0.8);
-  for (let i = -12; i <= 12; i += 4.0) {
+  // 10. Perimeter boundary wall & trees at far East / Jl. Bambu Indah end (z = -68)
+  const backPt = getRoadPoint(-68);
+  box(m.wallDefault, backPt.x - 2, 1.8, -69.5, 42, 3.6, 0.4, 0, backPt.angle, 0);
+  box(m.tile, backPt.x - 2, 3.7, -69.5, 42.5, 0.25, 0.8, 0, backPt.angle, 0);
+  for (let i = -18; i <= 18; i += 4.0) {
     const treeMat = m.leafMats[Math.abs(Math.floor(i * 7)) % m.leafMats.length];
-    box(treeMat, i, 4.5, -26.5, 4.0, 4.2, 3.5);
-    box(m.wood, i, 2.2, -26.5, 0.32, 3.8, 0.32);
-  }
-}
-
-/**
- * Builds low-poly, lightweight residential backdrop buildings along forward lane.
- */
-function buildForwardBackdropHouses(ctx: WorldContext) {
-  const { box, materials: m } = ctx;
-
-  // Left side houses (side = -1)
-  const leftHouses = [
-    { z: 70, w: 8.5, h: 4.2, d: 7, mat: m.cream, roofMat: m.terracottaTile },
-    { z: 80, w: 9.5, h: 5.6, d: 8, mat: m.wallGray, roofMat: m.roofGrey },
-    { z: 91, w: 8.0, h: 3.8, d: 7, mat: m.pale, roofMat: m.tile },
-    { z: 101, w: 9.0, h: 4.5, d: 7, mat: m.brickWeathered, roofMat: m.terracottaTile },
-    { z: 112, w: 8.5, h: 4.0, d: 7, mat: m.wallDefault, roofMat: m.tile },
-  ];
-
-  for (const h of leftHouses) {
-    const posX = -FRONTAGE - 2.8;
-    // House body
-    box(h.mat, posX - h.d / 2 + 1, h.h / 2, h.z, h.d, h.h, h.w);
-    // Roof prism
-    box(h.roofMat, posX - h.d / 2 + 1, h.h + 0.65, h.z, h.d + 0.6, 1.3, h.w + 0.6);
-    // Boundary curb wall
-    box(m.concrete, -FRONTAGE - 0.2, 0.75, h.z, 0.18, 1.5, h.w - 0.2);
-    // Window accents
-    box(m.glass, -FRONTAGE - 0.1, h.h * 0.55, h.z, 0.05, 1.1, 1.6);
-    box(m.dark, -FRONTAGE - 0.08, h.h * 0.55, h.z, 0.06, 1.15, 1.65);
-  }
-
-  // Right side houses (side = 1)
-  const rightHouses = [
-    { z: 68, w: 8.5, h: 4.0, d: 7, mat: m.teal, roofMat: m.tile },
-    { z: 78, w: 8.0, h: 3.7, d: 7, mat: m.salmon, roofMat: m.terracottaTile },
-    { z: 88, w: 9.5, h: 5.4, d: 8, mat: m.white, roofMat: m.roofGrey },
-    { z: 100, w: 8.5, h: 4.2, d: 7, mat: m.cream, roofMat: m.tile },
-    { z: 111, w: 9.0, h: 4.0, d: 7, mat: m.wallDefault, roofMat: m.terracottaTile },
-  ];
-
-  for (const h of rightHouses) {
-    const posX = FRONTAGE + 2.8;
-    // House body
-    box(h.mat, posX + h.d / 2 - 1, h.h / 2, h.z, h.d, h.h, h.w);
-    // Roof prism
-    box(h.roofMat, posX + h.d / 2 - 1, h.h + 0.65, h.z, h.d + 0.6, 1.3, h.w + 0.6);
-    // Boundary curb wall
-    box(m.concrete, FRONTAGE + 0.2, 0.75, h.z, 0.18, 1.5, h.w - 0.2);
-    // Window accents
-    box(m.glass, FRONTAGE + 0.1, h.h * 0.55, h.z, 0.05, 1.1, 1.6);
-    box(m.dark, FRONTAGE + 0.08, h.h * 0.55, h.z, 0.06, 1.15, 1.65);
-  }
-
-  // Intermediate courtyard trees in gaps
-  for (const [tz, side] of [
-    [75, -1],
-    [85.5, 1],
-    [96, -1],
-    [106, 1],
-  ] as const) {
-    const mat = m.leafMats[Math.abs(Math.floor(tz * 3)) % m.leafMats.length];
-    box(mat, side * (FRONTAGE + 2.2), 3.5, tz, 2.5, 3.2, 2.5);
-    box(m.wood, side * (FRONTAGE + 2.2), 1.3, tz, 0.2, 2.6, 0.2);
-  }
-}
-
-/**
- * Builds low-poly backdrop houses behind street entrance (z = -4 .. -24).
- */
-function buildBackwardBackdropHouses(ctx: WorldContext) {
-  const { box, materials: m } = ctx;
-
-  for (const side of [-1, 1]) {
-    const mat = side === -1 ? m.cream : m.wallGray;
-    const roof = side === -1 ? m.terracottaTile : m.tile;
-    const posX = side * (FRONTAGE + 3.2);
-
-    box(mat, posX, 2.2, -10, 6, 4.4, 10);
-    box(roof, posX, 4.8, -10, 6.6, 1.2, 10.6);
-    box(m.concrete, side * (FRONTAGE + 0.2), 0.75, -10, 0.18, 1.5, 9.8);
-
-    box(m.white, posX, 2.0, -18, 6, 4.0, 7);
-    box(m.roofGrey, posX, 4.5, -18, 6.6, 1.2, 7.6);
-    box(m.concrete, side * (FRONTAGE + 0.2), 0.75, -18, 0.18, 1.5, 6.8);
+    const tx = backPt.x - 2 + i * backPt.normalX;
+    const tz = -71.5 + i * backPt.normalZ;
+    box(treeMat, tx, 4.5, tz, 4.0, 4.2, 3.5);
+    box(m.wood, tx, 2.2, tz, 0.32, 3.8, 0.32);
   }
 }
 
@@ -163,30 +123,37 @@ export function buildRoadPortal(
   signText = 'PORTAL DITUTUP\n22.00 - 05.00',
 ) {
   const { box, cyl, emit, materials: m } = ctx;
-  const postLeftX = -LANE.halfWidth + 0.12;
-  const postRightX = LANE.halfWidth - 0.12;
+  const pt = getRoadPoint(z);
+
+  // Position and orient the portal locally perpendicular to the curved road
+  ctx.transform.compose(
+    new T.Vector3(pt.x, 0, z),
+    new T.Quaternion().setFromAxisAngle(upAxis, pt.angle),
+    new T.Vector3(1, 1, 1),
+  );
+
+  const postLeftX = -pt.halfWidth + 0.12;
+  const postRightX = pt.halfWidth - 0.12;
   const postHeight = 2.1;
 
   // 1. Concrete umpak footings
-  box(m.concrete, postLeftX, 0.15, z, 0.38, 0.32, 0.38);
-  box(m.concrete, postRightX, 0.15, z, 0.38, 0.32, 0.38);
+  box(m.concrete, postLeftX, 0.15, 0, 0.38, 0.32, 0.38);
+  box(m.concrete, postRightX, 0.15, 0, 0.38, 0.32, 0.38);
 
   // 2. Vertical steel tubular posts
-  cyl(m.dark, postLeftX, 1.15, z, 0.07, postHeight);
-  cyl(m.dark, postRightX, 1.15, z, 0.07, postHeight);
+  cyl(m.dark, postLeftX, 1.15, 0, 0.07, postHeight);
+  cyl(m.dark, postRightX, 1.15, 0, 0.07, postHeight);
 
   // Black and yellow reflective warning stripes on the vertical posts
   for (let y = 0.45; y <= 1.85; y += 0.32) {
-    box(m.gold, postLeftX, y, z, 0.155, 0.12, 0.155);
-    box(m.gold, postRightX, y, z, 0.155, 0.12, 0.155);
+    box(m.gold, postLeftX, y, 0, 0.155, 0.12, 0.155);
+    box(m.gold, postRightX, y, 0, 0.155, 0.12, 0.155);
   }
 
   // 3. Left hinge mechanism and concrete counterweight box
-  box(m.dark, postLeftX, 1.08, z, 0.24, 0.26, 0.24);
-  // Counterweight extension lever
-  box(m.dark, postLeftX - 0.28, 1.08, z, 0.45, 0.18, 0.18);
-  // Heavy counterweight concrete block
-  box(m.concrete, postLeftX - 0.58, 1.08, z, 0.42, 0.36, 0.32);
+  box(m.dark, postLeftX, 1.08, 0, 0.24, 0.26, 0.24);
+  box(m.dark, postLeftX - 0.28, 1.08, 0, 0.45, 0.18, 0.18);
+  box(m.concrete, postLeftX - 0.58, 1.08, 0, 0.42, 0.36, 0.32);
 
   // 4. Horizontal boom barrier arm
   const boomY = 1.05;
@@ -194,43 +161,35 @@ export function buildRoadPortal(
   const boomCenterX = (postLeftX + postRightX) / 2;
 
   if (isClosed) {
-    // Horizontal closed boom arm across the street
-    cyl(m.white, boomCenterX, boomY, z, 0.046, boomSpan, 0, Math.PI / 2);
+    cyl(m.white, boomCenterX, boomY, 0, 0.046, boomSpan, 0, Math.PI / 2);
 
-    // Alternating reflective red sleeves on the boom arm
     for (let sx = postLeftX + 0.35; sx <= postRightX - 0.35; sx += 0.5) {
-      box(m.cloth[0], sx, boomY, z, 0.24, 0.105, 0.105);
+      box(m.cloth[0], sx, boomY, 0, 0.24, 0.105, 0.105);
     }
 
-    // Heavy chain and padlock on the receiver post (right side)
-    emit(new T.TorusGeometry(0.08, 0.02, 6, 16), m.dark, postRightX, boomY, z);
-    box(m.gold, postRightX, boomY - 0.08, z, 0.06, 0.08, 0.04);
+    emit(new T.TorusGeometry(0.08, 0.02, 6, 16), m.dark, postRightX, boomY, 0);
+    box(m.gold, postRightX, boomY - 0.08, 0, 0.06, 0.08, 0.04);
 
-    // Center warning restriction sign
     if (signText) {
-      // Sign backing board
-      box(m.dark, boomCenterX, boomY, z, 0.94, 0.54, 0.02);
-      // Support hanger brackets
-      cyl(m.dark, boomCenterX - 0.3, boomY + 0.12, z, 0.008, 0.18);
-      cyl(m.dark, boomCenterX + 0.3, boomY + 0.12, z, 0.008, 0.18);
-      // Front and back signage
-      ctx.sign(signText, boomCenterX, boomY, z + 0.02, 0.9, 0.5, '#c62828', '#ffffff', 0);
-      ctx.sign(signText, boomCenterX, boomY, z - 0.02, 0.9, 0.5, '#c62828', '#ffffff', Math.PI);
+      box(m.dark, boomCenterX, boomY, 0, 0.94, 0.54, 0.02);
+      cyl(m.dark, boomCenterX - 0.3, boomY + 0.12, 0, 0.008, 0.18);
+      cyl(m.dark, boomCenterX + 0.3, boomY + 0.12, 0, 0.008, 0.18);
+      ctx.sign(signText, boomCenterX, boomY, 0.02, 0.9, 0.5, '#c62828', '#ffffff', 0);
+      ctx.sign(signText, boomCenterX, boomY, -0.02, 0.9, 0.5, '#c62828', '#ffffff', Math.PI);
     }
   } else {
-    // Raised boom (angled up 70 degrees)
     const raisedAngle = (70 * Math.PI) / 180;
-    cyl(m.white, postLeftX + 0.7, boomY + 1.2, z, 0.046, boomSpan, 0, raisedAngle);
+    cyl(m.white, postLeftX + 0.7, boomY + 1.2, 0, 0.046, boomSpan, 0, raisedAngle);
   }
 
-  // 5. Flanking physical barricades on sidewalks (prevent squeezing through curbs)
-  // Left side curb barrier
-  box(m.concrete, postLeftX - 0.45, 0.25, z, 0.4, 0.5, 0.6);
-  buildGentong(ctx, postLeftX - 0.45, z + 0.45, 'drum-blue');
+  // 5. Flanking physical barricades on sidewalks
+  box(m.concrete, postLeftX - 0.45, 0.25, 0, 0.4, 0.5, 0.6);
+  buildGentong(ctx, postLeftX - 0.45, 0.45, 'drum-blue');
 
-  // Right side curb barrier
-  box(m.concrete, postRightX + 0.45, 0.25, z, 0.4, 0.5, 0.6);
-  buildGentong(ctx, postRightX + 0.45, z + 0.45, 'drum-metal');
+  box(m.concrete, postRightX + 0.45, 0.25, 0, 0.4, 0.5, 0.6);
+  buildGentong(ctx, postRightX + 0.45, 0.45, 'drum-metal');
+
+  ctx.transform.identity();
 }
 
 /**
@@ -247,60 +206,43 @@ export function buildGentong(
 
   switch (type) {
     case 'drum-blue': {
-      // Iconic 200L blue plastic water/trash barrel (Drum Plastik Biru)
       const r = 0.28;
       const h = 0.88;
-      // Blue cylindrical body
       cyl(m.aquaBlue, x, y + h / 2, z, r, h);
-      // Top black screw lid
       cyl(m.dark, x, y + h + 0.015, z, r + 0.008, 0.035);
-      // Molded bung caps on top
       cyl(m.white, x - 0.1, y + h + 0.038, z, 0.032, 0.02);
       cyl(m.white, x + 0.1, y + h + 0.038, z, 0.032, 0.02);
-      // Reinforcement rib rings
       cyl(m.dark, x, y + h * 0.35, z, r + 0.006, 0.028);
       cyl(m.dark, x, y + h * 0.65, z, r + 0.006, 0.028);
-      // Stencil label band
       box(m.white, x, y + h * 0.5, z + r + 0.002, 0.25, 0.08, 0.004);
       break;
     }
 
     case 'gentong-clay': {
-      // Traditional earthenware water jar (Gentong Tanah Liat / Gerabah)
-      // Base
       cyl(m.clay, x, y + 0.18, z, 0.23, 0.36);
-      // Bulbous middle
       cyl(m.clay, x, y + 0.42, z, 0.31, 0.24);
-      // Neck and rim
       cyl(m.clay, x, y + 0.60, z, 0.22, 0.14);
       cyl(m.clay, x, y + 0.68, z, 0.25, 0.04);
-      // Wooden round lid
       cyl(m.wood, x, y + 0.71, z, 0.26, 0.03);
       box(m.teakWood, x, y + 0.74, z, 0.05, 0.04, 0.04);
-      // Gayung (water dipper handle resting on rim)
       box(m.dark, x + 0.15, y + 0.72, z + 0.08, 0.02, 0.02, 0.25, 0.4, 0.2);
       break;
     }
 
     case 'buis-beton': {
-      // Precast concrete well ring planter (Buis Beton Pot)
       const r = 0.34;
       const h = 0.62;
       cyl(m.concrete, x, y + h / 2, z, r, h);
-      // Dark soil inside
       cyl(m.dark, x, y + h - 0.04, z, r - 0.04, 0.08);
-      // Potted ornamental foliage
       buildPlant(ctx, x, z, 0.35, false);
       break;
     }
 
     case 'drum-metal': {
-      // Heavy metal drum / oil barrel (Drum Besi / Oli)
       const r = 0.285;
       const h = 0.90;
       cyl(m.rust, x, y + h / 2, z, r, h);
       cyl(m.dark, x, y + h + 0.01, z, r + 0.008, 0.025);
-      // Ribbed rolling hoops
       cyl(m.dark, x, y + h * 0.28, z, r + 0.007, 0.025);
       cyl(m.dark, x, y + h * 0.52, z, r + 0.007, 0.025);
       cyl(m.dark, x, y + h * 0.76, z, r + 0.007, 0.025);
@@ -310,61 +252,208 @@ export function buildGentong(
 }
 
 /**
- * Places props (Portal, gentong clusters, parked cars, traffic barricades).
+ * Places props (Entrance archway, gentong clusters, parked vehicles).
  */
 export function buildExtendedProps(ctx: WorldContext) {
   const { box, cyl, materials: m } = ctx;
 
-  // 1. MAIN ROAD PORTAL AT END OF LANE (z = 64.0)
-  // Physically stops players from passing through into the extended street.
-  buildRoadPortal(ctx, 64.0, true, 'PORTAL DITUTUP\n22.00 - 05.00');
+  // 1. ENTRANCE GATEWAY ARCH AT STREET ENTRANCE (z = 0.8)
+  const entPt = getRoadPoint(0.8);
+  ctx.transform.compose(
+    new T.Vector3(entPt.x, 0, 0.8),
+    new T.Quaternion().setFromAxisAngle(upAxis, entPt.angle),
+    new T.Vector3(1, 1, 1),
+  );
+  const entLeft = -entPt.halfWidth + 0.12;
+  const entRight = entPt.halfWidth - 0.12;
+  cyl(m.dark, entLeft, 1.6, 0, 0.08, 3.2);
+  cyl(m.dark, entRight, 1.6, 0, 0.08, 3.2);
+  box(m.dark, 0, 3.25, 0, entPt.halfWidth * 2 + 0.4, 0.18, 0.18);
+  ctx.sign('JL. H. JUNEN\nRT 03 / RW 02', 0, 3.5, 0, 1.8, 0.55, '#1b5e20', '#ffffff', 0);
+  ctx.sign('JL. H. JUNEN\nRT 03 / RW 02', 0, 3.5, 0, 1.8, 0.55, '#1b5e20', '#ffffff', Math.PI);
+  ctx.transform.identity();
 
-  // Concrete traffic barriers immediately behind the portal boom (double barricade)
-  for (const bx of [-1.1, 0, 1.1]) {
-    box(m.concrete, bx, 0.4, 64.8, 0.85, 0.8, 0.35);
-    box(m.gold, bx, 0.4, 64.8, 0.45, 0.15, 0.36); // Yellow reflector stripe
+  // 2. PARKED CARS IN DESIGNATED ROADSIDE BAYS (Not blocking the street)
+  // Car 1: Silver MPV parked at Badminton Hall parking apron (z = -26.0, North / side: 1)
+  const c1Pt = getRoadPoint(-26.0);
+  const c1Dist = c1Pt.halfWidth + 2.2;
+  ctx.transform.compose(
+    new T.Vector3(c1Pt.x + c1Dist * c1Pt.normalX, 0, -26.0 + c1Dist * c1Pt.normalZ),
+    new T.Quaternion().setFromAxisAngle(upAxis, c1Pt.angle + Math.PI / 2),
+    new T.Vector3(1, 1, 1),
+  );
+  buildCar(ctx, 0, 0, false, m.silverCover);
+  ctx.transform.identity();
+
+  // Car 2: Covered car parked at House 18 carport driveway (z = 94.0, North / side: 1)
+  const c2Pt = getRoadPoint(94.0);
+  const c2Dist = c2Pt.halfWidth + 2.0;
+  ctx.transform.compose(
+    new T.Vector3(c2Pt.x + c2Dist * c2Pt.normalX, 0, 94.0 + c2Dist * c2Pt.normalZ),
+    new T.Quaternion().setFromAxisAngle(upAxis, c2Pt.angle),
+    new T.Vector3(1, 1, 1),
+  );
+  buildCar(ctx, 0, 0, true);
+  ctx.transform.identity();
+
+  // Car 3: White sedan parked along wide Jl. Lestari junction (z = 138.0)
+  const c3Pt = getRoadPoint(138.0);
+  const c3Dist = -(c3Pt.halfWidth + 2.2);
+  ctx.transform.compose(
+    new T.Vector3(c3Pt.x + c3Dist * c3Pt.normalX, 0, 138.0 + c3Dist * c3Pt.normalZ),
+    new T.Quaternion().setFromAxisAngle(upAxis, c3Pt.angle),
+    new T.Vector3(1, 1, 1),
+  );
+  buildCar(ctx, 0, 0, false, m.white);
+  ctx.transform.identity();
+
+  // Car 4: Dark car parked at House 16 driveway (z = -10.0, South / side: -1)
+  const c4Pt = getRoadPoint(-10.0);
+  const c4Dist = -(c4Pt.halfWidth + 1.8);
+  ctx.transform.compose(
+    new T.Vector3(c4Pt.x + c4Dist * c4Pt.normalX, 0, -10.0 + c4Dist * c4Pt.normalZ),
+    new T.Quaternion().setFromAxisAngle(upAxis, c4Pt.angle),
+    new T.Vector3(1, 1, 1),
+  );
+  buildCar(ctx, 0, 0, false, m.dark);
+  ctx.transform.identity();
+
+  // 3. RESIDENTIAL GENTONG (Barrels, water drums, trash cans)
+  const gentongLocs: [number, number, 'drum-blue' | 'gentong-clay' | 'buis-beton' | 'drum-metal'][] = [
+    [-1, 2.8, 'drum-blue'],
+    [1, 9.5, 'gentong-clay'],
+    [-1, 12.0, 'drum-blue'],
+    [1, 19.8, 'gentong-clay'],
+    [-1, 26.5, 'buis-beton'],
+    [1, 35.0, 'drum-blue'],
+    [-1, 43.5, 'drum-blue'],
+    [1, 52.8, 'gentong-clay'],
+    [-1, 56.5, 'buis-beton'],
+    [1, 75.0, 'drum-blue'],
+    [-1, 88.0, 'gentong-clay'],
+    [1, 105.0, 'buis-beton'],
+    [-1, -16.0, 'drum-blue'],
+    [1, -38.0, 'drum-metal'],
+  ];
+
+  for (const [side, gz, type] of gentongLocs) {
+    const pt = getRoadPoint(gz);
+    const dist = side * (pt.halfWidth + 0.28);
+    buildGentong(ctx, pt.x + dist * pt.normalX, gz + dist * pt.normalZ, type);
+  }
+}
+
+/**
+ * Builds the side junction alley extension (Jl. H. Junen II / Water Tank junction branch),
+ * complete with extended asphalt road, curbs, boundary walls, backdrop houses,
+ * road boom portal, parked car, and gentong clusters.
+ */
+export function buildJunctionExtension(ctx: WorldContext) {
+  const { box, cyl, emit, materials: m } = ctx;
+
+  // 1. Concrete ground foundation under junction alley
+  box(m.concrete, 16.0, -0.22, 8.5, 24, 0.08, 20);
+
+  // 2. Road asphalt continuation from x = 7.8 to x = 22.0, z = 7.0 to 10.0 (width 3.0)
+  box(m.road, 14.9, -0.12, 8.5, 14.2, 0.2, 3.0);
+
+  // 3. Drainage gutters and curbs along z = 7.0 (south) and z = 10.0 (north)
+  for (let x = 2.4; x < 21.5; x += 0.5) {
+    // South curb (z = 7.0)
+    box(m.dark, x + 0.25, -0.15, 6.85, 0.5, 0.1, 0.3);
+    box(m.concrete, x + 0.25, -0.04, 7.02, 0.49, 0.12, 0.1);
+    // North curb (z = 10.0)
+    box(m.dark, x + 0.25, -0.15, 10.15, 0.5, 0.1, 0.3);
+    box(m.concrete, x + 0.25, -0.04, 9.98, 0.49, 0.12, 0.1);
   }
 
-  // 2. ENTRANCE GATEWAY / PORTAL AT STREET ENTRANCE (z = 0.8)
-  // Open neighborhood entrance portal frame
-  const entLeft = -LANE.halfWidth + 0.12;
-  const entRight = LANE.halfWidth - 0.12;
-  cyl(m.dark, entLeft, 1.6, 0.8, 0.08, 3.2);
-  cyl(m.dark, entRight, 1.6, 0.8, 0.08, 3.2);
-  // Overhead arch beam
-  box(m.dark, 0, 3.25, 0.8, LANE.halfWidth * 2 + 0.4, 0.18, 0.18);
-  // Neighborhood welcome signboard
-  ctx.sign('JL. H. JUNEN\nRT 03 / RW 02', 0, 3.5, 0.8, 1.8, 0.55, '#1b5e20', '#ffffff', 0);
-  ctx.sign('JL. H. JUNEN\nRT 03 / RW 02', 0, 3.5, 0.8, 1.8, 0.55, '#1b5e20', '#ffffff', Math.PI);
+  // 4. Boundary walls and backdrop houses along the side alley
+  // South wall (z = 6.85)
+  box(m.wallDefault, 13.5, 1.6, 6.85, 11.0, 3.2, 0.24);
+  box(m.terracottaTile, 13.5, 3.25, 6.85, 11.2, 0.2, 0.45);
+  // Backdrop house south
+  box(m.cream, 14.0, 2.2, 4.2, 8.0, 4.4, 5.0);
+  box(m.tile, 14.0, 4.8, 4.2, 8.4, 1.2, 5.4);
 
-  // 3. PARKED CARS ALONG THE EXTENDED STREET ("mobil")
-  // Car 1: Parked silver MPV just past the portal (z = 68.5)
-  buildCar(ctx, 0.85, 68.5, false, m.silverCover);
+  // North wall (z = 10.15)
+  box(m.kamprot, 13.5, 1.45, 10.15, 11.0, 2.9, 0.24);
+  box(m.tile, 13.5, 2.95, 10.15, 11.2, 0.2, 0.45);
+  // Backdrop house north
+  box(m.teal, 14.0, 2.1, 12.8, 8.0, 4.2, 5.0);
+  box(m.roofGrey, 14.0, 4.6, 12.8, 8.4, 1.2, 5.4);
 
-  // Car 2: Covered car parked in extended lane (z = 84.0)
-  buildCar(ctx, -1.05, 84.0, true);
+  // 5. Far-end alley termination wall at x = 22.0
+  box(m.wallGray, 22.0, 1.8, 8.5, 0.35, 3.6, 5.2);
+  box(m.tile, 22.0, 3.7, 8.5, 0.6, 0.25, 5.4);
+  // Trees behind the end wall
+  box(m.leafMats[0], 24.2, 4.8, 7.6, 3.6, 4.6, 3.6);
+  box(m.wood, 24.2, 2.2, 7.6, 0.35, 4.0, 0.35);
+  box(m.leafMats[1], 24.2, 5.2, 9.5, 3.8, 5.0, 3.8);
+  box(m.wood, 24.2, 2.4, 9.5, 0.35, 4.2, 0.35);
 
-  // Car 3: White sedan parked in the far background (z = 100.0)
-  buildCar(ctx, 0.8, 100.0, false, m.white);
+  // 6. ROAD PORTAL ACROSS JUNCTION BRANCH (at x = 7.85)
+  // Blocks the player from passing further down into the side alley.
+  const portalX = 7.85;
+  const postSZ = 7.15;
+  const postNZ = 9.85;
 
-  // Car 4: Dark car parked outside at the backward entrance road (z = -9.5)
-  buildCar(ctx, 0.95, -9.5, false, m.dark);
+  // Concrete footings
+  box(m.concrete, portalX, 0.15, postSZ, 0.36, 0.32, 0.36);
+  box(m.concrete, portalX, 0.15, postNZ, 0.36, 0.32, 0.36);
 
-  // 4. GENTONG CLUSTERS (Barrels, water drums, trash cans)
-  // Cluster around the portal barricade
-  buildGentong(ctx, -1.6, 64.9, 'drum-blue');
-  buildGentong(ctx, 1.6, 64.9, 'buis-beton');
-  buildGentong(ctx, -0.6, 65.4, 'drum-metal');
-  buildGentong(ctx, 0.6, 65.4, 'drum-blue');
+  // Vertical steel posts
+  cyl(m.dark, portalX, 1.15, postSZ, 0.07, 2.1);
+  cyl(m.dark, portalX, 1.15, postNZ, 0.07, 2.1);
 
-  // Residential gentong along the neighborhood lane
-  buildGentong(ctx, -LANE.halfWidth - 0.28, 2.8, 'drum-blue'); // White scroll entrance
-  buildGentong(ctx, LANE.halfWidth + 0.26, 9.5, 'gentong-clay'); // Green tank junction
-  buildGentong(ctx, -LANE.halfWidth - 0.28, 12.0, 'drum-blue'); // Cream carport
-  buildGentong(ctx, LANE.halfWidth + 0.25, 19.8, 'gentong-clay'); // Turquoise house
-  buildGentong(ctx, -LANE.halfWidth - 0.26, 26.5, 'buis-beton'); // Blue low house
-  buildGentong(ctx, LANE.halfWidth + 0.28, 35.0, 'drum-blue'); // Yellow black house
-  buildGentong(ctx, -LANE.halfWidth - 0.25, 43.5, 'drum-blue'); // White car house
-  buildGentong(ctx, LANE.halfWidth + 0.26, 52.8, 'gentong-clay'); // Pink house
-  buildGentong(ctx, -LANE.halfWidth - 0.28, 56.5, 'buis-beton'); // Green car house
+  // Hazard bands on posts
+  for (let y = 0.45; y <= 1.85; y += 0.32) {
+    box(m.gold, portalX, y, postSZ, 0.155, 0.12, 0.155);
+    box(m.gold, portalX, y, postNZ, 0.155, 0.12, 0.155);
+  }
+
+  // Boom barrier arm across the alley (along Z)
+  cyl(m.white, portalX, 1.05, 8.5, 0.046, postNZ - postSZ + 0.15, Math.PI / 2, 0);
+  for (let bz = postSZ + 0.35; bz <= postNZ - 0.35; bz += 0.48) {
+    box(m.cloth[0], portalX, 1.05, bz, 0.105, 0.105, 0.24);
+  }
+
+  // Counterweight lever and box on south post
+  box(m.dark, portalX, 1.08, postSZ - 0.28, 0.18, 0.18, 0.45);
+  box(m.concrete, portalX, 1.08, postSZ - 0.58, 0.32, 0.36, 0.42);
+
+  // Padlock and chain on north post
+  emit(new T.TorusGeometry(0.08, 0.02, 6, 16), m.dark, portalX, 1.05, postNZ);
+  box(m.gold, portalX, 0.97, postNZ, 0.04, 0.08, 0.06);
+
+  // Center warning sign
+  box(m.dark, portalX, 1.05, 8.5, 0.02, 0.54, 0.94);
+  cyl(m.dark, portalX, 1.15, 8.2, 0.008, 0.18);
+  cyl(m.dark, portalX, 1.15, 8.8, 0.008, 0.18);
+  ctx.sign('PORTAL DITUTUP\nKHUSUS WARGA', portalX, 1.05, 8.5, 0.9, 0.5, '#c62828', '#ffffff', Math.PI / 2);
+  ctx.sign('PORTAL DITUTUP\nKHUSUS WARGA', portalX, 1.05, 8.5, 0.9, 0.5, '#c62828', '#ffffff', -Math.PI / 2);
+
+  // Flanking concrete curb barrier blocks
+  box(m.concrete, portalX, 0.35, postSZ, 0.4, 0.7, 0.5);
+  box(m.concrete, portalX, 0.35, postNZ, 0.4, 0.7, 0.5);
+
+  // 7. PARKED CAR IN JUNCTION ALLEY (behind the portal, facing down the alley)
+  const carPos = new T.Vector3(13.0, 0, 8.5);
+  const carQuat = new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), Math.PI / 2);
+  ctx.transform.compose(carPos, carQuat, new T.Vector3(1, 1, 1));
+  buildCar(ctx, 0, 0, false, m.white);
+  ctx.transform.identity();
+
+  // 8. GENTONG CLUSTERS AROUND JUNCTION
+  // At the side portal barrier
+  buildGentong(ctx, 7.5, postSZ + 0.3, 'drum-blue');
+  buildGentong(ctx, 7.5, postNZ - 0.3, 'buis-beton');
+  buildGentong(ctx, 8.4, postSZ + 0.3, 'drum-metal');
+  buildGentong(ctx, 8.4, postNZ - 0.3, 'drum-blue');
+
+  // Inside the playable junction branch
+  buildGentong(ctx, 4.5, 7.35, 'drum-blue');
+  buildGentong(ctx, 4.2, 9.65, 'gentong-clay');
+
+  // 9. Alley street name sign at corner
+  ctx.sign('JL. H. JUNEN II\n← GANG BUNTU', 2.45, 2.2, 10.25, 1.2, 0.45, '#1b5e20', '#ffffff', Math.PI / 2);
 }

@@ -1,4 +1,4 @@
-import { LANE, LANDMARK_STAGES, constrainToLane } from './neighborhood.ts';
+import { LANE, LANDMARK_STAGES, constrainToLane, getWorldRoadCenter } from './neighborhood.ts';
 
 export type Action = 'idle' | 'punch' | 'kick' | 'dodge' | 'counter' | 'hurt' | 'windup' | 'down';
 export type Fighter = {
@@ -60,7 +60,7 @@ const fighter = (id: number, x: number, z: number): Fighter => ({
 export const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 
 export class Combat {
-  player: Fighter = fighter(0, 0, 3);
+  player: Fighter = fighter(0, getWorldRoadCenter(3), 3);
   enemies: Fighter[] = [];
   stage = 0;
   cleared = 0;
@@ -119,7 +119,7 @@ export class Combat {
   }
 
   update(rawDt: number, input: Input) {
-    if (this.status !== 'playing') return;
+    if (this.status !== 'playing' && this.status !== 'won') return;
 
     this.slow = Math.max(0, this.slow - rawDt);
     const dt = Math.min(rawDt, 0.05) * (this.slow > 0 ? 0.3 : 1);
@@ -135,10 +135,11 @@ export class Combat {
     // Spawn encounters if reached
     if (this.stage === this.cleared && this.stage < 3 && p.z > ENCOUNTERS[this.stage] - 8) {
       const z = ENCOUNTERS[this.stage];
+      const cx = getWorldRoadCenter(z);
       this.enemies.push(
-        fighter(this.stage * 3 + 1, -0.8, z),
-        fighter(this.stage * 3 + 2, 0, z + 1.5),
-        fighter(this.stage * 3 + 3, 0.8, z + 3.0),
+        fighter(this.stage * 3 + 1, cx - 0.8, z),
+        fighter(this.stage * 3 + 2, cx, z + 1.5),
+        fighter(this.stage * 3 + 3, cx + 0.8, z + 3.0),
       );
       this.stage++;
       this.message = ['Clear the water-tank junction', 'Hold the turquoise house', 'One last stand by the pink house'][this.stage - 1];
@@ -277,7 +278,7 @@ export class Combat {
       constrainToLane(e, previousEnemyX);
     }
 
-    p.z = clamp(p.z, 1, this.stage > this.cleared ? ENCOUNTERS[this.stage - 1] + 7 : LANE.end);
+    p.z = clamp(p.z, LANE.start, this.stage > this.cleared ? ENCOUNTERS[this.stage - 1] + 7 : LANE.end);
     constrainToLane(p, previousPlayerX);
 
     if (this.stage > this.cleared && alive.length === 0) {

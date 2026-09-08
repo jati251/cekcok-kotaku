@@ -48,27 +48,29 @@ export function createRenderingPipeline(
   scene.fog = new T.FogExp2('#8ec2ea', 0.0018);
 
   // 3. Lighting: Sunny Jakarta daylight
-  const hemi = new T.HemisphereLight('#7db8ec', '#5a5445', 1.55);
+  // Balanced ambient floor allows crisp, punchy shadows with rich contrast
+  const hemi = new T.HemisphereLight('#6aa5df', '#362e22', 0.70);
   scene.add(hemi);
 
-  const sun = new T.DirectionalLight('#fff7e6', 3.0);
-  sun.position.set(-17, 26, 12);
+  const sun = new T.DirectionalLight('#fff4dc', 4.5);
+  sun.position.set(-7.5, 30, -6);
+  sun.target.position.set(0.5, 0, 6);
   sun.castShadow = true;
   sun.shadow.mapSize.set(
     initialQuality === 'cinematic' ? 2048 : 1024,
     initialQuality === 'cinematic' ? 2048 : 1024,
   );
   Object.assign(sun.shadow.camera, {
-    left: -20,
-    right: 20,
-    top: 22,
-    bottom: -22,
-    near: 0.2,
-    far: 88,
+    left: -18,
+    right: 18,
+    top: 24,
+    bottom: -24,
+    near: 0.5,
+    far: 85,
   });
-  sun.shadow.bias = -0.00008;
-  sun.shadow.normalBias = 0.022;
-  sun.shadow.radius = 1.6;
+  sun.shadow.bias = -0.0001;
+  sun.shadow.normalBias = 0.012;
+  sun.shadow.radius = 1.0;
   scene.add(sun, sun.target);
 
   // 4. Procedural Tropical Sky Dome
@@ -159,7 +161,7 @@ export function createRenderingPipeline(
   const pmrem = new T.PMREMGenerator(renderer);
   const environment = pmrem.fromScene(envScene, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.78;
+  scene.environmentIntensity = 0.38;
   envScene.clear();
   pmrem.dispose();
 
@@ -175,9 +177,9 @@ export function createRenderingPipeline(
 
   // SSAO: Clamped resolution to prevent frame drops on Retina/4K displays
   const ao = new SSAOPass(scene, camera, 800, 600);
-  ao.kernelRadius = 0.38;
-  ao.minDistance = 0.002;
-  ao.maxDistance = 0.25;
+  ao.kernelRadius = 0.65;
+  ao.minDistance = 0.003;
+  ao.maxDistance = 0.40;
   ao.output = SSAOPass.OUTPUT.Default;
   composer.addPass(ao);
 
@@ -231,6 +233,9 @@ export function createRenderingPipeline(
         vec3 coolGround = vec3(0.98, 0.99, 1.01);
         col *= mix(coolGround, warmSky, smoothstep(0.12, 0.80, lum));
 
+        // Rich contrast curve for punchy shadows and sun-drenched highlights
+        col = pow(col, vec3(1.05));
+
         // Gentle vignette
         float vignette = smoothstep(0.98, 0.40, rDist * 1.15);
         col *= mix(0.78, 1.0, vignette);
@@ -242,7 +247,7 @@ export function createRenderingPipeline(
         float grain = fract(sin(dot(uv + fract(time * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
         col += (grain - 0.5) * 0.009;
 
-        gl_FragColor = vec4(col, 1.0);
+        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
       }
     `,
   });
@@ -278,6 +283,10 @@ export function createRenderingPipeline(
 
   function update(time: number, damage = 0) {
     sky.material.uniforms.uTime.value = time;
+    sky.material.uniforms.uSunPosition.value
+      .copy(sun.position)
+      .sub(sun.target.position)
+      .normalize();
     grade.uniforms.time.value = time;
     grade.uniforms.damage.value = damage;
   }

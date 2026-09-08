@@ -117,16 +117,20 @@ export function createSurfaceLibrary() {
         uniform vec2 uMaterialOffset; uniform float uMaterialScale; uniform float uMaterialRelief;
         varying vec3 vSurfacePosition; varying vec3 vSurfaceNormal;
 
+        vec2 repeatUv(vec2 uv) {
+          return abs(fract(uv * 0.5 + 0.5) * 2.0 - 1.0);
+        }
+
         vec3 surfaceSample(vec2 uv) {
           vec2 tileSpan = vec2(0.25, 0.50);
           vec2 margin = vec2(0.0015, 0.003);
-          return texture2D(uMaterialAtlas, uMaterialOffset + margin + fract(uv) * (tileSpan - 2.0 * margin)).rgb;
+          return texture2D(uMaterialAtlas, uMaterialOffset + margin + repeatUv(uv) * (tileSpan - 2.0 * margin)).rgb;
         }
 
         vec3 normalSample(vec2 uv) {
           vec2 tileSpan = vec2(0.25, 0.50);
           vec2 margin = vec2(0.0015, 0.003);
-          return texture2D(uNormalAtlas, uMaterialOffset + margin + fract(uv) * (tileSpan - 2.0 * margin)).rgb * 2.0 - 1.0;
+          return texture2D(uNormalAtlas, uMaterialOffset + margin + repeatUv(uv) * (tileSpan - 2.0 * margin)).rgb * 2.0 - 1.0;
         }
 
         float surfaceNoise(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -214,14 +218,16 @@ export function createSurfaceLibrary() {
         vec3 surfDx = dFdx(vViewPosition), surfDy = dFdy(vViewPosition);
         vec3 surfR1 = cross(surfDy, normal), surfR2 = cross(normal, surfDx);
         float surfDet = dot(surfDx, surfR1);
-        vec3 surfGradient = sign(surfDet) * (dFdx(surfaceGrain) * surfR1 + dFdy(surfaceGrain) * surfR2);
+        float dGx = clamp(dFdx(surfaceGrain), -0.05, 0.05);
+        float dGy = clamp(dFdy(surfaceGrain), -0.05, 0.05);
+        vec3 surfGradient = sign(surfDet) * (dGx * surfR1 + dGy * surfR2);
 
         normal = normalize(abs(surfDet) * normal + uMaterialRelief * 0.065 * surfGradient + normBlended * uMaterialRelief * 0.35);
         `,
       );
     };
 
-    material.customProgramCacheKey = () => `junen-surface-v3-${kind}-${scale}-${relief}`;
+    material.customProgramCacheKey = () => `junen-surface-v4-${kind}-${scale}-${relief}`;
   }
 
   return {
